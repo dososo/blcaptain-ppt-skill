@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>奢侈的下一个十年 · 时尚奢侈极简 · 20 页一览</title>
+<style>
+  /* 展示框 = 深色画廊墙（让象牙白裸色卡片浮现）· 强调用暖驼（零信号色·呼应 luxury 人格） */
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#1b1a18;color:#C9C2B4;font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;padding:24px;min-height:100vh}
+  .head{max-width:1480px;margin:0 auto 22px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  .head h1{font-size:21px;font-weight:600;color:#F6F4EE;letter-spacing:.02em}
+  .head .meta{font-size:13px;color:#8c8478}
+  .head .open-full{margin-left:auto;font-size:13px;color:#C5A572;text-decoration:none;border:1px solid #3a382f;padding:6px 12px;border-radius:4px}
+  .head .open-full:hover{color:#F6F4EE;border-color:#C5A572}
+  .grid{max-width:1480px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px}
+  .cell{background:#F6F4EE;border-radius:5px;overflow:hidden;box-shadow:0 6px 22px rgba(0,0,0,.5);transition:transform .16s,box-shadow .16s}
+  .cell:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,0,0,.65)}
+  .thumb{position:relative;width:100%;aspect-ratio:1280/720;overflow:hidden;background:#F6F4EE}
+  .thumb iframe{position:absolute;top:0;left:0;width:1280px;height:720px;border:0;transform-origin:top left;pointer-events:none}
+  .thumb a.open{position:absolute;inset:0;z-index:2;display:block}
+  .cap{display:flex;align-items:baseline;gap:9px;padding:9px 12px;background:#262420}
+  .cap .n{font-family:ui-monospace,"SFMono-Regular",monospace;color:#C5A572;font-weight:700;font-size:12px;letter-spacing:.06em}
+  .cap .nm{color:#C9C2B4;font-size:13px}
+  .cap .ch{margin-left:auto;font-size:11px;color:#9C8458;letter-spacing:.10em}
+  footer{max-width:1480px;margin:22px auto 0;font-size:12px;color:#6a6458;line-height:1.7}
+  @media(max-width:720px){
+    body{padding:12px}
+    .head h1{font-size:18px}
+    .head .open-full{margin-left:0}
+    .grid{grid-template-columns:1fr;gap:12px}
+  }
+</style>
+</head>
+<body>
+  <div class="head">
+    <h1>奢侈的下一个十年 · 时尚奢侈极简 · 20 页一览</h1>
+    <span class="meta">真实渲染缩略 · 点任一页全屏打开</span>
+    <a class="open-full" href="deck-luxury.html#1" target="_blank">▶ 从头全屏播放</a>
+  </div>
+  <div class="grid" id="grid"></div>
+  <footer>
+    全部示意数据 · 形态演示（非真实财报/市场数据）· 共 20 页，三章结构：①换代 ②重估 ③重构。<br>
+    PC 端多列平铺、手机端单列滑动；点缩略图任一页可单独全屏看。
+  </footer>
+<script>
+  var pages=[
+    [1,"封面 · 增长来自换人",""],[2,"目录 · 三章一览",""],[3,"换代"," 第一章"],[4,"量级 · 50% 换代",""],[5,"信念 · 提价透支",""],
+    [6,"对比 · 提价 vs 换人",""],[7,"序列 · 新钱三坐标",""],[8,"重估"," 第二章"],[9,"图文 · 本质转被理解",""],[10,"抽言 · 为被看懂付钱",""],
+    [11,"量级 · 3× 复购",""],[12,"清单 · 重估三件事",""],[13,"双量级 · 二手 vs 一手",""],[14,"重构"," 第三章"],[15,"图文 · 稀缺即判断",""],
+    [16,"信念 · 克制定价权",""],[17,"时间线 · 定价百年三变",""],[18,"引言 · 敢说不",""],[19,"聚焦 · 慢是护城河",""],[20,"收束 · 判断交给时间",""]
+  ];
+  var g=document.getElementById("grid");
+  pages.forEach(function(p){
+    var n=p[0], pad=(n<10?"0":"")+n;
+    var cell=document.createElement("div");cell.className="cell";
+    cell.innerHTML=
+      '<div class="thumb"><iframe src="deck-luxury.html#'+n+'" scrolling="no" loading="lazy" tabindex="-1"></iframe>'+
+      '<a class="open" href="deck-luxury.html#'+n+'" target="_blank" aria-label="打开第'+n+'页"></a></div>'+
+      '<div class="cap"><span class="n">'+pad+'</span><span class="nm">'+p[1]+'</span>'+(p[2]?'<span class="ch">'+p[2]+'</span>':'')+'</div>';
+    g.appendChild(cell);
+    var ifr=cell.querySelector("iframe"), thumb=cell.querySelector(".thumb");
+    function scale(){ var w=thumb.clientWidth; ifr.style.transform="scale("+(w/1280)+")"; }
+    ifr.addEventListener("load",scale); scale();
+    window.addEventListener("resize",scale);
+  });
+</script>
+</body>
+</html>

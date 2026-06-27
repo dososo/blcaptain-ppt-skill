@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>空的信念 · 演示禅 × 阴翳 × MUJI空 · 20 页一览</title>
+<style>
+  /* 展示框 = 暗墨画廊墙（演示禅×阴翳·把 deck 暖墨黑「第二种黑」再压深一档当墙·#15130F=stage-void）。
+     与暖纸五套（de-stijl/editorial 暖纸白卡片在深墙跳出）的根本区隔：本套 deck 本就是暗墨——
+       卡片≈deck 暖墨黑·几乎与墙同调·只靠极淡边线/外影「从墨里浮出」（阴翳：deck 在幽暗里若隐显形·非跳出）。
+     近零彩色身份：标号/章节标一律纸白/glow/暖灰·绝无彩色 accent（守 zen「强调靠明度非色」命根·区隔
+       de-stijl 三原色 caption / editorial 编辑红 caption）。极简骨架·去网格线·留白当容器（禅克制）。 */
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#15130F;color:#9A9081;
+    font-family:"Source Sans 3","Helvetica Neue",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    padding:32px;min-height:100vh;-webkit-font-smoothing:antialiased}
+  /* 刊头：极淡纸白细线（非彩色粗 rule·禅去骨架）+ 巨留白起手 */
+  .head{max-width:1480px;margin:0 auto 26px;display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;
+    border-bottom:1px solid #3A352B;padding-bottom:16px}
+  .head h1{font-family:"Source Han Sans SC","PingFang SC",sans-serif;font-weight:300;font-size:21px;color:#EAE4D7;letter-spacing:.04em}
+  .head .vol{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#9A9081;font-weight:500;align-self:center}
+  .head .meta{font-size:12px;color:#9A9081;letter-spacing:.04em}
+  /* 全屏播放：纸白描边幽灵按钮（非彩色实底·守近零彩色）·hover 反白 */
+  .head .open-full{margin-left:auto;font-size:12px;color:#EAE4D7;background:transparent;border:1px solid #5A5346;text-decoration:none;
+    padding:7px 16px;border-radius:0;font-weight:500;letter-spacing:.14em;text-transform:uppercase;display:inline-flex;align-items:center;gap:8px;transition:.18s}
+  .head .open-full:hover{background:#EAE4D7;color:#15130F;border-color:#EAE4D7}
+  /* 画廊：宽 gap（ma 当容器·呼吸）·卡片随视口列数自适应 */
+  .grid{max-width:1480px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(348px,1fr));gap:24px}
+  /* 卡片 = 暗墨黑（≈deck bg #211E17）·极淡边线 + 外影从墨里浮出（阴翳·非跳出）·硬直角 */
+  .cell{background:#211E17;border:1px solid #2C2820;border-radius:0;overflow:hidden;
+    box-shadow:0 10px 34px rgba(0,0,0,.55);transition:transform .18s,box-shadow .18s,border-color .18s}
+  .cell:hover{z-index:2;transform:translateY(-3px);box-shadow:0 16px 46px rgba(0,0,0,.7);border-color:#4A443A}
+  .thumb{position:relative;width:100%;aspect-ratio:1280/720;overflow:hidden;background:#211E17;border-bottom:1px solid #2C2820}
+  .thumb iframe{position:absolute;top:0;left:0;width:1280px;height:720px;border:0;transform-origin:top left;pointer-events:none}
+  .thumb a.open{position:absolute;inset:0;z-index:2;display:block}
+  /* caption：暗墨条·标号纸白(非彩底)·名宋楷调用思源黑体 Light·章节标极淡暖灰描边(非彩色块) */
+  .cap{display:flex;align-items:stretch;gap:0;background:#1A1813;min-height:40px}
+  .cap .n{font-family:"Source Sans 3",ui-monospace,monospace;color:#15130F;font-weight:600;font-size:12px;letter-spacing:.08em;
+    padding:10px 13px;background:#EAE4D7;flex-shrink:0;display:flex;align-items:center}  /* 标号=纸白底压墨字(明度强调·非彩色) */
+  .cap .nm{font-family:"Source Han Sans SC","PingFang SC",sans-serif;color:#EAE4D7;font-size:13px;font-weight:300;letter-spacing:.02em;
+    padding:10px 13px;flex:1;display:flex;align-items:center}
+  .cap .ch{font-family:"Source Sans 3",system-ui,sans-serif;font-size:10px;color:#9A9081;background:transparent;border-left:1px solid #3A352B;
+    padding:10px 13px;letter-spacing:.14em;font-weight:500;text-transform:uppercase;display:flex;align-items:center;flex-shrink:0}
+  footer{max-width:1480px;margin:20px auto 0;font-size:12px;color:#6F665A;line-height:1.8;border-top:1px solid #2C2820;padding-top:14px}
+  @media(max-width:720px){
+    body{padding:14px}
+    .head h1{font-size:17px}
+    .head .open-full{margin-left:0}
+    .grid{grid-template-columns:1fr;gap:16px}
+  }
+</style>
+</head>
+<body>
+  <div class="head">
+    <h1>空的信念 · 演示禅 × 阴翳 × MUJI空</h1>
+    <span class="vol">第七方言 · 空的信念</span>
+    <span class="meta">真实渲染缩略 · 点任一页全屏打开</span>
+    <a class="open-full" href="deck-zen.html#1" target="_blank">▶ 从头全屏播放</a>
+  </div>
+  <div class="grid" id="grid"></div>
+  <footer>
+    一份关于「克制 / 做减法 · Less but Better」的思想演示 · 一图一念·留白当容器（示意引文已标注·名言均一手源核实） · 共 20 页，三段弧：①为何要减 → ②怎么减 → ③减后所得。<br>
+    暗墨禅：暖墨黑作 void·「空 / 白」作为唯一的光从墨中显形·强调靠字重+明度（近零彩色）。PC 端多列平铺、手机端单列滑动；点缩略图任一页可单独全屏看。
+  </footer>
+<script>
+  // 20 页 · [页码, 名, 章节标]（章节标仅章扉页·近零彩色暖灰描边·非彩块）
+  var pages=[
+    [1,"封面 · 少，是一种设计",""],
+    [2,"墨章扉 · 加是默认，越加越被淹没","弧一 · 为何要减"],
+    [3,"空当容器 · 给得越多，带走越少",""],
+    [4,"一线 · 加没有尽头，先画一条线",""],
+    [5,"案例 · iPod · 一千首歌装进口袋",""],
+    [6,"円相 · 簡素 KANSO · 留出空才被看见",""],
+    [7,"枯山水 · 一物被看 · 孤立才看得见",""],
+    [8,"拉引文 · 少，却更好",""],
+    [9,"墨章扉 · 减到只剩本质","弧二 · 怎么减"],
+    [10,"空当容器 · 敢说到此为止，最难的一下",""],
+    [11,"竖排 · 减，是主动地选",""],
+    [12,"阴翳材质 · 先减去光，白才显形",""],
+    [13,"念 · 对比来自克制",""],
+    [14,"单数 · 留白即容器",""],
+    [15,"間 · 之间才要紧",""],
+    [16,"拉引文 · 一句判断",""],
+    [17,"墨章扉 · 减掉之后换回专注","弧三 · 减后所得"],
+    [18,"空当容器 · 专注是一种信念",""],
+    [19,"序列 · 减，是有节奏的",""],
+    [20,"收束 · 剩下的就是你的判断",""]
+  ];
+  var g=document.getElementById("grid");
+  pages.forEach(function(p){
+    var n=p[0], pad=(n<10?"0":"")+n;
+    var cell=document.createElement("div");cell.className="cell";
+    cell.innerHTML=
+      '<div class="thumb"><iframe src="deck-zen.html#'+n+'" scrolling="no" loading="lazy" tabindex="-1"></iframe>'+
+      '<a class="open" href="deck-zen.html#'+n+'" target="_blank" aria-label="打开第'+n+'页"></a></div>'+
+      '<div class="cap"><span class="n">'+pad+'</span><span class="nm">'+p[1]+'</span>'+(p[2]?'<span class="ch">'+p[2]+'</span>':'')+'</div>';
+    g.appendChild(cell);
+    var ifr=cell.querySelector("iframe"), thumb=cell.querySelector(".thumb");
+    function scale(){ var w=thumb.clientWidth; ifr.style.transform="scale("+(w/1280)+")"; }
+    ifr.addEventListener("load",scale); scale();
+    window.addEventListener("resize",scale);
+  });
+</script>
+</body>
+</html>

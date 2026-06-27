@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>标准即秩序 · De Stijl 新造型主义 · 16 页一览</title>
+<style>
+  /* 展示框 = 深色画廊墙（暖深灰 #1A1815 = deck 暖黑墨扩成墙）· 让暖纸白 deck 卡片在深墙上跳出。
+     De Stijl 身份靠：正交硬直角(border-radius:0)·浊钴蓝/砖红 caption 系统·全大写几何字——非黑线(深墙上黑线不可见)。 */
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#1A1815;color:#C9C2B4;font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;padding:24px;min-height:100vh}
+  .head{max-width:1480px;margin:0 auto 22px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;border-bottom:3px solid #4A6FA5;padding-bottom:14px}
+  .head h1{font-size:21px;font-weight:700;color:#F4F1E8;letter-spacing:.08em;text-transform:uppercase}
+  .head .meta{font-size:13px;color:#A8A296}
+  .head .open-full{margin-left:auto;font-size:13px;color:#F4F1E8;background:#B5392B;text-decoration:none;padding:6px 14px;border-radius:0;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+  .head .open-full:hover{background:#F4F1E8;color:#1A1815}
+  .grid{max-width:1480px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px}
+  .cell{background:#F4F1E8;border-radius:0;overflow:hidden;box-shadow:0 6px 22px rgba(0,0,0,.55);transition:transform .16s,box-shadow .16s}
+  .cell:hover{z-index:2;transform:translateY(-3px);box-shadow:0 12px 34px rgba(0,0,0,.7)}
+  .thumb{position:relative;width:100%;aspect-ratio:1280/720;overflow:hidden;background:#F4F1E8;border-bottom:2px solid #1A1815}
+  .thumb iframe{position:absolute;top:0;left:0;width:1280px;height:720px;border:0;transform-origin:top left;pointer-events:none}
+  .thumb a.open{position:absolute;inset:0;z-index:2;display:block}
+  .cap{display:flex;align-items:stretch;gap:0;background:#1A1815;min-height:36px}
+  .cap .n{font-family:ui-monospace,"SFMono-Regular",monospace;color:#F4F1E8;font-weight:700;font-size:12px;letter-spacing:.08em;padding:8px 10px;background:#28466E;flex-shrink:0;display:flex;align-items:center}
+  .cap .nm{color:#F4F1E8;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:8px 10px;flex:1;display:flex;align-items:center}
+  .cap .ch{font-size:11px;color:#F4F1E8;background:#B5392B;padding:8px 10px;letter-spacing:.10em;font-weight:700;text-transform:uppercase;display:flex;align-items:center;flex-shrink:0}
+  footer{max-width:1480px;margin:16px auto 0;font-size:12px;color:#8C8478;line-height:1.7;border-top:2px solid #3a352e;padding-top:12px}
+  @media(max-width:720px){
+    body{padding:12px}
+    .head h1{font-size:16px}
+    .head .open-full{margin-left:0}
+    .grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+  <div class="head">
+    <h1>标准即秩序 · De Stijl 新造型主义 · 16 页一览</h1>
+    <span class="meta">真实渲染缩略 · 点任一页全屏打开</span>
+    <a class="open-full" href="deck-de-stijl.html#1" target="_blank">▶ 从头全屏播放</a>
+  </div>
+  <div class="grid" id="grid"></div>
+  <footer>
+    全部数据基于集装箱标准化（ISO 668·1968）及 TCP/IP 协议史实 · 形态演示（示意数据已标注）· 共 16 页，五幕结构：①混乱的代价 ②秩序的提出 ③Standards War ④秩序的胜利 ⑤标准的权力。<br>
+    PC 端多列平铺、手机端单列滑动；点缩略图任一页可单独全屏看。
+  </footer>
+<script>
+  var pages=[
+    [1,"封面 · 秩序的信念",""],[2,"目录 · 五幕论证链",""],
+    [3,"对照 · 混乱 vs 秩序"," 第一幕"],[4,"量级 · 装卸成本坍缩",""],[5,"网格 · 集装箱标准化",""],[6,"宣言 · 标准先于效率",""],
+    [7,"章节 · 标准之争"," 第三幕"],[8,"网格 · TCP/IP 判断",""],[9,"指标 · 扩散三指标",""],[10,"引言 · Clark 名言",""],
+    [11,"数据 · 标准化战役"," 第四幕"],[12,"时间轴 · 跨世纪母题",""],[13,"论点 · 标准的权力"," 第五幕"],[14,"比例 · USB-C 收敛",""],
+    [15,"聚焦 · 标准即锁定",""],[16,"收束 · 新秩序的边界",""]
+  ];
+  var g=document.getElementById("grid");
+  pages.forEach(function(p){
+    var n=p[0], pad=(n<10?"0":"")+n;
+    var cell=document.createElement("div");cell.className="cell";
+    cell.innerHTML=
+      '<div class="thumb"><iframe src="deck-de-stijl.html#'+n+'" scrolling="no" loading="lazy" tabindex="-1"></iframe>'+
+      '<a class="open" href="deck-de-stijl.html#'+n+'" target="_blank" aria-label="打开第'+n+'页"></a></div>'+
+      '<div class="cap"><span class="n">'+pad+'</span><span class="nm">'+p[1]+'</span>'+(p[2]?'<span class="ch">'+p[2]+'</span>':'')+'</div>';
+    g.appendChild(cell);
+    var ifr=cell.querySelector("iframe"), thumb=cell.querySelector(".thumb");
+    function scale(){ var w=thumb.clientWidth; ifr.style.transform="scale("+(w/1280)+")"; }
+    ifr.addEventListener("load",scale); scale();
+    window.addEventListener("resize",scale);
+  });
+</script>
+</body>
+</html>

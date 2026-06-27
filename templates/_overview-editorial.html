@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>深度行业观察 · 编辑主义 · 17 页一览</title>
+<style>
+  /* 展示框 = 深色画廊墙（暖深褐 #1F1B16 = 把 deck 暖黑墨扩成墙）· 让暖纸白 deck 卡片在深墙上跳出。
+     编辑主义身份靠：暖纸白卡片 + 衬线刊头 + 编辑红序号/章节标（红只作墨水/结构强调·非发光块）·硬直角·杂志刊头脚注。 */
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#1F1B16;color:#C7BEAE;font-family:"Source Serif 4","Songti SC",Georgia,"PingFang SC",serif;padding:24px;min-height:100vh}
+  .head{max-width:1480px;margin:0 auto 22px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;border-bottom:2px solid #9E2B22;padding-bottom:14px}
+  .head h1{font-size:23px;font-weight:600;color:#F3EEE3;letter-spacing:.01em}
+  .head .vol{font-family:"Libre Franklin",system-ui,sans-serif;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#9E2B22;font-weight:600;align-self:center}
+  .head .meta{font-family:"Libre Franklin",system-ui,sans-serif;font-size:12px;color:#A29684;letter-spacing:.02em}
+  .head .open-full{margin-left:auto;font-family:"Libre Franklin",system-ui,sans-serif;font-size:12px;color:#F3EEE3;background:#9E2B22;text-decoration:none;padding:7px 15px;border-radius:0;font-weight:600;letter-spacing:.10em;text-transform:uppercase;display:inline-flex;align-items:center;gap:7px}
+  .head .open-full:hover{background:#F3EEE3;color:#1F1B16}
+  .grid{max-width:1480px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px}
+  .cell{background:#F4EFE4;border-radius:0;overflow:hidden;box-shadow:0 6px 22px rgba(0,0,0,.5);transition:transform .16s,box-shadow .16s}
+  .cell:hover{z-index:2;transform:translateY(-3px);box-shadow:0 12px 34px rgba(0,0,0,.66)}
+  .thumb{position:relative;width:100%;aspect-ratio:1280/720;overflow:hidden;background:#F4EFE4;border-bottom:1px solid #1F1B16}
+  .thumb iframe{position:absolute;top:0;left:0;width:1280px;height:720px;border:0;transform-origin:top left;pointer-events:none}
+  .thumb a.open{position:absolute;inset:0;z-index:2;display:block}
+  .cap{display:flex;align-items:stretch;gap:0;background:#1F1B16;min-height:38px}
+  .cap .n{font-family:"Libre Franklin",ui-monospace,monospace;color:#F3EEE3;font-weight:700;font-size:12px;letter-spacing:.06em;padding:9px 11px;background:#9E2B22;flex-shrink:0;display:flex;align-items:center}
+  .cap .nm{font-family:"Source Serif 4",Georgia,serif;color:#F3EEE3;font-size:13px;font-weight:500;letter-spacing:.01em;padding:9px 11px;flex:1;display:flex;align-items:center}
+  .cap .ch{font-family:"Libre Franklin",system-ui,sans-serif;font-size:10px;color:#F3EEE3;background:transparent;border-left:2px solid #9E2B22;padding:9px 11px;letter-spacing:.10em;font-weight:600;text-transform:uppercase;display:flex;align-items:center;flex-shrink:0;color:#E0B7B0}
+  footer{max-width:1480px;margin:16px auto 0;font-family:"Libre Franklin",system-ui,sans-serif;font-size:12px;color:#8A7E6E;line-height:1.7;border-top:1px solid #3a322a;padding-top:12px}
+  @media(max-width:720px){
+    body{padding:12px}
+    .head h1{font-size:17px}
+    .head .open-full{margin-left:0}
+    .grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+  <div class="head">
+    <h1>深度行业观察 · 隐性技术债</h1>
+    <span class="vol">Vol.01 · No.07</span>
+    <span class="meta">真实渲染缩略 · 点任一页全屏打开</span>
+    <a class="open-full" href="deck-editorial.html#1" target="_blank">▶ 从头全屏播放</a>
+  </div>
+  <div class="grid" id="grid"></div>
+  <footer>
+    一期关于「隐性技术债」的深度行业观察 · 形态演示（示意数据已标注·非实拍）· 共 17 页，四幕论证：先承认账存在 → 把它算清楚 → 看清谁在结账 → 答案是时间。<br>
+    PC 端多列平铺、手机端单列滑动；点缩略图任一页可单独全屏看。
+  </footer>
+<script>
+  var pages=[
+    [1,"封面 · 谁在为这场静默买单",""],[2,"目录 · 这场迁移分四幕",""],
+    [3,"立论 · 技术债不在财报里","第一章"],[4,"对照 · 真正的账单在迁移之后",""],[5,"三栏 · 看不见的账记在三处",""],[6,"特征数 · 每周 17.3 小时",""],[7,"引文 · 主编的判断",""],
+    [8,"章扉 · 把这本账摊开来","第二章"],[9,"数据网格 · 反复出现的四个数字",""],[10,"对照 · 45% 超支不是意外",""],[11,"特征数 · 五分之四用来不让它倒",""],[12,"时间轴 · 债是怎么欠下的",""],[13,"三栏 · 账单分给三个人",""],[14,"引文 · 主编的判断",""],
+    [15,"立论 · 看不见不等于不存在","第三章"],[16,"特征数 · 这笔账能还",""],[17,"收束 · 答案是时间",""]
+  ];
+  var g=document.getElementById("grid");
+  pages.forEach(function(p){
+    var n=p[0], pad=(n<10?"0":"")+n;
+    var cell=document.createElement("div");cell.className="cell";
+    cell.innerHTML=
+      '<div class="thumb"><iframe src="deck-editorial.html#'+n+'" scrolling="no" loading="lazy" tabindex="-1"></iframe>'+
+      '<a class="open" href="deck-editorial.html#'+n+'" target="_blank" aria-label="打开第'+n+'页"></a></div>'+
+      '<div class="cap"><span class="n">'+pad+'</span><span class="nm">'+p[1]+'</span>'+(p[2]?'<span class="ch">'+p[2]+'</span>':'')+'</div>';
+    g.appendChild(cell);
+    var ifr=cell.querySelector("iframe"), thumb=cell.querySelector(".thumb");
+    function scale(){ var w=thumb.clientWidth; ifr.style.transform="scale("+(w/1280)+")"; }
+    ifr.addEventListener("load",scale); scale();
+    window.addEventListener("resize",scale);
+  });
+</script>
+</body>
+</html>

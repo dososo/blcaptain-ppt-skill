@@ -1,0 +1,1535 @@
+<!doctype html>
+<html lang="zh-CN" class="no-js" data-theme="de-stijl" data-rendered-by="blcaptain">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>标准之战 — demo</title>
+
+<!-- preload 首屏三族字体（crossorigin 必须·制作规范：本地打包 + preload + font-display:optional
+     ＝磁盘快几乎首屏命中终字体·零跳变零白屏·根治「首次打开文字跳一下」FOUT layout shift） -->
+<link rel="preload" href="./fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="./fonts/SpaceGrotesk.de-stijl.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="./fonts/GlowSansSC-Regular.de-stijl.woff2" as="font" type="font/woff2" crossorigin>
+
+<style>
+/* FONTS · 三族 OFL 本地打包（de-stijl  · 实现期/3）
+   拉丁直引全字 woff2（Geist 正文静默 / Space Grotesk 几何无衬线全大写标题）：
+     Space Grotesk 走 Geist 模式·全字 pyftsubset --unicodes='*' 打包·不进 CJK 子集表（subset-fonts 注释坐实）；
+   Glow Sans SC CJK 子集化（.de-stijl 后缀 · per-deck）。 */
+@font-face{font-family:"Geist";src:url("./fonts/Geist-Variable.woff2") format("woff2-variations");font-weight:100 900;font-display:optional}
+@font-face{font-family:"Space Grotesk";src:url("./fonts/SpaceGrotesk.de-stijl.woff2") format("woff2-variations");font-weight:300 700;font-display:optional}
+@font-face{font-family:"Glow Sans SC";src:url("./fonts/GlowSansSC-Regular.de-stijl.woff2") format("woff2");font-weight:400;font-display:optional}
+</style>
+
+<style>
+/* =========================================================================
+   TOKENS START · de-stijl（新造型主义 · 浊三原色秩序方言）
+   暖纸白主导 60–90% · 浊三原色判断锚 ≤10% 一主二从 · 粗黑线正交网格 · 禁对角。
+   对比度均为 WCAG 2.x node 实测，非目测（实现期 已完成，与 00-tokens-locked.md 1:1）。
+   ========================================================================= */
+
+/* ---- 全局基底（与主题无关的结构常量）---- */
+:root{
+  /* 字体族（de-stijl 三族  · Geist + Space Grotesk + Glow）
+     拉丁正文静默：Geist（几何无衬线·栈内含 Glow CJK 兜底·置于 system-ui 前→中文走 Glow 不漏给系统字）
+     中文正文静默：Glow Sans SC（复用·几何方正感·守禁思源裸用）
+     几何无衬线全大写标题锚：Space Grotesk（类 Futura 全正交无曲线·锚 van Doesburg 1919 方块字母·仅标题/大字结构）
+     无 mono：工具层（eyebrow/foot/页码/HUD）用 Geist——mono 技术感属 instrument-cool/info-data，非秩序方言 */
+  --font-sans:"Geist","Glow Sans SC","Noto Sans SC","PingFang SC",system-ui,sans-serif;
+  --font-cjk:"Glow Sans SC","Noto Sans SC","PingFang SC",sans-serif;
+  --font-geo:"Space Grotesk","Glow Sans SC","Geist","Arial Narrow",system-ui,sans-serif;
+
+  /* 间距 8px 刻度（设计决策 · 00-tokens-locked  · 与 validator SPACING_SCALE 1:1）*/
+  --sp-1:8px; --sp-2:16px; --sp-3:24px; --sp-4:32px;
+  --sp-6:48px; --sp-8:64px; --sp-10:80px; --sp-12:96px; --sp-16:160px;
+  /* 设计决策 细档例外轨（仅组件内部/紧凑/图标-文字/≤14px 小字行内）*/
+  --sp-fine-a:4px; --sp-fine-c:12px; --sp-fine-e:20px;
+
+  /* 画板 */
+  --radius:0px;
+  --deck-w:1280px; --deck-h:720px;
+  --dur-base:.28s; --ease:cubic-bezier(.22,1,.36,1);
+
+  /* 线宽（复用全局·de-stijl 粗黑线主轴由布局以 --ink 实色描边承载·见 .ds-cover）*/
+  --line-w:1px; --line-w-hair:.5px;
+
+  /* 舞台 + HUD */
+  --stage-void:#1d1d20;
+  --hud-fg:#C9C2B4; --hud-fg-hi:#fff;
+}
+
+/* ---- de-stijl 主题块（新造型主义  · 与 00-tokens-locked 「De Stijl theme」1:1）---- */
+[data-theme="de-stijl"]{
+  --bg:#F4F1E8;                     /* 暖纸白 · 底面主导 60–90% */
+  --ink:#1A1815;                    /* 暖黑 · 主文字 + 粗黑线 · on 纸白 15.69 AAA */
+  --ink-dim:#726E62;                /* 暖灰次文 · on 纸白 4.51 AA · 极少用·非色补充 */
+  --ink-faint:#9A968C;              /* 暖灰 · on 纸白 2.61 <AA · 仅装饰/eyebrow/注脚 */
+
+  /* 浊三原色（neoplastic palette · 封闭系统色 · 一主二从 · 总面积 ≤10% · 无第四色）
+     红块强制纸白字（纸白 on 红 5.19 AA）· 蓝块强制纸白字（纸白 on 蓝 8.48 AAA）· 黄块强制黑字（黑 on 黄 9.57 AAA·黄禁承载小字）
+     ⚠ 反白字实渲染用 var(--bg) 纸白 #F4F1E8（非纯白 #fff）→ 对比按纸白实算（对齐 deck 版式块·守实事求是·均过 AA/AAA）*/
+  --ds-red:#B5392B;                 /* 浊砖红 · 核心判断锚 · 饱和 0.62 · 纸白 on 红 5.19 */
+  --ds-yellow:#DDBB5E;              /* 浊镉黄 · 次级锚 · 饱和 0.65 · 黑字 on 黄 9.57·只做色块/大字图形 */
+  --ds-blue:#28466E;                /* 浊钴蓝 · 数据锚 · 饱和 0.47 · 纸白 on 蓝 8.48 */
+  /* 无 --accent（第二个破「单信号色」共性  · 色彩 accent 由三原色封闭系统承担·无第四信号色） */
+
+  /* 版式常量 */
+  --pad-x:80px; --pad-top:72px; --pad-bottom:96px;
+  /* 粗黑线分级（de-stijl 网格主轴·呼应蒙德里安线宽变化·主线粗/次线细）*/
+  --rule-bold:10px; --rule-mid:6px; --rule-thin:2px;
+}
+/* =========================================================================
+   TOKENS END
+   ========================================================================= */
+
+*{margin:0;padding:0;box-sizing:border-box}
+/* 全局禁字体合成（faux-bold/faux-italic） 字体克制铁律：
+   中文落 Glow Sans SC 仅 400 面，任何 font-weight:700 的中文都会被浏览器合成假粗（墨量+25~35%·笔画发糊）。
+   font-synthesis:none 强制"无真面就用最近真面"（Glow 400），杜绝合成；拉丁 Space Grotesk/Geist 有真 700/可变轴·不受影响（合成只压"假面"）。
+   像素墨量法实测坐实：中文锚词墨量回落 ≈400 基线（advance-width 法测不出合成·假阴性·勿用）。 */
+*{font-synthesis:none}
+html,body{height:100%; background:var(--stage-void); overflow:hidden; -webkit-text-size-adjust:100%; text-size-adjust:100%}
+/* 混排：拉丁 Geist 在前·中文 Glow 接续（浏览器按字符 glyph 选）*/
+body{font-family:var(--font-sans),var(--font-cjk); color:var(--ink); line-break:strict; word-break:normal; overflow-wrap:anywhere; text-wrap:pretty}
+
+/* ===== 翻页运行时（一次一页 · 横向切换 · 主题无关 · 复用自 luxury/info-data 结构） ===== */
+.stage{position:fixed; inset:0; overflow:hidden}
+/* 居中=JS 算 px 平移（非 flex 居中）：手机上 1280px deck 远宽于视口时，flex justify-content:center 会把溢出盒钉到 start、
+   叠加 transform-origin:center 把缩放后画面推到屏幕右侧外（偏右看不全）。改 transform-origin:top-left + fit() 平移
+   (W−1280s)/2 居中→任意视口确定性居中、溢出无关（移动端正解·见制作规范）。 */
+.deck{position:absolute; left:0; top:0; width:var(--deck-w); height:var(--deck-h); transform-origin:top left}
+.slide{position:absolute; inset:0; width:var(--deck-w); height:var(--deck-h); overflow:hidden;
+  background:var(--bg); color:var(--ink); box-shadow:0 0 0 1px rgba(22,18,13,.08), 0 28px 80px rgba(0,0,0,.5);
+  opacity:0; visibility:hidden; pointer-events:none; z-index:0}
+.slide.is-active{opacity:1; visibility:visible; pointer-events:auto; z-index:2}
+@media (prefers-reduced-motion:no-preference){
+  /* de-stijl 动效纪律（设计决策 · 静态非对称平衡人格）：只极克制 fade——禁滑入/grow/count-up/drawOn 炫技、
+     禁任何位移（位移＝动势＝撞构成主义）。① 整页淡入；② 支撑层延迟 .4s 淡入＝「先判断（网格+原色锚）后支撑（量级）」
+     的内容节奏，**只 opacity 无位移**。reduced-motion 下整块失效·全部终态可见（自动截图/缩略/PDF 不取空帧）。 */
+  html.js .slide.is-active{animation:fadeIn .36s var(--ease) both}
+  /* 支撑层延迟淡入（先判断·后支撑·只 opacity 无位移）：锚块脚注/页脚/数据格说明/时间节点描述/引文出处
+     ——判断（主标 + 原色锚 + 巨数）随整页先到，量级支撑与脚注 .4s 后淡入，呼应内容节奏。 */
+  html.js .slide.is-active :is(
+    .dsc-anchor-cap,.dsc-foot,
+    .dgc-anchor-cap,.dgc-cell-desc,.dgc-foot,
+    .dmg-anchor-cap,.dmg-num-cap,.dmg-foot,
+    .dmf-foot,
+    .dix-row-d,.dix-foot,
+    .dct-anchor-cap,.dct-l-list,.dct-foot,
+    .ddv-sub,.ddv-foot,
+    .dsr-cell-desc,.dsr-hi-cap,.dsr-foot,
+    .dqt-cite,.dqt-foot,
+    .ddb-hero-cap,.ddb-cell-desc,.ddb-foot,
+    .dtl-desc,.dtl-foot,
+    .dls-row-d,.dls-lead,.dls-foot,
+    .drt-lead,.drt-stat,.drt-foot,
+    .dsp-counter,.dsp-anchor-cap,.dsp-foot,
+    .dcl-anchor-cap,.dcl-foot
+  ){
+    animation:fadeIn .6s var(--ease) .4s both;
+  }
+  @keyframes fadeIn{from{opacity:0} to{opacity:1}}
+}
+
+/* HUD 翻页控件 */
+.hud{position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:50; display:flex; align-items:center; gap:12px; padding:8px 12px;
+  background:rgba(28,28,32,.82); border:1px solid rgba(255,255,255,.18); font-family:var(--font-sans); font-size:12px; color:var(--hud-fg);
+  -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); opacity:0; transition:opacity .28s}
+html.js .hud{opacity:.55} .hud:hover{opacity:1}
+.hud button{font:inherit; color:var(--hud-fg); background:none; border:1px solid rgba(255,255,255,.18); width:28px; height:24px; cursor:pointer; line-height:1}
+.hud button:hover{color:var(--hud-fg-hi); border-color:var(--hud-fg-hi)}
+.hud .cnt{font-variant-numeric:tabular-nums; min-width:54px; text-align:center}
+
+/* no-js fallback */
+.nojs-hint{display:none}
+html.no-js .nojs-hint{display:block; position:fixed; top:0; left:0; right:0; z-index:60; padding:4px 12px; font-family:var(--font-sans); font-size:12px; text-align:center; color:var(--hud-fg); background:rgba(28,28,32,.9)}
+html.no-js body{overflow:auto}
+html.no-js .stage{position:static; display:block; padding:32px 0}
+html.no-js .deck{position:static; width:auto; height:auto; transform:none!important; display:flex; flex-direction:column; align-items:center; gap:16px}
+html.no-js .slide{position:relative; inset:auto; opacity:1; visibility:visible; pointer-events:auto; flex:none}
+html.no-js .hud{display:none}
+
+/* 横屏提示（移动端竖屏引导旋转·de-stijl：无 accent → 用 --ds-red 原色方块·正交·守禁装饰 · 红即「秩序锚」语义）*/
+.rotate-hint{display:none}
+@media (orientation:portrait) and (max-width:768px){
+  html.js .rotate-hint{display:flex; position:fixed; inset:0; z-index:120; flex-direction:column; align-items:center; justify-content:center; gap:24px; background:var(--stage-void); color:var(--hud-fg-hi); text-align:center; padding:48px}
+  .rotate-hint .rh-ico{color:var(--ds-red); animation:rhSpin 2.6s var(--ease) infinite; transform-origin:center}
+  /* 中文「横屏观看更佳」须落 Glow（CJK），故 --font-cjk 字体须排在通用 sans-serif 终止符之前
+     （不能写 var(--font-geo),var(--font-cjk)——--font-geo 末尾的 sans-serif 会短路、永不命中后面的 Glow）。
+     weight 400：Glow 仅 400 面·防系统字体回退 faux-bold。 */
+  .rotate-hint .rh-msg{display:flex; align-items:center; gap:8px; font-family:"Space Grotesk","Glow Sans SC","Noto Sans SC","PingFang SC",sans-serif; font-weight:400; font-size:21px; letter-spacing:.04em; text-transform:uppercase}
+  .rotate-hint .rh-sq{width:12px; height:12px; background:var(--ds-red)}
+  .rotate-hint .rh-sub{font-family:var(--font-sans); font-size:14px; color:var(--hud-fg); opacity:.75; line-height:1.6}
+  @keyframes rhSpin{0%,55%{transform:rotate(0)} 75%,100%{transform:rotate(-90deg)}}
+}
+
+/* =========================================================================
+   通用版式元件（eyebrow / foot / 页码 · 全版式共享 · 暖纸白 · 三原色封闭系统）
+   绝对定位 top/left/right/bottom = 光学摆位（设计规范 豁免间距刻度）。
+   ========================================================================= */
+.ds-eyebrow{
+  font-family:var(--font-geo); font-size:12px; font-weight:500;
+  letter-spacing:.28em; text-transform:uppercase;
+  color:var(--ink-dim);
+}
+.ds-foot{
+  font-family:var(--font-geo); font-size:12px; font-weight:400; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink-faint);
+}
+.ds-foot .pg{font-variant-numeric:tabular-nums; letter-spacing:.18em}
+
+/* ============================================================================
+   P1 封面 · ds-cover（签名第一页 · 正交信息网格 + 原色判断锚 · 秩序的信念）
+   ----------------------------------------------------------------------------
+   构图（蒙德里安式非对称粗黑线分区·全正交禁对角·暖纸白主导·原色 ≤10% 一主<红>）：
+     · 主竖轴 bold 黑线 @ x=824（左大场 64% / 右窄列 36%·非对称 push-and-pull·拒等分）。
+     · 横轴 mid 黑线 @ y=476 仅横切右窄列（生成右下「判断锚格」），不贯穿左场→留白即秩序。
+     · 次轴 thin 黑线 @ y=200 仅压左场上方（分级线宽·呼应蒙德里安线粗变化·托 eyebrow 与主标）。
+     · 红判断锚块「卡」满右下格（左 834 右出血·上贴 mid 线·下出血到底边·块净≈8.6% ≤10%）·块上白字判断锚（载判断非装饰）。
+     · 全大写主标 Space Grotesk heavy 落左大场 2 行（撑结构呼应粗黑线）+ 中文判断副标（与主标拉开·不交叠）。
+   ============================================================================ */
+.ds-cover{ background:var(--bg); }
+
+/* —— 网格黑线（结构本身即设计·--ink 实色描边·分级粗细）—— */
+.ds-cover .dsc-v-main{ position:absolute; left:824px; top:0; bottom:0; width:var(--rule-bold); background:var(--ink); }
+.ds-cover .dsc-h-anchor{ position:absolute; left:824px; right:0; top:476px; height:var(--rule-mid); background:var(--ink); }
+.ds-cover .dsc-h-top{ position:absolute; left:0; width:824px; top:200px; height:var(--rule-thin); background:var(--ink); }
+
+/* —— eyebrow（左场上方·黑线之上的白区·驼/灰中性内容名·无代号）—— */
+.ds-cover .ds-eyebrow{ position:absolute; left:var(--pad-x); top:128px; }
+
+/* —— 全大写主标（左大场·Space Grotesk 偏粗·撑结构·2 行完整陈述）—— */
+.ds-cover .dsc-title{
+  position:absolute; left:var(--pad-x); top:260px;
+  font-family:var(--font-geo); font-weight:700;
+  font-size:124px; line-height:.96; letter-spacing:-.015em;
+  text-transform:uppercase; color:var(--ink);
+}
+/* —— 中文判断副标（左大场·主标之下·Glow·承载这一页的判断·与主标拉开不交叠）—— */
+.ds-cover .dsc-sub{
+  position:absolute; left:var(--pad-x); top:556px; max-width:640px;
+  font-family:var(--font-cjk); font-weight:400;
+  font-size:30px; line-height:1.44; letter-spacing:.02em;
+  color:var(--ink);
+}
+
+/* —— 红判断锚块（右下角·漂浮白底·≤10% 一主·块上白字·载判断非装饰）
+   左 944 · 右 flush 1280 · 上贴 anchor 横线下沿（476+6=482）· 下 flush 底边。
+   面积 = (1280−944)×(720−482) = 336×238 = 79,968px² = 8.68%（≤10% 安全·留 grid 同档余量）。
+   ⚠️ 实现期 修真：原 left:834 = 446×238 = 11.52% > 10%（旧注「6.8%」误扣了画内不存在的"出血"·实际 right:0 全在框内），
+   ds-primary-area 门取证暴露后窄至 left:944·块脱离 main 竖线成漂浮色块（更合 Mondrian 色块漂浮白底）。 */
+.ds-cover .dsc-anchor{
+  position:absolute; left:944px; right:0; top:482px; bottom:0;
+  background:var(--ds-red);
+}
+.ds-cover .dsc-anchor-word{
+  position:absolute; left:968px; top:512px; right:40px;
+  font-family:var(--font-geo); font-weight:400;  /* 纯中文落 Glow(仅400面)·禁合成假粗·强调靠红块+字号+留白·非字重 */
+  font-size:30px; line-height:1.08; letter-spacing:.005em;
+  text-transform:uppercase; color:var(--bg);  /* 红块反白字·纸白 on 红 5.19 AA·对齐前人格 */
+}
+.ds-cover .dsc-anchor-cap{
+  position:absolute; left:968px; bottom:48px; right:40px;
+  font-family:var(--font-geo); font-weight:400;
+  font-size:12px; line-height:1.4; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--bg); opacity:.84;  /* 锚块脚注·纸白字 on 红 */
+}
+
+/* —— 注脚（左场底·白区·中性·示意标记）—— */
+.ds-cover .dsc-foot{
+  position:absolute; left:var(--pad-x); right:496px; bottom:48px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+
+/* ============================================================================
+   P2 网格内容页 · ds-grid-content（签名主力·正交信息网格载真内容 + 红判断锚·一主<红>）
+   ----------------------------------------------------------------------------
+   讲：集装箱标准化——一个核心判断（红锚）+ 网格分区载三条支撑论点/数据（每区真内容·非空贴图）。
+   构图（蒙德里安式非对称粗黑线·全正交禁对角·暖纸白主导·原色 ≤10% 一主<红>·与封面同语言更密）：
+     · 主竖轴 bold 黑线 @ x=512（左窄判断列 40% / 右宽支撑场 60%·非对称·拒等分·与封面镜像换边制造变化）。
+     · 横轴 mid 黑线 @ y=400 仅横切右宽场（把右场切成「上：判断正文区 / 下：双数据格」·两区皆满载·无孤儿空带）。
+     · 竖 thin 黑线 @ x=896 仅压右下区（把下区均分两个并置数据格·线由内容分区决定）。
+     · 左场 mid 横线 @ y=400 横切判断列（托主标 / 红锚分界）；红判断锚块卡左下角（左出血贴边·上沿 y=520·下出血到底）·块上白字载核心判断。
+     · 左上白区＝eyebrow + 全大写英文判断主标（结构锚）；右场上区载一段判断正文、下区两格各载一条数据（真内容·非空贴图）。
+   红锚净面积：left:0 width:432 top:520 → 432×(720−520)=432×200=86,400px² = 9.38% ≤10%（主红·一主二从·实测见 Step6 复核）。 */
+.ds-grid-content .dgc-v-main{ position:absolute; left:512px; top:0; bottom:0; width:var(--rule-bold); background:var(--ink); }
+.ds-grid-content .dgc-h-mid{ position:absolute; left:512px; right:0; top:400px; height:var(--rule-mid); background:var(--ink); }
+.ds-grid-content .dgc-v-low{ position:absolute; left:896px; top:406px; bottom:0; width:var(--rule-thin); background:var(--ink); }
+.ds-grid-content .dgc-h-anchor{ position:absolute; left:0; width:512px; top:400px; height:var(--rule-mid); background:var(--ink); }
+
+.ds-grid-content .ds-eyebrow{ position:absolute; left:var(--pad-x); top:80px; }
+/* —— 左上判断主标（全大写·撑结构·落主竖线左侧白区·上方留白）—— */
+.ds-grid-content .dgc-title{
+  position:absolute; left:var(--pad-x); top:152px; right:584px;
+  font-family:var(--font-geo); font-weight:700;
+  font-size:52px; line-height:.98; letter-spacing:-.01em;
+  text-transform:uppercase; color:var(--ink);
+}
+/* —— 红判断锚块（卡左下·一主·≤10%·纸白字载核心判断）
+   净面积：432×(720−536)=432×184=79,488px²=8.62%（收窄留安全垫·原9.38%）—— */
+.ds-grid-content .dgc-anchor{
+  position:absolute; left:0; width:432px; top:536px; bottom:0;
+  background:var(--ds-red);
+}
+.ds-grid-content .dgc-anchor-word{
+  position:absolute; left:var(--pad-x); top:568px; width:312px;
+  font-family:var(--font-geo); font-weight:400;  /* 纯中文落 Glow(仅400面)·禁合成假粗·强调靠红块+字号 */
+  font-size:24px; line-height:1.1; letter-spacing:.005em;
+  text-transform:uppercase; color:var(--bg);  /* 红块反白字·纸白 on 红 5.19 AA·对齐前人格 */
+}
+.ds-grid-content .dgc-anchor-cap{
+  position:absolute; left:var(--pad-x); bottom:40px; width:312px;
+  font-family:var(--font-geo); font-weight:400;
+  font-size:12px; line-height:1.4; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--bg); opacity:.84;
+}
+/* —— 右上支撑区（一段判断性正文·满载上区 80→380·真内容）—— */
+.ds-grid-content .dgc-lead{
+  position:absolute; left:560px; right:var(--pad-x); top:128px;
+  font-family:var(--font-cjk); font-weight:400;
+  font-size:24px; line-height:1.55; letter-spacing:.01em;
+  color:var(--ink);
+}
+/* —— 右下双数据格（各载小标 + 数据 + 一句·满载下区 432→·真内容·线由分区决定）—— */
+.ds-grid-content .dgc-cell{ position:absolute; top:440px; }
+.ds-grid-content .dgc-cell.c1{ left:560px; right:432px; }
+.ds-grid-content .dgc-cell.c2{ left:944px; right:var(--pad-x); }
+.ds-grid-content .dgc-cell-k{
+  font-family:var(--font-geo); font-size:12px; font-weight:500;
+  letter-spacing:.2em; text-transform:uppercase; color:var(--ink-dim);
+}
+.ds-grid-content .dgc-cell-num{
+  font-family:var(--font-geo); font-weight:700; font-variant-numeric:tabular-nums;
+  font-size:52px; line-height:1; letter-spacing:-.01em; color:var(--ink);
+  margin-top:12px;
+}
+.ds-grid-content .dgc-cell-desc{
+  font-family:var(--font-cjk); font-weight:400;
+  font-size:14px; line-height:1.5; color:var(--ink-dim);
+  margin-top:16px;
+}
+.ds-grid-content .dgc-foot{
+  position:absolute; left:560px; right:var(--pad-x); bottom:40px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+
+/* ============================================================================
+   P3 量级页 · ds-magnitude（巨数 tabular + 蓝数据锚<从> + 黑线分隔 + 判断标注落白区）
+   ----------------------------------------------------------------------------
+   讲：某个量级（示意：跨洋运费降幅）——巨数撑场 + 蓝数据锚承载量化坐标 + 判断标注落白。
+   构图（留白主导·巨数压版·一蓝<从>·全正交·与封面/网格页不同：这页疏、靠巨数与单蓝块平衡）：
+     · 横轴 bold 黑线 @ y=288 横贯全宽（巨数坐在线上·线即基线·分「判断区 / 量级区」）。
+     · 竖轴 thin 黑线 @ x=864 仅压下半（右下生成蓝数据锚格·线只切量级区）。
+     · 巨数 Space Grotesk tabular 落左下大场（坐 bold 线下·撑结构）。
+     · 蓝数据锚块卡右下格（贴竖 thin 线右 + 下出血）·块上白字载数据坐标（蓝＝数据语义·从）。
+     · 判断标注（全大写英文 eyebrow + 中文判断句）落上半白区（巨数之上·大留白）。
+   蓝锚净面积：left:870 right:0(→1280) top:294(贴 bold 线下) bottom:0 = 410×426=174,660→超。
+     收窄：蓝块只占右下格的下部——top:432 left:912 → (1280−912)×(720−432)=368×288=105,984→超。
+     落定 left:944 top:448 → (1280−944)×(720−448)=336×272=91,392px² = 9.92%→贴线险。
+     最终留安全余量：left:960 top:456 → 320×264=84,480px² = 9.17% ≤10%（从蓝·安全）。 */
+.ds-magnitude .dmg-h-base{ position:absolute; left:0; right:0; top:288px; height:var(--rule-bold); background:var(--ink); }
+.ds-magnitude .dmg-v-low{ position:absolute; left:864px; top:298px; bottom:0; width:var(--rule-thin); background:var(--ink); }
+
+.ds-magnitude .ds-eyebrow{ position:absolute; left:var(--pad-x); top:80px; }
+/* —— 上半判断标注（巨数之上白区·中文判断句·大留白）—— */
+.ds-magnitude .dmg-claim{
+  position:absolute; left:var(--pad-x); top:140px; right:560px;
+  font-family:var(--font-cjk); font-weight:400;
+  font-size:30px; line-height:1.4; letter-spacing:.02em;
+  color:var(--ink);
+}
+/* —— 巨数（坐 bold 线下·tabular·撑结构·留白主导）—— */
+.ds-magnitude .dmg-num{
+  position:absolute; left:var(--pad-x); top:332px;
+  font-family:var(--font-geo); font-weight:700;
+  font-size:248px; line-height:.84; letter-spacing:-.02em;
+  color:var(--ink); font-variant-numeric:tabular-nums;
+}
+.ds-magnitude .dmg-num .u{ font-size:92px; letter-spacing:0; }
+/* —— 巨数注解（巨数右侧/下方白区·说明量级是什么·真内容）—— */
+.ds-magnitude .dmg-num-cap{
+  position:absolute; left:var(--pad-x); bottom:64px; width:432px;
+  font-family:var(--font-cjk); font-weight:400;
+  font-size:18px; line-height:1.55; color:var(--ink-dim);
+}
+/* —— 蓝数据锚块（右下格·从蓝·≤10%·白字载数据坐标）—— */
+.ds-magnitude .dmg-anchor{
+  position:absolute; left:960px; right:0; top:456px; bottom:0;
+  background:var(--ds-blue);
+}
+.ds-magnitude .dmg-anchor-num{
+  position:absolute; left:992px; top:488px; right:48px;
+  font-family:var(--font-geo); font-weight:700; font-variant-numeric:tabular-nums;
+  font-size:52px; line-height:1; letter-spacing:-.01em;
+  color:var(--bg);  /* 蓝块反白字·纸白 on 蓝 8.48 AAA·对齐前人格 */
+}
+.ds-magnitude .dmg-anchor-cap{
+  position:absolute; left:992px; bottom:40px; right:48px;
+  font-family:var(--font-geo); font-weight:400;
+  font-size:12px; line-height:1.45; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--bg); opacity:.86;
+}
+.ds-magnitude .dmg-foot{
+  position:absolute; left:var(--pad-x); top:80px; right:var(--pad-x);
+  display:flex; align-items:center; justify-content:flex-end;
+}
+.ds-magnitude .dmg-foot .pg{ font-variant-numeric:tabular-nums; letter-spacing:.18em; }
+
+/* ============================================================================
+   P4 宣言/判断页 · ds-manifesto（网格分区 + 全大写判断主标 + 单红锚<一主> + 大留白 60–90%）
+   ----------------------------------------------------------------------------
+   讲：一句秩序判断——极简·中性主导·全大写主标撑场 + 一个小红方块作判断锚（极克制）。
+   构图（最简·留白经营·靠 push-pull 与单红块的张力平衡·非对称·全正交）：
+     · 主竖轴 thin 黑线 @ x=240 仅切左上（细线·托 eyebrow + 红锚方块·左窄白带）。
+     · 横轴 bold 黑线 @ y=520 横贯全宽（主标坐线上·线即收束·下方大留白）。
+     · 红判断锚＝小正方块卡左上（240×240 区内·边长 80·贴竖线右）·块上白字单词锚（核心判断·一主）。
+     · 全大写主标 Space Grotesk heavy 落中场 2 行（坐 bold 线上·撑结构）。
+     · 下半全留白（中性主导·秩序＝留白经营·只一行注脚）。
+   红锚＝80×80=6,400px² = 0.69%（极克制单主·留白主导 >90% 中性·安全）。 */
+.ds-manifesto .dmf-v-top{ position:absolute; left:240px; top:0; height:332px; width:var(--rule-thin); background:var(--ink); }
+.ds-manifesto .dmf-h-base{ position:absolute; left:0; right:0; top:520px; height:var(--rule-bold); background:var(--ink); }
+
+/* —— 红判断锚方块（左上·一主·极小·白字单词锚）—— */
+.ds-manifesto .dmf-anchor{
+  position:absolute; left:240px; top:128px; width:80px; height:80px;
+  background:var(--ds-red);
+}
+.ds-manifesto .ds-eyebrow{ position:absolute; left:352px; top:152px; }
+/* —— 全大写判断主标（坐 bold 线上·撑结构·中场·2 行止于 bold 线上方·与副标永不交叠）—— */
+.ds-manifesto .dmf-title{
+  position:absolute; left:240px; right:var(--pad-x); top:288px;
+  font-family:var(--font-geo); font-weight:700;
+  font-size:72px; line-height:.96; letter-spacing:-.015em;
+  text-transform:uppercase; color:var(--ink);
+}
+/* —— 中文判断副标（落 bold 线下·下半大留白区·与主标拉开·不交叠·留白即秩序）—— */
+.ds-manifesto .dmf-sub{
+  position:absolute; left:240px; right:480px; top:584px;
+  font-family:var(--font-cjk); font-weight:400;
+  font-size:18px; line-height:1.5; letter-spacing:.02em;
+  color:var(--ink-dim);
+}
+/* —— 注脚（下半留白区·中性·示意标记）—— */
+.ds-manifesto .dmf-foot{
+  position:absolute; left:240px; right:var(--pad-x); bottom:56px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+
+/* ============================================================================
+   P· 目录页 · ds-index（总览 · 五幕论证链 · 网格行 + 蓝序号锚<从> + 当前幕红条<一主>）
+   ----------------------------------------------------------------------------
+   讲：五幕论证链一览——左判断列（全大写「THE STANDARD」+ 中文导语）/ 右网格行（5 幕·各载序号+幕名+一句）。
+   构图（蒙德里安式非对称粗黑线·全正交·暖纸白主导·一主<蓝序号块>二从<红当前条>·网格行即结构）：
+     · 主竖轴 bold 黑线 @ x=456（左判断列 36% / 右目录场 64%·非对称·拒等分）。
+     · 右场 5 条 thin 横线分隔 5 幕行（线由内容分区决定·正交·无孤儿空带）。
+     · 蓝序号块＝每幕行左侧小方块载幕号（蓝＝导航/数据语义·从·总面积受控）。
+     · 当前幕（第一幕）左判断列底红细条标当前位置（一主·极小·载「YOU ARE HERE」语义）。
+   原色面积：5 蓝序号块各 56×56=3,136 ×5=15,680 + 红当前条 168×10=1,680 = 17,360px² = 1.88% ≤10%（一主二从·安全）。 */
+.ds-index .dix-v-main{ position:absolute; left:456px; top:0; bottom:0; width:var(--rule-bold); background:var(--ink); }
+.ds-index .dix-row-line{ position:absolute; left:456px; right:0; height:var(--rule-thin); background:var(--ink); }
+.ds-index .ds-eyebrow{ position:absolute; left:var(--pad-x); top:80px; }
+.ds-index .dix-title{
+  position:absolute; left:var(--pad-x); top:152px; right:var(--pad-x);
+  font-family:var(--font-geo); font-weight:700;
+  font-size:52px; line-height:.98; letter-spacing:-.01em;
+  text-transform:uppercase; color:var(--ink);
+}
+.ds-index .dix-lead{
+  position:absolute; left:var(--pad-x); top:344px; right:888px;
+  font-family:var(--font-cjk); font-weight:400;
+  font-size:18px; line-height:1.55; letter-spacing:.01em;
+  color:var(--ink-dim);
+}
+/* —— 当前幕红条（左判断列底·一主·极小·载「你在这里」）—— */
+.ds-index .dix-here{ position:absolute; left:var(--pad-x); top:512px; width:168px; height:var(--rule-bold); background:var(--ds-red); }
+.ds-index .dix-here-cap{
+  position:absolute; left:var(--pad-x); top:534px;
+  font-family:var(--font-geo); font-weight:500; font-size:12px;
+  letter-spacing:.2em; text-transform:uppercase; color:var(--ds-red);
+}
+/* —— 右目录行（各幕·序号蓝块 + 幕名 + 一句·真内容）—— */
+.ds-index .dix-row{ position:absolute; left:504px; right:var(--pad-x); height:96px; display:flex; align-items:center; gap:32px; }
+.ds-index .dix-num{
+  flex:none; width:56px; height:56px; background:var(--ds-blue);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-geo); font-weight:700; font-variant-numeric:tabular-nums;
+  font-size:21px; color:var(--bg);  /* 蓝块反白·纸白 on 蓝 8.48 AAA */
+}
+.ds-index .dix-row-body{ flex:1 1 auto; min-width:0; }
+.ds-index .dix-row-k{
+  font-family:var(--font-geo); font-weight:400; font-size:21px;  /* 纯中文幕名落 Glow(仅400面)·禁合成假粗·强调靠字号+蓝序号块 */
+  letter-spacing:.01em; text-transform:uppercase; color:var(--ink); line-height:1.05;
+}
+.ds-index .dix-row-d{
+  font-family:var(--font-cjk); font-weight:400; font-size:14px;
+  line-height:1.45; color:var(--ink-dim); margin-top:8px;  /* 8pt 刻度（吸附自 6px·实现期 修真 off-scale/0021） */
+}
+.ds-index .dix-foot{
+  position:absolute; left:var(--pad-x); right:var(--pad-x); bottom:40px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+
+/* ============================================================================
+   P· 对照页 · ds-contrast（混乱 vs 秩序 · 双区对置 · 左混乱<无色灰>/右秩序<红主>）
+   ----------------------------------------------------------------------------
+   讲：散货时代（混乱·密·灰文字堆叠）vs 集装箱时代（秩序·疏·网格对齐 + 红锚）——同主题两态对置。
+   构图（中轴 bold 黑线对半切但内容非对称·全正交·左密右疏即「混乱→秩序」的形式承载·一主<右红条>）：
+     · 主竖轴 bold 黑线 @ x=640（视觉对半·但左场密文字堆/右场疏网格·形式即论证：左乱右整）。
+     · 左场上 thin 横线 @ y=200 托「BEFORE」小标；左场文字行散乱密排（承载「混乱」）。
+     · 右场上 thin 横线 @ y=200 托「AFTER」小标；右场红判断条 @ y=536 卡底（一主·载「秩序」判断锚）。
+   红面积：右场红条 left:680 right:0(→1280) top:536 → 600×(720−536)=600×184... 收窄至 right:80 → (1200−680)×184=520×184=95,680→超。
+     落定：left:680 width:472 top:560 → 472×(720−560)=472×160=75,520px²=8.19% ≤10%（一主·安全）。 */
+.ds-contrast .dct-v-main{ position:absolute; left:640px; top:0; bottom:0; width:var(--rule-bold); background:var(--ink); }
+.ds-contrast .dct-h-l{ position:absolute; left:0; width:640px; top:200px; height:var(--rule-thin); background:var(--ink); }
+.ds-contrast .dct-h-r{ position:absolute; left:640px; right:0; top:200px; height:var(--rule-thin); background:var(--ink); }
+.ds-contrast .ds-eyebrow{ position:absolute; left:var(--pad-x); top:80px; }
+/* —— 左场：混乱（BEFORE · 密文字堆 · 灰 · 承载「无标准的世界」）—— */
+.ds-contrast .dct-l-tag{
+  position:absolute; left:var(--pad-x); top:152px;
+  font-family:var(--font-geo); font-weight:700; font-size:30px;
+  letter-spacing:.01em; text-transform:uppercase; color:var(--ink-dim);
+}
+.ds-contrast .dct-l-list{
+  position:absolute; left:var(--pad-x); top:248px; right:704px;
+  font-family:var(--font-cjk); font-weight:400; font-size:18px;
+  line-height:1.75; color:var(--ink-dim); letter-spacing:.01em;
+}
+.ds-contrast .dct-l-list b{ font-weight:400; color:var(--ink); }  /* 强调=暗灰→满墨提色(非字重·Glow 仅 400 面·守字体克制) */
+/* —— 右场：秩序（AFTER · 疏网格 · 红判断条 · 承载「标准化之后」）—— */
+.ds-contrast .dct-r-tag{
+  position:absolute; left:680px; top:152px;
+  font-family:var(--font-geo); font-weight:700; font-size:30px;
+  letter-spacing:.01em; text-transform:uppercase; color:var(--ink);
+}
+.ds-contrast .dct-r-lead{
+  position:absolute; left:680px; right:var(--pad-x); top:248px;
+  font-family:var(--font-cjk); font-weight:400; font-size:18px;
+  line-height:1.6; color:var(--ink); letter-spacing:.01em;
+}
+.ds-contrast .dct-anchor{ position:absolute; left:680px; width:472px; top:560px; bottom:0; background:var(--ds-red); }
+.ds-contrast .dct-anchor-word{
+  position:absolute; left:712px; top:592px; right:128px;
+  font-family:var(--font-geo); font-weight:400; font-size:24px;  /* 纯中文落 Glow(仅400面)·禁合成假粗·强调靠红块+字号 */
+  line-height:1.1; text-transform:uppercase; color:var(--bg);
+}
+.ds-contrast .dct-anchor-cap{
+  position:absolute; left:712px; bottom:36px; right:96px;
+  font-family:var(--font-geo); font-weight:400; font-size:12px;
+  line-height:1.4; letter-spacing:.16em; text-transform:uppercase; color:var(--bg); opacity:.84;
+}
+.ds-contrast .dct-foot{
+  position:absolute; left:var(--pad-x); right:680px; bottom:40px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+
+/* ============================================================================
+   P· 章节过渡 · ds-divider（大原色块 + 章节号 + 幕名 · 蓝主<一>·块上反白）
+   ----------------------------------------------------------------------------
+   讲：进入新一幕——大蓝块卡左场载巨章节号 + 右场全大写幕名（结构重音·节奏断点）。
+   构图（左大蓝块 + 右白场幕名·非对称·全正交·蓝＝结构导航语义·一主）：
+     · 主竖轴 bold 黑线 @ x=512（蓝块右缘贴线·左 40% 蓝场 / 右 60% 白场）。
+     · 蓝块卡满左场上半（left:0 top:0 → 512×480·但 ≤10% 须收窄：见下）·块上巨章节号反白。
+     · 右白场 mid 横线 @ y=400 托幕名 / 中文副题分界。
+   蓝面积须 ≤10%：满左场 512×720=368,640 远超。收窄为「左场中段横带」：left:0 width:512 top:240 height:240 → 512×240=122,880→13.3% 超。
+     再收：width:360 top:264 height:192 → 360×192=69,120px²=7.5% ≤10%（一主蓝·安全·块上反白巨号）。 */
+.ds-divider .ddv-v-main{ position:absolute; left:512px; top:0; bottom:0; width:var(--rule-bold); background:var(--ink); }
+.ds-divider .ddv-h-mid{ position:absolute; left:512px; right:0; top:400px; height:var(--rule-mid); background:var(--ink); }
+.ds-divider .ddv-block{ position:absolute; left:0; width:360px; top:264px; height:192px; background:var(--ds-blue); }
+.ds-divider .ddv-block-num{
+  position:absolute; left:40px; top:280px;
+  font-family:var(--font-geo); font-weight:700; font-variant-numeric:tabular-nums;
+  font-size:148px; line-height:.84; letter-spacing:-.03em; color:var(--bg);
+}
+.ds-divider .ds-eyebrow{ position:absolute; left:var(--pad-x); top:80px; }
+.ds-divider .ddv-act{
+  position:absolute; left:560px; right:var(--pad-x); top:280px;
+  font-family:var(--font-geo); font-weight:700;
+  font-size:52px; line-height:.98; letter-spacing:-.01em;
+  text-transform:uppercase; color:var(--ink);
+}
+.ds-divider .ddv-sub{
+  position:absolute; left:560px; right:var(--pad-x); top:448px;
+  font-family:var(--font-cjk); font-weight:400; font-size:18px;
+  line-height:1.5; letter-spacing:.02em; color:var(--ink-dim);
+}
+.ds-divider .ddv-foot{
+  position:absolute; left:560px; right:var(--pad-x); bottom:40px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+
+/* ============================================================================
+   P· 指标行 · ds-statrow（tabular 数字 + 网格竖分隔 · 蓝主<从>·量级页·量化）
+   ----------------------------------------------------------------------------
+   讲：一组并置量级指标（如 TCP/IP 扩散：主机数/机构数/切换日）——3 格 tabular 巨数 + 网格分隔。
+   构图（横带式·bold 基线 + 2 条 thin 竖线分 3 格·全正交·一主<蓝标重点格>）：
+     · 横轴 bold 黑线 @ y=296 横贯全宽（指标行坐线下·线即基线·上判断/下指标）。
+     · 2 竖 thin 线 @ x=480 / x=853 分 3 等格（线由内容分区决定·tabular 数字对齐网格）。
+     · 第 3 格（重点指标）底蓝条标重点（一主·从蓝·载「这格是论点」）。
+   蓝面积：第3格底蓝条 left:880 right:0(→1280)... 收窄 left:880 width:320 top:632 height:64 → 320×64=20,480px²=2.2% ≤10%（从蓝·安全）。 */
+.ds-statrow .dsr-h-base{ position:absolute; left:0; right:0; top:296px; height:var(--rule-bold); background:var(--ink); }
+.ds-statrow .dsr-v-1{ position:absolute; left:480px; top:306px; bottom:0; width:var(--rule-thin); background:var(--ink); }
+.ds-statrow .dsr-v-2{ position:absolute; left:853px; top:306px; bottom:0; width:var(--rule-thin); background:var(--ink); }
+.ds-statrow .ds-eyebrow{ position:absolute; left:var(--pad-x); top:80px; }
+.ds-statrow .dsr-claim{
+  position:absolute; left:var(--pad-x); top:144px; right:512px;
+  font-family:var(--font-cjk); font-weight:400; font-size:30px;
+  line-height:1.4; letter-spacing:.02em; color:var(--ink);
+}
+.ds-statrow .dsr-cell{ position:absolute; top:344px; }
+.ds-statrow .dsr-cell.s1{ left:var(--pad-x); width:368px; }
+.ds-statrow .dsr-cell.s2{ left:512px; width:309px; }
+.ds-statrow .dsr-cell.s3{ left:885px; right:var(--pad-x); }
+.ds-statrow .dsr-cell-k{
+  font-family:var(--font-geo); font-size:12px; font-weight:500;
+  letter-spacing:.2em; text-transform:uppercase; color:var(--ink-dim);
+}
+.ds-statrow .dsr-cell-num{
+  font-family:var(--font-geo); font-weight:700; font-variant-numeric:tabular-nums;
+  font-size:72px; line-height:.96; letter-spacing:-.02em; color:var(--ink); margin-top:16px;
+}
+.ds-statrow .dsr-cell-num .u{ font-size:30px; letter-spacing:0; }
+.ds-statrow .dsr-cell-desc{
+  font-family:var(--font-cjk); font-weight:400; font-size:14px;
+  line-height:1.5; color:var(--ink-dim); margin-top:20px;
+}
+/* —— 第3格底蓝重点条（从蓝·标论点格）—— */
+.ds-statrow .dsr-hi{ position:absolute; left:885px; width:315px; top:632px; height:48px; background:var(--ds-blue); }
+.ds-statrow .dsr-hi-cap{
+  position:absolute; left:901px; top:645px; right:24px;
+  font-family:var(--font-geo); font-weight:400; font-size:12px;
+  line-height:1.3; letter-spacing:.14em; text-transform:uppercase; color:var(--bg); opacity:.9;
+}
+.ds-statrow .dsr-foot{
+  position:absolute; left:var(--pad-x); right:var(--pad-x); bottom:40px;
+  display:flex; align-items:center; justify-content:flex-end;
+}
+.ds-statrow .dsr-foot .pg{ font-variant-numeric:tabular-nums; letter-spacing:.18em; }
+
+/* ============================================================================
+   P· 引言页 · ds-quote（全大写引语 + 克制留白 + 红引号锚<一主·极小>·信念）
+   ----------------------------------------------------------------------------
+   讲：一句定调金句（Clark "rough consensus and running code"）——大字引语撑场 + 极小红方块作引号锚 + 出处。
+   构图（最简·留白经营·引语坐网格·非对称·全正交·一主<红引号块>极克制）：
+     · 主竖轴 thin 黑线 @ x=200 仅切上半（细线·托红引号块·左窄白带）。
+     · 横轴 bold 黑线 @ y=512 横贯全宽（引语坐线上·线即收束·下方留白载出处）。
+     · 红引号方块卡左上（200 区·边长 64·贴竖线右）·纯图形锚（引号语义·一主·无承载小字符合黄禁但此为红可，仍留空仅作锚）。
+   红面积：64×64=4,096px²=0.44%（极克制单主·留白主导·安全）。 */
+.ds-quote .dqt-v-top{ position:absolute; left:200px; top:0; height:336px; width:var(--rule-thin); background:var(--ink); }
+.ds-quote .dqt-h-base{ position:absolute; left:0; right:0; top:512px; height:var(--rule-bold); background:var(--ink); }
+.ds-quote .dqt-mark{ position:absolute; left:200px; top:120px; width:64px; height:64px; background:var(--ds-red); }
+.ds-quote .ds-eyebrow{ position:absolute; left:296px; top:140px; }
+.ds-quote .dqt-text{
+  position:absolute; left:200px; right:200px; top:236px;
+  font-family:var(--font-geo); font-weight:700;
+  font-size:52px; line-height:1.04; letter-spacing:-.01em;
+  text-transform:uppercase; color:var(--ink);
+}
+.ds-quote .dqt-text .em{ color:var(--ds-red); }
+.ds-quote .dqt-cite{
+  position:absolute; left:200px; right:480px; top:560px;
+  font-family:var(--font-cjk); font-weight:400; font-size:18px;
+  line-height:1.5; letter-spacing:.02em; color:var(--ink-dim);
+}
+.ds-quote .dqt-cite b{ font-weight:400; color:var(--ink); }  /* 强调=暗灰→满墨提色(非字重·Glow 仅 400 面) */
+.ds-quote .dqt-foot{
+  position:absolute; left:200px; right:var(--pad-x); bottom:56px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+
+/* ============================================================================
+   P· 数据墙 · ds-data-block（网格 + 原色数据块编码 · 蓝主<从> + 红/黄点缀 · 量级）
+   ----------------------------------------------------------------------------
+   讲：标准化战役总览——网格分 5 区，各区载一个量级数据，原色块编码强弱（蓝主块=王牌数字·红/黄小块=次级）。
+   构图（蒙德里安式不等分网格·全正交·一主<蓝大块>二从<红/黄小块>·每区真内容·非空贴图）：
+     · 主竖轴 bold 黑线 @ x=768；横轴 mid 黑线 @ y=384 把版切 4 象限（不等分·非对称）。
+     · 左上大区（蓝主数据块·王牌数字 700% 反白）；右上区（白·数字+说明）；左下区（白·数字+说明 + 红小条）；右下区（白·数字+说明 + 黄小块）。
+     · thin 竖线 @ x=1024 仅切右下（分右下为二·线由内容定）。
+   原色面积：蓝主块 left:0 width:432 top:96 height:240 → 432×240=103,680=11.3% 超。收窄 width:384 height:224 → 384×224=86,016=9.34%→险。
+     落定 width:360 height:216 → 360×216=77,760=8.44% + 红条 240×10=2,400 + 黄块 64×64=4,096 = 84,256px²=9.14% ≤10%（一主二从·贴线·实测见 Step6）。 */
+.ds-data-block .ddb-v-main{ position:absolute; left:768px; top:0; bottom:0; width:var(--rule-bold); background:var(--ink); }
+.ds-data-block .ddb-h-mid{ position:absolute; left:0; right:0; top:384px; height:var(--rule-mid); background:var(--ink); }
+.ds-data-block .ddb-v-low{ position:absolute; left:1024px; top:390px; bottom:0; width:var(--rule-thin); background:var(--ink); }
+.ds-data-block .ds-eyebrow{ position:absolute; left:var(--pad-x); top:80px; }
+.ds-data-block .ddb-title{
+  position:absolute; left:464px; right:var(--pad-x); top:128px;
+  font-family:var(--font-geo); font-weight:700; font-size:40px;
+  line-height:1; letter-spacing:-.01em; text-transform:uppercase; color:var(--ink); text-align:right;
+}
+/* —— 左上：蓝主数据块（王牌·一主·反白巨数）—— */
+.ds-data-block .ddb-hero{ position:absolute; left:0; width:360px; top:120px; height:216px; background:var(--ds-blue); }
+.ds-data-block .ddb-hero-num{
+  position:absolute; left:32px; top:148px;
+  font-family:var(--font-geo); font-weight:700; font-variant-numeric:tabular-nums;
+  font-size:92px; line-height:.84; letter-spacing:-.02em; color:var(--bg);
+}
+.ds-data-block .ddb-hero-cap{
+  position:absolute; left:32px; top:268px; width:300px;
+  font-family:var(--font-cjk); font-weight:400; font-size:14px;
+  line-height:1.45; color:var(--bg); opacity:.9;
+}
+/* —— 通用数据格（白区·数字 + 说明·真内容）—— */
+.ds-data-block .ddb-cell{ position:absolute; }
+.ds-data-block .ddb-cell.b-ru{ left:816px; right:var(--pad-x); top:188px; }
+.ds-data-block .ddb-cell.b-ld{ left:var(--pad-x); right:480px; top:456px; }
+.ds-data-block .ddb-cell.b-rd1{ left:816px; right:336px; top:456px; }
+.ds-data-block .ddb-cell.b-rd2{ left:1072px; right:var(--pad-x); top:456px; }
+.ds-data-block .ddb-cell-k{
+  font-family:var(--font-geo); font-size:12px; font-weight:500;
+  letter-spacing:.18em; text-transform:uppercase; color:var(--ink-dim);
+}
+.ds-data-block .ddb-cell-num{
+  font-family:var(--font-geo); font-weight:700; font-variant-numeric:tabular-nums;
+  font-size:52px; line-height:1; letter-spacing:-.01em; color:var(--ink); margin-top:12px;
+}
+.ds-data-block .ddb-cell-num .u{ font-size:24px; letter-spacing:0; }
+.ds-data-block .ddb-cell-desc{
+  font-family:var(--font-cjk); font-weight:400; font-size:14px;
+  line-height:1.45; color:var(--ink-dim); margin-top:16px;
+}
+/* —— 次级原色锚（红条标左下王牌 + 黄块标右下次级·二从·黄不承载小字）—— */
+.ds-data-block .ddb-red{ position:absolute; left:var(--pad-x); width:240px; top:432px; height:var(--rule-bold); background:var(--ds-red); }
+.ds-data-block .ddb-yellow{ position:absolute; left:1072px; top:400px; width:48px; height:48px; background:var(--ds-yellow); }
+.ds-data-block .ddb-foot{
+  position:absolute; left:var(--pad-x); right:var(--pad-x); bottom:36px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+
+/* ============================================================================
+   P· 时间轴 · ds-timeline（正交时间轴·禁对角 · 蓝节点<从> + 红当前<一主>·量级）
+   ----------------------------------------------------------------------------
+   讲：标准化母题跨世纪反复——1841 螺纹 → 1846 轨距 → 1968 集装箱 → 1983 TCP/IP → 2024 USB-C。
+   构图（正交时间轴·**严禁对角**·一条水平 bold 主轴 + 垂直 thin 引线·节点蓝方块<从>·末节点红<一主>）：
+     · 横轴 bold 黑线 @ y=400 横贯（时间主轴·正交·年份坐轴上方/事件坐轴下方·交替避撞）。
+     · 5 节点垂直 thin 引线（从轴垂直向上/下·正交·禁任何斜线）。
+     · 节点方块：前 4 个蓝（从·数据/事件锚）+ 末个（USB-C 2024·当下）红（一主·载「秩序仍在推进」判断）。
+   原色面积：4 蓝方块各 28×28=784 ×4=3,136 + 红方块 40×40=1,600 = 4,736px²=0.51% ≤10%（一主二从·极克制·安全）。 */
+.ds-timeline .dtl-axis{ position:absolute; left:80px; right:80px; top:400px; height:var(--rule-bold); background:var(--ink); }
+.ds-timeline .ds-eyebrow{ position:absolute; left:var(--pad-x); top:80px; }
+.ds-timeline .dtl-title{
+  position:absolute; left:var(--pad-x); top:144px; right:var(--pad-x);
+  font-family:var(--font-geo); font-weight:700; font-size:40px;
+  line-height:1; letter-spacing:-.01em; text-transform:uppercase; color:var(--ink);
+}
+.ds-timeline .dtl-claim{
+  position:absolute; left:var(--pad-x); top:212px; right:560px;
+  font-family:var(--font-cjk); font-weight:400; font-size:18px;
+  line-height:1.5; letter-spacing:.01em; color:var(--ink-dim);
+}
+/* —— 时间节点（垂直引线 + 方块 + 年/名/句·全正交）—— */
+.ds-timeline .dtl-node{ position:absolute; top:0; width:200px; }
+.ds-timeline .dtl-lead{ position:absolute; width:var(--rule-thin); background:var(--ink); }   /* 垂直引线·正交 */
+.ds-timeline .dtl-dot{ position:absolute; width:28px; height:28px; background:var(--ds-blue); }
+.ds-timeline .dtl-dot.now{ width:40px; height:40px; background:var(--ds-red); }   /* 末节点红·一主 */
+.ds-timeline .dtl-year{
+  font-family:var(--font-geo); font-weight:700; font-variant-numeric:tabular-nums;
+  font-size:30px; line-height:1; letter-spacing:-.01em; color:var(--ink);
+}
+.ds-timeline .dtl-name{
+  font-family:var(--font-geo); font-weight:500; font-size:14px;
+  letter-spacing:.12em; text-transform:uppercase; color:var(--ink); margin-top:8px;
+}
+.ds-timeline .dtl-desc{
+  font-family:var(--font-cjk); font-weight:400; font-size:14px;
+  line-height:1.45; color:var(--ink-dim); margin-top:8px;
+}
+.ds-timeline .dtl-foot{
+  position:absolute; left:var(--pad-x); right:var(--pad-x); bottom:36px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+
+/* ============================================================================
+   P· 论点列表 · ds-list（网格行 + 红序号锚<一主> · 信念）
+   ----------------------------------------------------------------------------
+   讲：标准的权力——谁定标准谁定规则（3 条论点·各网格行·红序号块锚）。
+   构图（左判断列 + 右 3 网格论点行·非对称·全正交·一主<红序号块>）：
+     · 主竖轴 bold 黑线 @ x=440（左判断列 34% / 右论点场 66%）。
+     · 右场 thin 横线分隔 3 行（线由内容定·正交）。
+     · 红序号方块＝每行左侧载序号（一主红·载「这是第几条判断」）。
+   红面积：3 红序号块各 48×48=2,304 ×3=6,912px²=0.75% ≤10%（一主·极克制·安全）。 */
+.ds-list .dls-v-main{ position:absolute; left:440px; top:0; bottom:0; width:var(--rule-bold); background:var(--ink); }
+.ds-list .dls-row-line{ position:absolute; left:440px; right:0; height:var(--rule-thin); background:var(--ink); }
+.ds-list .ds-eyebrow{ position:absolute; left:var(--pad-x); top:80px; }
+.ds-list .dls-title{
+  position:absolute; left:var(--pad-x); top:152px; right:872px;
+  font-family:var(--font-geo); font-weight:700; font-size:52px;
+  line-height:.98; letter-spacing:-.01em; text-transform:uppercase; color:var(--ink);
+}
+.ds-list .dls-lead{
+  position:absolute; left:var(--pad-x); top:392px; right:872px;
+  font-family:var(--font-cjk); font-weight:400; font-size:18px;
+  line-height:1.55; color:var(--ink-dim);
+}
+.ds-list .dls-row{ position:absolute; left:488px; right:var(--pad-x); height:160px; display:flex; align-items:center; gap:32px; }
+.ds-list .dls-num{
+  flex:none; width:48px; height:48px; background:var(--ds-red);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-geo); font-weight:700; font-variant-numeric:tabular-nums;
+  font-size:21px; color:var(--bg);  /* 红块反白·纸白 on 红 5.19 AA·序号数字(对齐 dix-num 21·档位收敛) */
+}
+.ds-list .dls-row-body{ flex:1 1 auto; min-width:0; }
+.ds-list .dls-row-k{
+  font-family:var(--font-geo); font-weight:400; font-size:21px;  /* 纯中文论点标题落 Glow(仅400面)·禁合成假粗·强调靠字号+红序号块 */
+  letter-spacing:.005em; text-transform:uppercase; color:var(--ink); line-height:1.05;
+}
+.ds-list .dls-row-d{
+  font-family:var(--font-cjk); font-weight:400; font-size:14px;
+  line-height:1.5; color:var(--ink-dim); margin-top:8px;
+}
+.ds-list .dls-foot{
+  position:absolute; left:var(--pad-x); right:var(--pad-x); bottom:40px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+
+/* ============================================================================
+   P· 比例页 · ds-ratio（原色面积即数据 · 黄主<次级>·面积承载意义·量级）
+   ----------------------------------------------------------------------------
+   讲：USB-C 充电口收敛——「30 种 → 3 种」用原色块面积比直观承载（面积即数据·呼应蒙德里安「面积承载意义」）。
+   构图（左大块 vs 右小块·面积比即数据·全正交·黄主<次级·此页量级用黄色块图形非小字>·黄禁承载小字→数字落白区）：
+     · 主竖轴 bold 黑线 @ x=512（左对比场 / 右判断场）。
+     · 左场：上「BEFORE 30」黄大块（面积大）+ 下「AFTER 3」黄小块（面积小·比例真实 1:10 示意收敛）·块上不放小字·标签落白区。
+       注：黄禁承载小字（黑字 on 黄虽 9.57 但 spec 定黄只做色块/大字图形）→ 块旁数字用 var(--ink) 落白底。
+     · 右判断场：全大写主标 + 中文判断 + 白区数字标注（11,000 吨/年 等硬数据落白）。
+   黄面积须 ≤10%：大块 240×96=23,040 + 小块 96×40... 但黄面积大→收窄。大块 200×80=16,000 + 小块 80×20=1,600 = 17,600px²=1.91% ≤10%
+     （面积比 200×80 : 80×20 = 16000:1600 = 精确 10:1·「面积即数据」精确等比承载 30→3 种<10×收敛>·黄主次级·安全·审计 修真）。 */
+.ds-ratio .drt-v-main{ position:absolute; left:512px; top:0; bottom:0; width:var(--rule-bold); background:var(--ink); }
+.ds-ratio .drt-h-mid{ position:absolute; left:0; width:512px; top:400px; height:var(--rule-thin); background:var(--ink); }
+.ds-ratio .ds-eyebrow{ position:absolute; left:var(--pad-x); top:80px; }
+/* —— 左对比场：黄面积块（面积即数据·黄不承载小字·标签落白）—— */
+.ds-ratio .drt-bar{ position:absolute; background:var(--ds-yellow); }
+.ds-ratio .drt-bar.big{ left:var(--pad-x); top:208px; width:200px; height:80px; }
+.ds-ratio .drt-bar.small{ left:var(--pad-x); top:512px; width:80px; height:20px; }  /* 80×20=1600·与大块 200×80=16000 = 精确 10:1 面积比（30→3 种·审计） */
+.ds-ratio .drt-bar-k{
+  position:absolute; font-family:var(--font-geo); font-weight:500; font-size:12px;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--ink-dim);
+}
+.ds-ratio .drt-bar-k.kbig{ left:300px; top:212px; }
+.ds-ratio .drt-bar-k.ksmall{ left:180px; top:508px; }
+.ds-ratio .drt-bar-num{
+  position:absolute; font-family:var(--font-geo); font-weight:700; font-variant-numeric:tabular-nums;
+  letter-spacing:-.01em; color:var(--ink);
+}
+.ds-ratio .drt-bar-num.nbig{ left:300px; top:232px; font-size:52px; line-height:1; }
+.ds-ratio .drt-bar-num.nsmall{ left:180px; top:524px; font-size:30px; line-height:1; }
+/* —— 右判断场：主标 + 判断 + 白区硬数据 —— */
+.ds-ratio .drt-title{
+  position:absolute; left:560px; right:var(--pad-x); top:152px;
+  font-family:var(--font-geo); font-weight:700; font-size:52px;
+  line-height:.98; letter-spacing:-.01em; text-transform:uppercase; color:var(--ink);
+}
+.ds-ratio .drt-lead{
+  position:absolute; left:560px; right:var(--pad-x); top:312px;
+  font-family:var(--font-cjk); font-weight:400; font-size:18px;
+  line-height:1.6; letter-spacing:.01em; color:var(--ink);
+}
+.ds-ratio .drt-stat{
+  position:absolute; left:560px; right:var(--pad-x); top:472px;
+  display:flex; gap:48px;
+}
+.ds-ratio .drt-stat .st-k{
+  font-family:var(--font-geo); font-size:12px; font-weight:500;
+  letter-spacing:.18em; text-transform:uppercase; color:var(--ink-dim);
+}
+.ds-ratio .drt-stat .st-num{
+  font-family:var(--font-geo); font-weight:700; font-variant-numeric:tabular-nums;
+  font-size:40px; line-height:1; letter-spacing:-.01em; color:var(--ink); margin-top:12px;  /* 细档 --sp-fine-c=12px（吸附自 10px·组件内紧凑 key→num 间距·实现期 修真 off-scale/0021） */
+}
+.ds-ratio .drt-stat .st-num .u{ font-size:18px; letter-spacing:0; }
+.ds-ratio .drt-foot{
+  position:absolute; left:var(--pad-x); right:var(--pad-x); bottom:40px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+
+/* ============================================================================
+   P· 单点聚焦 · ds-spotlight（单原色判断锚 + 大留白 · 红主<一>·信念）
+   ----------------------------------------------------------------------------
+   讲：新秩序的边界——标准即锁定（含诚实反证「运费降 90% 是讹传」）。单红锚 + 大留白聚焦一个判断。
+   构图（极简·单红块右下锚 + 左大留白判断·非对称·全正交·一主<红块>·留白主导）：
+     · 主竖轴 thin 黑线 @ x=856 仅切下半（细线·分判断区/红锚区）。
+     · 横轴 bold 黑线 @ y=224 仅压左场（托主标·线即上界）。
+     · 红判断锚块卡右下（贴竖线右 + 下出血）·块上反白判断（一主·载「边界判断」）。
+     · 左场全大写主标 + 中文判断正文 + 反证脚注（白区·诚实边界）。
+   红面积：right下块 left:862 right:0(→1280) top:432 → 418×288=120,384 超。收窄 left:912 top:456 → (1280−912)×(720−456)=368×264=97,152=10.5% 险。
+     落定 left:944 top:472 → 336×248=83,328px²=9.04% ≤10%（一主红·安全）。 */
+.ds-spotlight .dsp-v-low{ position:absolute; left:856px; top:230px; bottom:0; width:var(--rule-thin); background:var(--ink); }
+.ds-spotlight .dsp-h-top{ position:absolute; left:0; width:856px; top:224px; height:var(--rule-bold); background:var(--ink); }
+.ds-spotlight .ds-eyebrow{ position:absolute; left:var(--pad-x); top:80px; }
+.ds-spotlight .dsp-title{
+  position:absolute; left:var(--pad-x); top:128px; right:480px;
+  font-family:var(--font-geo); font-weight:700; font-size:52px;
+  line-height:.98; letter-spacing:-.015em; text-transform:uppercase; color:var(--ink);
+}
+.ds-spotlight .dsp-lead{
+  position:absolute; left:var(--pad-x); top:288px; right:520px;
+  font-family:var(--font-cjk); font-weight:400; font-size:21px;
+  line-height:1.6; letter-spacing:.01em; color:var(--ink);
+}
+.ds-spotlight .dsp-counter{
+  position:absolute; left:var(--pad-x); bottom:64px; right:560px;
+  font-family:var(--font-cjk); font-weight:400; font-size:14px;
+  line-height:1.55; color:var(--ink-dim); border-top:var(--rule-thin) solid var(--ink); padding-top:16px;
+}
+.ds-spotlight .dsp-counter b{ font-weight:400; color:var(--ink); }  /* 强调=暗灰→满墨提色(非字重·Glow 仅 400 面) */
+.ds-spotlight .dsp-anchor{ position:absolute; left:944px; right:0; top:472px; bottom:0; background:var(--ds-red); }
+.ds-spotlight .dsp-anchor-word{
+  position:absolute; left:976px; top:504px; right:48px;
+  font-family:var(--font-geo); font-weight:400; font-size:24px;  /* 纯中文落 Glow(仅400面)·禁合成假粗·强调靠红块+字号 */
+  line-height:1.1; text-transform:uppercase; color:var(--bg);
+}
+.ds-spotlight .dsp-anchor-cap{
+  position:absolute; left:976px; bottom:36px; right:48px;
+  font-family:var(--font-geo); font-weight:400; font-size:12px;
+  line-height:1.4; letter-spacing:.16em; text-transform:uppercase; color:var(--bg); opacity:.84;
+}
+.ds-spotlight .dsp-foot{
+  position:absolute; left:var(--pad-x); right:560px; bottom:40px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+
+/* ============================================================================
+   P· 收束 · ds-closing（新秩序的边界 · 全大写收束主标 + 红锚<一主> + 署名区·信念）
+   ----------------------------------------------------------------------------
+   讲：收尾判断——秩序不是终点，是新混乱的起点（克制不炸尾·calm/half）。全大写主标 + 红锚 + 中性署名。
+   构图（对称感的收束但仍非对称配重·全正交·一主<红块>·呼应封面镜像收书挡）：
+     · 主竖轴 bold 黑线 @ x=456（与封面 x=824 镜像换边·成「书挡」对称呼应）。
+     · 横轴 mid 黑线 @ y=476 仅切左场（与封面右场 anchor 横线 y=476 等高·对仗）。
+     · 红锚块卡左下（与封面右下红锚镜像·一主·载收束判断·反白）。
+     · 右窄场：全大写收束词 + 中文收尾 + 署名（中性·白标）。
+   红面积：left:0 width:432 top:482 → 432×238=102,816 超。收窄 width:408 top:512 → 408×208=84,864px²=9.21% ≤10%（一主·与封面同口径·安全）。 */
+.ds-closing .dcl-v-main{ position:absolute; left:456px; top:0; bottom:0; width:var(--rule-bold); background:var(--ink); }
+.ds-closing .dcl-h-anchor{ position:absolute; left:0; width:456px; top:476px; height:var(--rule-mid); background:var(--ink); }
+.ds-closing .ds-eyebrow{ position:absolute; left:504px; top:128px; }
+.ds-closing .dcl-title{
+  position:absolute; left:504px; right:var(--pad-x); top:200px;
+  font-family:var(--font-geo); font-weight:700;
+  font-size:72px; line-height:.96; letter-spacing:-.015em;
+  text-transform:uppercase; color:var(--ink);
+}
+.ds-closing .dcl-sub{
+  position:absolute; left:504px; right:var(--pad-x); top:440px; max-width:680px;
+  font-family:var(--font-cjk); font-weight:400; font-size:21px;
+  line-height:1.5; letter-spacing:.02em; color:var(--ink);
+}
+/* —— 红收束锚（卡左下·一主·反白·与封面镜像）—— */
+.ds-closing .dcl-anchor{ position:absolute; left:0; width:408px; top:512px; bottom:0; background:var(--ds-red); }
+.ds-closing .dcl-anchor-word{
+  position:absolute; left:var(--pad-x); top:544px; width:296px;
+  font-family:var(--font-geo); font-weight:400; font-size:24px;  /* 纯中文收束词落 Glow(仅400面)·禁合成假粗·强调靠红块+字号 */
+  line-height:1.1; text-transform:uppercase; color:var(--bg);
+}
+.ds-closing .dcl-anchor-cap{
+  position:absolute; left:var(--pad-x); bottom:40px; width:296px;
+  font-family:var(--font-geo); font-weight:400; font-size:12px;
+  line-height:1.4; letter-spacing:.16em; text-transform:uppercase; color:var(--bg); opacity:.84;
+}
+.ds-closing .dcl-foot{
+  position:absolute; left:504px; right:var(--pad-x); bottom:48px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+</style>
+
+</head>
+<body>
+
+<!-- 字体预激活节点：强制浏览器加载所有已声明字族（font-display:optional 延迟加载时 fonts.check 误报 false）
+     aria-hidden + 零尺寸·对可见层零影响·仅用于 document.fonts.check 核验 -->
+<span aria-hidden="true" style="position:absolute;overflow:hidden;width:0;height:0;font-family:'Space Grotesk';font-size:0;opacity:0">X</span>
+<span aria-hidden="true" style="position:absolute;overflow:hidden;width:0;height:0;font-family:'Glow Sans SC';font-size:0;opacity:0">字</span>
+
+<div class="nojs-hint">请启用 JavaScript 以获得最佳浏览体验</div>
+
+<div class="stage" id="stage">
+  <div class="deck" id="deck">
+
+    <!-- ===== 第一幕 · 混乱的代价 → 秩序的提出 ===== -->
+
+    <!-- P1 封面 · ds-cover · 秩序的信念（state·calm）·正交网格 + 红判断锚 -->
+    <section class="slide ds-cover" data-layout="ds-cover" data-role="state" data-energy="calm">
+      <!-- 网格黑线（结构·分级粗细·全正交） -->
+      <div class="dsc-v-main" aria-hidden="true"></div>
+      <div class="dsc-h-anchor" aria-hidden="true"></div>
+      <div class="dsc-h-top" aria-hidden="true"></div>
+
+      <div class="ds-eyebrow">标准之战 · The Standard</div>
+
+      <!-- 全大写主标（结构锚·2 行完整陈述）+ 中文判断副标 -->
+      <h1 class="dsc-title">ORDER<br>OVER CHAOS.</h1>
+      <p class="dsc-sub">混乱不是被消灭的，<br>是被一套更好的秩序，赢下来的。</p>
+
+      <!-- 红判断锚块（卡满右下格·一主·≤10%·块上白字·载判断） -->
+      <div class="dsc-anchor" aria-hidden="true"></div>
+      <div class="dsc-anchor-word">秩序，<br>是一种判断。</div>
+      <div class="dsc-anchor-cap">核心判断 · the call</div>
+
+      <!-- 注脚（左场底白区·中性） -->
+      <footer class="dsc-foot ds-foot"><span>标准化简史 · 一手核实</span><span class="pg">01 / 20</span></footer>
+    </section>
+
+    <!-- P2 目录页 · ds-index · 五幕论证链（insight·calm）·蓝序号锚 + 当前幕红条 -->
+    <section class="slide ds-index" data-layout="ds-index" data-role="insight" data-energy="calm">
+      <div class="dix-v-main" aria-hidden="true"></div>
+      <div class="dix-row-line" style="top:248px" aria-hidden="true"></div>
+      <div class="dix-row-line" style="top:344px" aria-hidden="true"></div>
+      <div class="dix-row-line" style="top:440px" aria-hidden="true"></div>
+      <div class="dix-row-line" style="top:536px" aria-hidden="true"></div>
+      <div class="dix-row-line" style="top:632px" aria-hidden="true"></div>
+
+      <div class="ds-eyebrow">论证链 · The Argument</div>
+      <h2 class="dix-title">THE<br>STANDARD.</h2>
+      <p class="dix-lead">一条从混乱到秩序的论证链——五幕，每一幕都是一个判断，配一组一手核实的量级。</p>
+
+      <!-- 当前幕红条（一主·你在这里） -->
+      <div class="dix-here" aria-hidden="true"></div>
+      <div class="dix-here-cap">You are here</div>
+
+      <!-- 五幕目录行（蓝序号 + 幕名 + 一句·真内容） -->
+      <div class="dix-row" style="top:248px">
+        <div class="dix-num">01</div>
+        <div class="dix-row-body"><div class="dix-row-k">混乱的代价</div><div class="dix-row-d">没有标准的世界，每一次交接都要重新谈判。</div></div>
+      </div>
+      <div class="dix-row" style="top:344px">
+        <div class="dix-num">02</div>
+        <div class="dix-row-body"><div class="dix-row-k">秩序的提出</div><div class="dix-row-d">集装箱：先统一尺寸，效率才随之而来。</div></div>
+      </div>
+      <div class="dix-row" style="top:440px">
+        <div class="dix-num">03</div>
+        <div class="dix-row-body"><div class="dix-row-k">标准之争</div><div class="dix-row-d">TCP/IP 如何赢过被官方钦定的 OSI。</div></div>
+      </div>
+      <div class="dix-row" style="top:536px">
+        <div class="dix-num">04</div>
+        <div class="dix-row-body"><div class="dix-row-k">秩序的胜利</div><div class="dix-row-d">从螺纹到 USB-C，跨世纪反复上演的统一。</div></div>
+      </div>
+      <div class="dix-row" style="top:632px">
+        <div class="dix-num">05</div>
+        <div class="dix-row-body"><div class="dix-row-k">新秩序的边界</div><div class="dix-row-d">标准带来互通，也带来锁定——它的代价。</div></div>
+      </div>
+
+      <footer class="dix-foot ds-foot"><span>五幕 · 标准之战</span><span class="pg">02 / 20</span></footer>
+    </section>
+
+    <!-- P3 对照页 · ds-contrast · 混乱 vs 秩序双区对置（insight·half）·左密右疏 + 红秩序锚 -->
+    <section class="slide ds-contrast" data-layout="ds-contrast" data-role="insight" data-energy="half">
+      <div class="dct-v-main" aria-hidden="true"></div>
+      <div class="dct-h-l" aria-hidden="true"></div>
+      <div class="dct-h-r" aria-hidden="true"></div>
+
+      <div class="ds-eyebrow">第一幕 · 混乱的代价</div>
+
+      <!-- 左场：混乱（散货时代·密文字堆·灰） -->
+      <div class="dct-l-tag">BEFORE</div>
+      <div class="dct-l-list">
+        散装上船：一件件吊、一件件数。<br>
+        一艘 <b>6,500 吨</b>散货船，传统装卸需逾 <b>11,000 工时</b>、在港约 <b>5.5 天</b>。<br>
+        每个港口的吊机、卡车、仓位各认各的规矩；<br>
+        货物每换一种运输工具，就要重新装一次、赔一次损耗。<br>
+        混乱不在某一个环节，而在<b>每一次交接都要重新谈判</b>。
+      </div>
+
+      <!-- 右场：秩序（集装箱时代·疏网格 + 红判断条） -->
+      <div class="dct-r-tag">AFTER</div>
+      <p class="dct-r-lead">把货物先装进一只<b style="font-weight:400;color:var(--ds-red)">尺寸统一的钢盒</b>，港口、卡车、吊机只需认同这一套接口——交接不再谈判，只是对接。</p>
+
+      <div class="dct-anchor" aria-hidden="true"></div>
+      <div class="dct-anchor-word">混乱的代价，<br>是反复的摩擦。</div>
+      <div class="dct-anchor-cap">来源 · Levinson《The Box》</div>
+
+      <footer class="dct-foot ds-foot"><span>散货 vs 集装箱</span><span class="pg">03 / 20</span></footer>
+    </section>
+
+    <!-- P4 量级页 · ds-magnitude · 装卸成本坍缩巨数 + 蓝数据锚（ground·blast）·一手核实 -->
+    <section class="slide ds-magnitude" data-layout="ds-magnitude" data-role="ground" data-energy="blast">
+      <div class="dmg-h-base" aria-hidden="true"></div>
+      <div class="dmg-v-low" aria-hidden="true"></div>
+
+      <div class="ds-eyebrow">量级 · Loading Cost</div>
+
+      <!-- 上半判断标注（巨数之上白区·大留白） -->
+      <p class="dmg-claim">1956 年 Ideal-X 首航，把货物的<b style="font-weight:400;color:var(--ds-blue)">装卸成本</b><br>从每吨 $5.83 直接压到了约 $0.16。</p>
+
+      <!-- 巨数（坐 bold 线下·tabular·撑结构·一手核实降幅 ~97%） -->
+      <div class="dmg-num">97<span class="u">%↓</span></div>
+      <div class="dmg-num-cap">散货装船 $5.83/吨 → 集装箱约 $0.16/吨，装卸环节成本坍缩约 97%。来源：Marc Levinson《The Box》(2006)。</div>
+
+      <!-- 蓝数据锚块（右下格·从蓝·白字载数据坐标） -->
+      <div class="dmg-anchor" aria-hidden="true"></div>
+      <div class="dmg-anchor-num">$0.16</div>
+      <div class="dmg-anchor-cap">集装箱装卸成本 · 每吨<br>对比散货 $5.83 / 吨</div>
+
+      <footer class="dmg-foot ds-foot"><span class="pg">04 / 20</span></footer>
+    </section>
+
+    <!-- P5 网格内容页 · ds-grid-content · 集装箱标准化判断 + 红锚（insight·half）·网格各载真内容 -->
+    <section class="slide ds-grid-content" data-layout="ds-grid-content" data-role="insight" data-energy="half">
+      <div class="dgc-v-main" aria-hidden="true"></div>
+      <div class="dgc-h-mid" aria-hidden="true"></div>
+      <div class="dgc-v-low" aria-hidden="true"></div>
+      <div class="dgc-h-anchor" aria-hidden="true"></div>
+
+      <div class="ds-eyebrow">第二幕 · 秩序的提出</div>
+
+      <h2 class="dgc-title">ONE BOX,<br>ONE WORLD.</h2>
+
+      <div class="dgc-anchor" aria-hidden="true"></div>
+      <div class="dgc-anchor-word">标准，<br>先于效率。</div>
+      <div class="dgc-anchor-cap">核心判断 · the call</div>
+
+      <p class="dgc-lead">一只钢盒子能横扫全球，靠的不是它更结实，<br>而是所有港口、卡车、吊机都先认同了同一套尺寸。秩序在效率之前。</p>
+
+      <div class="dgc-cell c1">
+        <div class="dgc-cell-k">尺寸收敛 · ISO 668</div>
+        <div class="dgc-cell-num">1968<span style="font-size:18px">年</span></div>
+        <div class="dgc-cell-desc">ISO/TC 104 颁布 ISO 668 系列，把箱体尺寸与角件统一为全球基准。</div>
+      </div>
+      <div class="dgc-cell c2">
+        <div class="dgc-cell-k">码头生产率</div>
+        <div class="dgc-cell-num">57<span style="font-size:24px">×</span></div>
+        <div class="dgc-cell-desc">装卸生产率从 1.3 吨/工时（1965）升到 74 吨/工时（1980）。来源：Levinson《The Box》。</div>
+      </div>
+
+      <footer class="dgc-foot ds-foot"><span>来源 · Levinson, ISO/TC 104</span><span class="pg">05 / 20</span></footer>
+    </section>
+
+    <!-- P6 宣言/判断页 · ds-manifesto · 标准先于效率（state·calm）·大留白中性主导 -->
+    <section class="slide ds-manifesto" data-layout="ds-manifesto" data-role="state" data-energy="calm">
+      <div class="dmf-v-top" aria-hidden="true"></div>
+      <div class="dmf-h-base" aria-hidden="true"></div>
+
+      <div class="dmf-anchor" aria-hidden="true"></div>
+      <div class="ds-eyebrow">秩序 · The Order</div>
+
+      <h2 class="dmf-title">STANDARDS<br>WIN WARS.</h2>
+      <p class="dmf-sub">谁定义了标准，谁就重写了竞争的规则。</p>
+
+      <footer class="dmf-foot ds-foot"><span>承上启下 · 标准即竞争</span><span class="pg">06 / 20</span></footer>
+    </section>
+
+    <!-- ===== 第二幕 · 标准之争（TCP/IP vs OSI） ===== -->
+
+    <!-- P7 章节过渡 · ds-divider · 第三幕标准之争（insight·calm）·大蓝块巨章节号 -->
+    <section class="slide ds-divider" data-layout="ds-divider" data-role="insight" data-energy="calm">
+      <div class="ddv-v-main" aria-hidden="true"></div>
+      <div class="ddv-h-mid" aria-hidden="true"></div>
+      <div class="ddv-block" aria-hidden="true"></div>
+      <div class="ddv-block-num">03</div>
+
+      <div class="ds-eyebrow">第三幕 · Standards War</div>
+      <h2 class="ddv-act">THE<br>STANDARDS WAR.</h2>
+      <p class="ddv-sub">最强的法理标准，败给了最强的事实标准。</p>
+
+      <footer class="ddv-foot ds-foot"><span>TCP/IP vs OSI</span><span class="pg">07 / 20</span></footer>
+    </section>
+
+    <!-- P8 网格内容页 · ds-grid-content · TCP/IP 赢 OSI 判断 + 红锚（insight·half）·网格各载真内容 -->
+    <section class="slide ds-grid-content" data-layout="ds-grid-content" data-role="insight" data-energy="half">
+      <div class="dgc-v-main" aria-hidden="true"></div>
+      <div class="dgc-h-mid" aria-hidden="true"></div>
+      <div class="dgc-v-low" aria-hidden="true"></div>
+      <div class="dgc-h-anchor" aria-hidden="true"></div>
+
+      <div class="ds-eyebrow">事实 vs 法理 · TCP/IP</div>
+
+      <h2 class="dgc-title">RUNNING<br>CODE WON.</h2>
+
+      <div class="dgc-anchor" aria-hidden="true"></div>
+      <div class="dgc-anchor-word">能跑的代码，<br>赢过钦定的标准。</div>
+      <div class="dgc-anchor-cap">核心判断 · the call</div>
+
+      <p class="dgc-lead">OSI 由委员会自上而下设计、需付费购买；<br>TCP/IP 可免费实现、靠「粗略共识 + 能跑的代码」自下而上扩散。一个被写在纸上，一个跑在线上。</p>
+
+      <div class="dgc-cell c1">
+        <div class="dgc-cell-k">法理标准 · OSI</div>
+        <div class="dgc-cell-num">1990<span style="font-size:18px">年</span></div>
+        <div class="dgc-cell-desc">美国政府以 GOSIP（FIPS 146）强制联邦采购采用 OSI——官方钦定的正统。</div>
+      </div>
+      <div class="dgc-cell c2">
+        <div class="dgc-cell-k">事实标准 · TCP/IP</div>
+        <div class="dgc-cell-num">1983<span style="font-size:18px">年</span></div>
+        <div class="dgc-cell-desc">1 月 1 日「flag day」，ARPANET 全网切换到 TCP/IP，不切换者断网。</div>
+      </div>
+
+      <footer class="dgc-foot ds-foot"><span>来源 · Russell, IEEE 2013</span><span class="pg">08 / 20</span></footer>
+    </section>
+
+    <!-- P9 指标行 · ds-statrow · TCP/IP 扩散三指标（ground·half）·tabular 巨数 + 蓝重点 -->
+    <section class="slide ds-statrow" data-layout="ds-statrow" data-role="ground" data-energy="half">
+      <div class="dsr-h-base" aria-hidden="true"></div>
+      <div class="dsr-v-1" aria-hidden="true"></div>
+      <div class="dsr-v-2" aria-hidden="true"></div>
+
+      <div class="ds-eyebrow">量级 · Internet Scale</div>
+      <p class="dsr-claim">没有官方强制，TCP/IP 靠自身扩散<br>从几百台主机长成了全球地基。</p>
+
+      <div class="dsr-cell s1">
+        <div class="dsr-cell-k">主机数 · 1981</div>
+        <div class="dsr-cell-num">213</div>
+        <div class="dsr-cell-desc">切换前夕，ARPANET 约 213 台主机（约每 20 天新增一台）。</div>
+      </div>
+      <div class="dsr-cell s2">
+        <div class="dsr-cell-k">切换日 · Flag Day</div>
+        <div class="dsr-cell-num">1.1<span class="u">'83</span></div>
+        <div class="dsr-cell-desc">1983-01-01 协调切换，无重大宕机，6 月全网完成。</div>
+      </div>
+      <div class="dsr-cell s3">
+        <div class="dsr-cell-k">主机数 · 1989</div>
+        <div class="dsr-cell-num">100<span class="u">K+</span></div>
+        <div class="dsr-cell-desc">八年后，广义互联网已连接逾 10 万台主机。</div>
+      </div>
+
+      <div class="dsr-hi" aria-hidden="true"></div>
+      <div class="dsr-hi-cap">八年 · 约 200 台 → 逾 10 万台</div>
+
+      <footer class="dsr-foot ds-foot"><span class="pg">09 / 20</span></footer>
+    </section>
+
+    <!-- P10 引言页 · ds-quote · Clark 名言（state·calm）·大字引语 + 红引号锚 -->
+    <section class="slide ds-quote" data-layout="ds-quote" data-role="state" data-energy="calm">
+      <div class="dqt-v-top" aria-hidden="true"></div>
+      <div class="dqt-h-base" aria-hidden="true"></div>
+      <div class="dqt-mark" aria-hidden="true"></div>
+
+      <div class="ds-eyebrow">金句 · The Creed</div>
+      <blockquote class="dqt-text">WE REJECT KINGS,<br>PRESIDENTS &amp; VOTING.<br>WE BELIEVE IN <span class="em">ROUGH<br>CONSENSUS &amp; RUNNING CODE.</span></blockquote>
+      <p class="dqt-cite">「我们拒绝国王、总统与投票；我们相信粗略的共识与能跑的代码。」<br>—— <b>David Clark</b>，IETF 第 24 届全会，1992 年</p>
+
+      <footer class="dqt-foot ds-foot"><span>互联网工程的信条</span><span class="pg">10 / 20</span></footer>
+    </section>
+
+    <!-- P11 对照页 · ds-contrast · 电流之战 恐吓 vs 物理（insight·half）·左恐吓堆右事实锚 -->
+    <section class="slide ds-contrast" data-layout="ds-contrast" data-role="insight" data-energy="half">
+      <div class="dct-v-main" aria-hidden="true"></div>
+      <div class="dct-h-l" aria-hidden="true"></div>
+      <div class="dct-h-r" aria-hidden="true"></div>
+
+      <div class="ds-eyebrow">案例 · 电流之战 War of Currents</div>
+
+      <!-- 左场：恐吓（爱迪生 DC 阵营抹黑 AC·密文字堆·灰·一手核实） -->
+      <div class="dct-l-tag">恐吓</div>
+      <div class="dct-l-list">
+        爱迪生不靠物理赢，靠<b>把交流电演成「死亡电流」</b>。<br>
+        1888 起，他在实验室用 AC 当众电死流浪猫狗，证 AC 比 DC 致命。<br>
+        其阵营的 Harold Brown 暗购西屋发电机，推动了<br>
+        <b>1890 年首例电椅处决</b>（Kemmler）——把竞争对手的电，<br>
+        塑造成「行刑者的电流」，甚至想把触电叫作 <b>“被西屋了”</b>。
+      </div>
+
+      <!-- 右场：物理（AC 靠变压器 + 经济赢·疏网格 + 红判断条） -->
+      <div class="dct-r-tag">物理</div>
+      <p class="dct-r-lead">交流电赢，靠的是<b style="font-weight:400;color:var(--ds-red)">变压器能升压远送</b>——直流当年无法高效变压、只能就近供电。1893 年世博与尼亚加拉电站一锤定音。</p>
+
+      <div class="dct-anchor" aria-hidden="true"></div>
+      <div class="dct-anchor-word">抹黑赢一时，<br>物理赢一世。</div>
+      <div class="dct-anchor-cap">来源 · 美国能源部 / Rutgers Edison Papers</div>
+
+      <footer class="dct-foot ds-foot"><span>恐吓 vs 物理</span><span class="pg">11 / 20</span></footer>
+    </section>
+
+    <!-- P12 指标行 · ds-statrow · 标准轨距 1435mm（ground·half）·tabular 巨数 + 蓝重点 -->
+    <section class="slide ds-statrow" data-layout="ds-statrow" data-role="ground" data-energy="half">
+      <div class="dsr-h-base" aria-hidden="true"></div>
+      <div class="dsr-v-1" aria-hidden="true"></div>
+      <div class="dsr-v-2" aria-hidden="true"></div>
+
+      <div class="ds-eyebrow">案例 · 标准轨距 Standard Gauge</div>
+      <p class="dsr-claim">全球六成铁路用同一个宽度，<br>它不是工程最优，是被一辆矿车锁定的。</p>
+
+      <div class="dsr-cell s1">
+        <div class="dsr-cell-k">轨距 · Gauge</div>
+        <div class="dsr-cell-num">1435<span class="u">mm</span></div>
+        <div class="dsr-cell-desc">即 4 英尺 8½ 英寸。源自 Stephenson 沿用的早期矿车轮距，加宽 ¼ 英寸过弯。</div>
+      </div>
+      <div class="dsr-cell s2">
+        <div class="dsr-cell-k">立法定标 · 英国</div>
+        <div class="dsr-cell-num">1846</div>
+        <div class="dsr-cell-desc">皇家委员会 1845 推荐、议会 1846《轨距法》强制新线采用，终结「轨距之战」。</div>
+      </div>
+      <div class="dsr-cell s3">
+        <div class="dsr-cell-k">世界占比 · Share</div>
+        <div class="dsr-cell-num">~60<span class="u">%</span></div>
+        <div class="dsr-cell-desc">全球约六成铁路使用标准轨——改轨成本极高，路径一旦选定即被锁死。</div>
+      </div>
+
+      <div class="dsr-hi" aria-hidden="true"></div>
+      <div class="dsr-hi-cap">非最优 · 却被全球锁定</div>
+
+      <footer class="dsr-foot ds-foot"><span class="pg">12 / 20</span></footer>
+    </section>
+
+    <!-- ===== 第三幕 · 秩序的胜利 → 标准的权力 ===== -->
+
+    <!-- P13 数据墙 · ds-data-block · 标准化战役总览（ground·half）·蓝主数据块 + 红/黄次级编码 -->
+    <section class="slide ds-data-block" data-layout="ds-data-block" data-role="ground" data-energy="half">
+      <div class="ddb-v-main" aria-hidden="true"></div>
+      <div class="ddb-h-mid" aria-hidden="true"></div>
+      <div class="ddb-v-low" aria-hidden="true"></div>
+
+      <div class="ds-eyebrow">第四幕 · 秩序的胜利</div>
+      <h2 class="ddb-title">THE LEDGER<br>OF ORDER.</h2>
+
+      <!-- 左上：蓝主数据块（王牌·一手核实 ~700% 累计效应） -->
+      <div class="ddb-hero" aria-hidden="true"></div>
+      <div class="ddb-hero-num">700%</div>
+      <div class="ddb-hero-cap">集装箱化 20 年累计对双边贸易的拉动（发达国家间），远大于自贸协定 + GATT。来源：Bernhofen et al., JIE 2016。</div>
+
+      <!-- 右上 / 左下 / 右下双格（白区·真内容） -->
+      <div class="ddb-cell b-ru">
+        <div class="ddb-cell-k">装卸成本坍缩</div>
+        <div class="ddb-cell-num">97<span class="u">%↓</span></div>
+        <div class="ddb-cell-desc">$5.83 → $0.16 / 吨（Levinson《The Box》）。</div>
+      </div>
+      <div class="ddb-cell b-ld">
+        <div class="ddb-cell-k">码头生产率</div>
+        <div class="ddb-cell-num">57<span class="u">×</span></div>
+        <div class="ddb-cell-desc">1.3 → 74 吨/工时（1965→1980）。</div>
+      </div>
+      <div class="ddb-cell b-rd1">
+        <div class="ddb-cell-k">废弃充电器</div>
+        <div class="ddb-cell-num">11<span class="u">K吨</span></div>
+        <div class="ddb-cell-desc">USB-C 前每年电子垃圾（欧盟）。</div>
+      </div>
+      <div class="ddb-cell b-rd2">
+        <div class="ddb-cell-k">轨距占比</div>
+        <div class="ddb-cell-num">60<span class="u">%</span></div>
+        <div class="ddb-cell-desc">标准轨占世界铁路约六成。</div>
+      </div>
+
+      <!-- 次级原色锚（红条标贸易王牌 + 黄块标次级·二从） -->
+      <div class="ddb-red" aria-hidden="true"></div>
+      <div class="ddb-yellow" aria-hidden="true"></div>
+
+      <footer class="ddb-foot ds-foot"><span>来源 · Bernhofen 2016 / Levinson / 欧盟</span><span class="pg">13 / 20</span></footer>
+    </section>
+
+    <!-- P12 时间轴 · ds-timeline · 标准化母题跨世纪（insight·half）·正交时间轴·禁对角 -->
+    <section class="slide ds-timeline" data-layout="ds-timeline" data-role="insight" data-energy="half">
+      <div class="dtl-axis" aria-hidden="true"></div>
+
+      <div class="ds-eyebrow">母题 · 跨世纪反复</div>
+      <h2 class="dtl-title">ORDER, AGAIN AND AGAIN.</h2>
+      <p class="dtl-claim">「把混乱统一成标准」不是一次事件，而是工程治理跨越两个世纪反复上演的母题。</p>
+
+      <!-- 5 节点（垂直引线 + 方块 + 年/名/句·全正交·禁对角）
+           轴在 y=400。上半左场（x<720·y<300）被标题/导语占据 → 前 3 节点（1841/1846/1968）落轴下方，
+           后 2 节点（1983/2024·均 x≥720·清标题区）落轴上方·末节点红·一主。 -->
+      <!-- 节点 1 · 1841 螺纹（轴下方） -->
+      <div class="dtl-node" style="left:80px">
+        <div class="dtl-lead" style="left:0; top:414px; height:96px"></div>
+        <div class="dtl-dot" style="left:-14px; top:386px"></div>
+        <div style="position:absolute; top:522px; left:0"><div class="dtl-year">1841</div><div class="dtl-name">螺纹 · Whitworth</div><div class="dtl-desc">首个国家级螺纹标准，零件从此可互换。</div></div>
+      </div>
+      <!-- 节点 2 · 1846 轨距（轴下方） -->
+      <div class="dtl-node" style="left:320px">
+        <div class="dtl-lead" style="left:0; top:414px; height:96px"></div>
+        <div class="dtl-dot" style="left:-14px; top:386px"></div>
+        <div style="position:absolute; top:522px; left:0"><div class="dtl-year">1846</div><div class="dtl-name">轨距 · Gauge Act</div><div class="dtl-desc">英国立法定标准轨距，终结「轨距之战」。</div></div>
+      </div>
+      <!-- 节点 3 · 1968 集装箱（轴下方） -->
+      <div class="dtl-node" style="left:560px">
+        <div class="dtl-lead" style="left:0; top:414px; height:96px"></div>
+        <div class="dtl-dot" style="left:-14px; top:386px"></div>
+        <div style="position:absolute; top:522px; left:0"><div class="dtl-year">1968</div><div class="dtl-name">集装箱 · ISO 668</div><div class="dtl-desc">ISO/TC 104 统一箱体尺寸与角件。</div></div>
+      </div>
+      <!-- 节点 4 · 1983 TCP/IP（轴上方·x≥720 清标题区） -->
+      <div class="dtl-node" style="left:800px">
+        <div class="dtl-lead" style="left:0; top:300px; height:100px"></div>
+        <div class="dtl-dot" style="left:-14px; top:386px"></div>
+        <div style="position:absolute; top:200px; left:0"><div class="dtl-year">1983</div><div class="dtl-name">网络 · TCP/IP</div><div class="dtl-desc">Flag day，互联网协议成全球地基。</div></div>
+      </div>
+      <!-- 节点 5 · 2024 USB-C（轴上方·末节点红·一主） -->
+      <div class="dtl-node" style="left:1040px">
+        <div class="dtl-lead" style="left:0; top:296px; height:104px"></div>
+        <div class="dtl-dot now" style="left:-20px; top:380px"></div>
+        <div style="position:absolute; top:196px; left:0"><div class="dtl-year">2024</div><div class="dtl-name">接口 · USB-C</div><div class="dtl-desc">欧盟强制统一充电口，混乱再次被收敛。</div></div>
+      </div>
+
+      <footer class="dtl-foot ds-foot"><span>1841 — 2024 · 标准化母题</span><span class="pg">14 / 20</span></footer>
+    </section>
+
+    <!-- P15 网格内容页 · ds-grid-content · 网络效应=标准为何赢（insight·half）·机制层综合判断 -->
+    <section class="slide ds-grid-content" data-layout="ds-grid-content" data-role="insight" data-energy="half">
+      <div class="dgc-v-main" aria-hidden="true"></div>
+      <div class="dgc-h-mid" aria-hidden="true"></div>
+      <div class="dgc-v-low" aria-hidden="true"></div>
+      <div class="dgc-h-anchor" aria-hidden="true"></div>
+
+      <div class="ds-eyebrow">机制 · 标准为何会赢</div>
+
+      <h2 class="dgc-title">NOT BETTER,<br>JUST BIGGER.</h2>
+
+      <div class="dgc-anchor" aria-hidden="true"></div>
+      <div class="dgc-anchor-word">赢的不是更好的，<br>是用的人更多的。</div>
+      <div class="dgc-anchor-cap">核心判断 · the call</div>
+
+      <p class="dgc-lead">前面每一场标准之战，胜负都不取决于技术优劣，<br>而取决于同一套机制：用的人越多越值钱、换走越来越贵、生态一旦长成就再难回头。</p>
+
+      <div class="dgc-cell c1">
+        <div class="dgc-cell-k">网络效应 · Metcalfe</div>
+        <div class="dgc-cell-num">n<span style="font-size:24px">²</span></div>
+        <div class="dgc-cell-desc">Metcalfe（1980）启发式：网络价值约随用户数平方增长——用的人越多，越值钱（IEEE 视其为高估的经验法则）。</div>
+      </div>
+      <div class="dgc-cell c2">
+        <div class="dgc-cell-k">转换成本 + 路径依赖</div>
+        <div class="dgc-cell-num">↑↑</div>
+        <div class="dgc-cell-desc">学习、设备、生态都押在旧标准上，迁移成本随时间累积——路径一旦锁定，更优者也挤不进来。</div>
+      </div>
+
+      <footer class="dgc-foot ds-foot"><span>来源 · Metcalfe 1980 / David 1985</span><span class="pg">15 / 20</span></footer>
+    </section>
+
+    <!-- P16 论点列表 · ds-list · 标准的权力（insight·half）·网格行 + 红序号锚 -->
+    <section class="slide ds-list" data-layout="ds-list" data-role="insight" data-energy="half">
+      <div class="dls-v-main" aria-hidden="true"></div>
+      <div class="dls-row-line" style="top:160px" aria-hidden="true"></div>
+      <div class="dls-row-line" style="top:320px" aria-hidden="true"></div>
+      <div class="dls-row-line" style="top:480px" aria-hidden="true"></div>
+      <div class="dls-row-line" style="top:640px" aria-hidden="true"></div>
+
+      <div class="ds-eyebrow">第五幕 · 标准的权力</div>
+      <h2 class="dls-title">WHO SETS<br>THE RULES.</h2>
+      <p class="dls-lead">标准统一了混乱，也把规则的定义权，交到了制定者手里。</p>
+
+      <div class="dls-row" style="top:160px">
+        <div class="dls-num">01</div>
+        <div class="dls-row-body"><div class="dls-row-k">定标准者定接口</div><div class="dls-row-d">谁的尺寸成了标准，谁的产品就成了别人必须对接的默认。</div></div>
+      </div>
+      <div class="dls-row" style="top:320px">
+        <div class="dls-num">02</div>
+        <div class="dls-row-body"><div class="dls-row-k">事实胜过法理</div><div class="dls-row-d">能被广泛实现、真正在跑的标准，比纸面上的钦定更有权力。</div></div>
+      </div>
+      <div class="dls-row" style="top:480px">
+        <div class="dls-num">03</div>
+        <div class="dls-row-body"><div class="dls-row-k">先发即护城河</div><div class="dls-row-d">一旦生态围绕某套标准长成，迁移成本本身就是壁垒。</div></div>
+      </div>
+
+      <footer class="dls-foot ds-foot"><span>标准即权力</span><span class="pg">16 / 20</span></footer>
+    </section>
+
+    <!-- P14 比例页 · ds-ratio · USB-C 充电口收敛（ground·half）·黄面积即数据 + 白区硬数据 -->
+    <section class="slide ds-ratio" data-layout="ds-ratio" data-role="ground" data-energy="half">
+      <div class="drt-v-main" aria-hidden="true"></div>
+      <div class="drt-h-mid" aria-hidden="true"></div>
+
+      <div class="ds-eyebrow">量级 · USB-C</div>
+
+      <!-- 左对比场：黄面积块（面积即数据·黄不承载小字·标签数字落白） -->
+      <div class="drt-bar big" aria-hidden="true"></div>
+      <div class="drt-bar-k kbig">2009 之前 · 互不兼容</div>
+      <div class="drt-bar-num nbig">~30<span style="font-size:21px">种</span></div>
+      <div class="drt-bar small" aria-hidden="true"></div>
+      <div class="drt-bar-k ksmall">MoU 之后 · 收敛</div>
+      <div class="drt-bar-num nsmall">3<span style="font-size:14px">种</span></div>
+
+      <!-- 右判断场：主标 + 判断 + 白区硬数据（欧盟官方·一手核实） -->
+      <h2 class="drt-title">ONE PORT<br>TO RULE ALL.</h2>
+      <p class="drt-lead">面积即数据——市场上互不兼容的充电接口，从约 30 种被收敛到 3 种（据报道），最终由欧盟立法钉死为 USB-C 一种。</p>
+      <div class="drt-stat">
+        <div><div class="st-k">电子垃圾 · 每年</div><div class="st-num">11<span class="u">K吨</span></div></div>
+        <div><div class="st-k">可省 · 每年</div><div class="st-num">€2.5<span class="u">亿</span></div></div>
+        <div><div class="st-k">强制生效</div><div class="st-num">2024</div></div>
+      </div>
+
+      <footer class="drt-foot ds-foot"><span>来源 · 欧盟委员会 / 欧洲议会</span><span class="pg">17 / 20</span></footer>
+    </section>
+
+    <!-- P18 引言页 · ds-quote · QWERTY 锁死（state·calm）·大字金句 + 红引号锚·标准暗面 -->
+    <section class="slide ds-quote" data-layout="ds-quote" data-role="state" data-energy="calm">
+      <div class="dqt-v-top" aria-hidden="true"></div>
+      <div class="dqt-h-base" aria-hidden="true"></div>
+      <div class="dqt-mark" aria-hidden="true"></div>
+
+      <div class="ds-eyebrow">暗面 · 锁定的代价 Lock-In</div>
+      <blockquote class="dqt-text">A LAYOUT BUILT<br>TO SLOW YOU DOWN<br>STILL <span class="em">RULES EVERY<br>KEYBOARD TODAY.</span></blockquote>
+      <p class="dqt-cite">1870 年代为防字键卡死，<b>故意打散字母</b>让人变慢；限制消失后，QWERTY 仍锁定至今。<br>—— David 1985《QWERTY 经济学》</p>
+
+      <footer class="dqt-foot ds-foot"><span>标准锁定 · 路径依赖</span><span class="pg">18 / 20</span></footer>
+    </section>
+
+    <!-- ===== 第五幕 · 新秩序的边界 → 收束 ===== -->
+
+    <!-- P19 单点聚焦 · ds-spotlight · 标准即锁定 + 诚实反证（insight·calm）·单红锚 + 大留白 -->
+    <section class="slide ds-spotlight" data-layout="ds-spotlight" data-role="insight" data-energy="calm">
+      <div class="dsp-v-low" aria-hidden="true"></div>
+      <div class="dsp-h-top" aria-hidden="true"></div>
+
+      <div class="ds-eyebrow">新秩序的边界 · The Cost</div>
+      <h2 class="dsp-title">ORDER HAS<br>A PRICE.</h2>
+      <p class="dsp-lead">标准带来互通，也带来锁定：生态一旦围绕它长成，更好的替代也未必挤得进来——秩序的红利，常被守在闸口的人先收走。</p>
+
+      <!-- 诚实反证脚注（research-led·守  实事求是·诚实边界即 craft 深度） -->
+      <p class="dsp-counter">诚实边界：常见的<b>「集装箱让运费下降 90%」其实是讹传</b>——把「装卸成本」误当「运费」。Bridgman（2014）实测：港口与工会攫取了大部分生产率红利，运费本身只降了约 7%–25%。</p>
+
+      <div class="dsp-anchor" aria-hidden="true"></div>
+      <div class="dsp-anchor-word">标准即互通，<br>也即锁定。</div>
+      <div class="dsp-anchor-cap">核心判断 · the call</div>
+
+      <footer class="dsp-foot ds-foot"><span>来源 · Bridgman 2014, BEA</span><span class="pg">19 / 20</span></footer>
+    </section>
+
+    <!-- P16 收束 · ds-closing · 新秩序的边界（act·half）·全大写收束 + 红锚·与封面镜像 -->
+    <section class="slide ds-closing" data-layout="ds-closing" data-role="act" data-energy="half">
+      <div class="dcl-v-main" aria-hidden="true"></div>
+      <div class="dcl-h-anchor" aria-hidden="true"></div>
+
+      <div class="ds-eyebrow">收束 · The Close</div>
+      <h2 class="dcl-title">ORDER IS<br>A CHOICE.</h2>
+      <p class="dcl-sub">秩序不是世界的默认，而是一次次被人选出来、争出来的判断。<br>下一场标准之战，永远在路上。</p>
+
+      <!-- 红收束锚（卡左下·一主·与封面镜像收书挡） -->
+      <div class="dcl-anchor" aria-hidden="true"></div>
+      <div class="dcl-anchor-word">秩序，<br>是一种选择。</div>
+      <div class="dcl-anchor-cap">核心判断 · the call</div>
+
+      <footer class="dcl-foot ds-foot"><span>标准之战 · 一手核实</span><span class="pg">20 / 20</span></footer>
+    </section>
+
+  </div><!-- /deck -->
+</div><!-- /stage -->
+
+<nav class="hud" aria-label="导航">
+  <button id="navPrev" aria-label="上一页">‹</button>
+  <span class="cnt" id="navCnt">01 / 20</span>
+  <button id="navNext" aria-label="下一页">›</button>
+</nav>
+
+<div class="rotate-hint" aria-hidden="true">
+  <svg class="rh-ico" viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v4h-4"/></svg>
+  <div class="rh-msg"><span class="rh-sq"></span>横屏观看更佳</div>
+  <div class="rh-sub">旋转手机以全屏查看这份演示</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var root=document.documentElement; root.classList.remove("no-js"); root.classList.add("js");
+  var deck=document.getElementById("deck");
+  var slides=[].slice.call(deck.querySelectorAll(".slide"));
+  var total=slides.length, cntEl=document.getElementById("navCnt"), i=0;
+  var pad2=function(n){return (n<10?"0":"")+n;};
+  function fit(){var s=Math.min(window.innerWidth/1280, window.innerHeight/720); var x=(window.innerWidth-1280*s)/2, y=(window.innerHeight-720*s)/2; deck.style.transform="translate("+x+"px,"+y+"px) scale("+s+")";}
+  function clamp(n){return Math.max(0,Math.min(total-1,n));}
+  function render(){
+    slides.forEach(function(sl,idx){sl.classList.toggle("is-active",idx===i);});
+    cntEl.textContent=pad2(i+1)+" / "+pad2(total);
+    if(("#"+(i+1))!==location.hash) history.replaceState(null,"","#"+(i+1));
+  }
+  function go(n){i=clamp(n);render();}
+  function next(){go(i+1);} function prev(){go(i-1);}
+  function fromHash(){var n=parseInt((location.hash||"").replace("#",""),10); if(!isNaN(n)&&n>=1&&n<=total)i=n-1;}
+  document.addEventListener("keydown",function(e){
+    switch(e.key){
+      case "ArrowRight": case "PageDown": case " ": e.preventDefault(); next(); break;
+      case "ArrowLeft": case "PageUp": e.preventDefault(); prev(); break;
+      case "Home": e.preventDefault(); go(0); break;
+      case "End": e.preventDefault(); go(total-1); break;
+    }
+  });
+  var tx=0,ty=0,tk=false;
+  document.addEventListener("touchstart",function(e){if(e.touches.length!==1)return;tk=true;tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
+  document.addEventListener("touchend",function(e){if(!tk)return;tk=false;var t=e.changedTouches[0],dx=t.clientX-tx,dy=t.clientY-ty;if(Math.abs(dx)>48&&Math.abs(dx)>Math.abs(dy)*1.4){dx<0?next():prev();}},{passive:true});
+  document.getElementById("navNext").addEventListener("click",next);
+  document.getElementById("navPrev").addEventListener("click",prev);
+  window.addEventListener("hashchange",function(){fromHash();render();});
+  window.addEventListener("resize",fit);
+  fromHash(); fit(); render();
+})();
+</script>
+</body>
+</html>

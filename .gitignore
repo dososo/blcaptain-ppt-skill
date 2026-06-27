@@ -1,0 +1,21 @@
+# 依赖与构建产物（本项目零依赖，正常不应出现 node_modules）
+node_modules/
+dist/
+build/
+
+# 系统 / 编辑器
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# 临时 / 日志 / 环境
+*.log
+.env
+.env.*
+/tmp/
+*.tmp
+
+# 生成的预览 / 截图产物（按需本地生成，不入库）
+*.local.png

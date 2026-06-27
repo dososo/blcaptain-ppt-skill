@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>算力经济 · 信息·数据设计 · 20 页一览</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#1d1d20;color:#C9C2B4;font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;padding:24px;min-height:100vh}
+  .head{max-width:1480px;margin:0 auto 22px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  .head h1{font-size:21px;font-weight:600;color:#fff;letter-spacing:.01em}
+  .head .meta{font-size:13px;color:#9a9a92}
+  .head .open-full{margin-left:auto;font-size:13px;color:#7FA3CE;text-decoration:none;border:1px solid #3a3a42;padding:6px 12px;border-radius:4px}
+  .head .open-full:hover{color:#fff;border-color:#7FA3CE}
+  .grid{max-width:1480px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px}
+  .cell{background:#fff;border-radius:5px;overflow:hidden;box-shadow:0 6px 22px rgba(0,0,0,.45);transition:transform .16s,box-shadow .16s}
+  .cell:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,0,0,.6)}
+  .thumb{position:relative;width:100%;aspect-ratio:1280/720;overflow:hidden;background:#FAFBFC}
+  .thumb iframe{position:absolute;top:0;left:0;width:1280px;height:720px;border:0;transform-origin:top left;pointer-events:none}
+  .thumb a.open{position:absolute;inset:0;z-index:2;display:block}
+  .cap{display:flex;align-items:baseline;gap:9px;padding:9px 12px;background:#26262b}
+  .cap .n{font-family:ui-monospace,"SFMono-Regular",monospace;color:#7FA3CE;font-weight:700;font-size:12px;letter-spacing:.04em}
+  .cap .nm{color:#C9C2B4;font-size:13px}
+  .cap .ch{margin-left:auto;font-size:11px;color:#D85A30;letter-spacing:.08em}
+  footer{max-width:1480px;margin:22px auto 0;font-size:12px;color:#6a6a62;line-height:1.7}
+  @media(max-width:720px){
+    body{padding:12px}
+    .head h1{font-size:18px}
+    .head .open-full{margin-left:0}
+    .grid{grid-template-columns:1fr;gap:12px}
+  }
+</style>
+</head>
+<body>
+  <div class="head">
+    <h1>算力经济 · 信息·数据设计 · 20 页一览</h1>
+    <span class="meta">真实渲染缩略 · 点任一页全屏打开</span>
+    <a class="open-full" href="deck-info-data.html#1" target="_blank">▶ 从头全屏播放</a>
+  </div>
+  <div class="grid" id="grid"></div>
+  <footer>
+    全部示意数据 · 形态演示（非真实财报/市场数据）· 共 20 页，三章结构：①趋势 ②格局 ③拐点。<br>
+    PC 端多列平铺、手机端单列滑动；点缩略图任一页可单独全屏看（含动效）。
+  </footer>
+<script>
+  var pages=[
+    [1,"封面 · 12× 巨数",""],[2,"导览 · 本场三章",""],[3,"趋势"," 第一章"],[4,"折线 · 算力甩开传统IT",""],[5,"数字阵 · 三关键数",""],
+    [6,"斜率 · 主体洗牌",""],[7,"格局"," 第二章"],[8,"排序条 · 国别断层",""],[9,"对照 · 中美双栏",""],[10,"小倍数 · 四区域",""],
+    [11,"哑铃 · 头尾差距",""],[12,"表格 · 五区一表",""],[13,"拐点"," 第三章"],[14,"堆叠面积 · 构成转移",""],[15,"散点 · 效率×规模",""],
+    [16,"衬线判断 · 新基建",""],[17,"瀑布 · 增量拆解",""],[18,"引言",""],[19,"方法与边界",""],[20,"收束 · 行动",""]
+  ];
+  var g=document.getElementById("grid");
+  pages.forEach(function(p){
+    var n=p[0], pad=(n<10?"0":"")+n;
+    var cell=document.createElement("div");cell.className="cell";
+    cell.innerHTML=
+      '<div class="thumb"><iframe src="deck-info-data.html#'+n+'" scrolling="no" loading="lazy" tabindex="-1"></iframe>'+
+      '<a class="open" href="deck-info-data.html#'+n+'" target="_blank" aria-label="打开第'+n+'页"></a></div>'+
+      '<div class="cap"><span class="n">'+pad+'</span><span class="nm">'+p[1]+'</span>'+(p[2]?'<span class="ch">'+p[2]+'</span>':'')+'</div>';
+    g.appendChild(cell);
+    var ifr=cell.querySelector("iframe"), thumb=cell.querySelector(".thumb");
+    function scale(){ var w=thumb.clientWidth; ifr.style.transform="scale("+(w/1280)+")"; }
+    ifr.addEventListener("load",scale); scale();
+    window.addEventListener("resize",scale);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,984 @@
+<!doctype html>
+<html lang="zh-CN" class="no-js" data-theme="zen" data-rendered-by="blcaptain">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>空的信念 — demo</title>
+
+<!-- preload 首屏字体（crossorigin 必须·制作规范：本地打包 + preload + font-display:optional
+     ＝磁盘快几乎首屏命中终字体·零跳变零白屏·根治「首次打开文字跳一下」FOUT layout shift）
+     演示禅二族（refined 日系无衬线·区隔 info-data humanist sans）：
+       思源黑体 SC（Source Han Sans·中文 Regular 400 + Medium 500 两真面·MUJI 调）+ Source Sans 3（Latin·kicker/数字/拉丁词）。
+     ⚠ 思源黑体 Medium(500) 必须一并 preload：font-synthesis:none 下 <b>(weight 600) 的中文落 Medium 真面，
+       若不 preload 则在 optional 首屏竞速中常输给系统 → 强调中文静默落 PingFang（CDP getPlatformFontsForNode 实测），
+       「白从墨中显形·强调靠真字重」的命根崩（zen 靠真 300↔600 字重对比·非合成假粗·继承 ds-cjk-no-faux-bold）。 -->
+<link rel="preload" href="./fonts/SourceHanSansSC-Light.zen.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="./fonts/SourceHanSansSC-Regular.zen.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="./fonts/SourceHanSansSC-Medium.zen.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="./fonts/SourceSans3.zen.woff2" as="font" type="font/woff2" crossorigin>
+
+<style>
+/* FONTS · 演示禅二族 OFL 本地打包（zen  · 实现期/3）
+   中文走思源黑体 SC（CJK 子集化·.zen 后缀·per-deck）：
+     Regular 400 + Medium 500 两真面（正文 ma 克制叙事·强调中文用 Medium 真面·绝不上 700 防 faux-bold·设计规范）。
+   拉丁走 Source Sans 3（humanist sans·全字直引·不进 CJK 子集表·subset-fonts 注释坐实「进表 CJK-only 子集会产零字形 woff2」）：
+     kicker/数字/拉丁词/页码（neutral·与中文同为无衬线·身份一致·区隔 info-data 靠暗墨气质 + 日系字面调而非字体本身）。
+   ⚠ Medium 独立 @font-face 声明（真面映射真 weight 500）→ 配合全局 font-synthesis:none，
+     杜绝「写无对应真面的 weight 触发浏览器合成假粗」（继承 De Stijl ds-cjk-no-faux-bold / editorial 设计决策）。
+   ⚠ 字体族 ≤3（too-many-fonts 门上限 3·zen 实际 2 族 Source Han Sans SC / Source Sans 3·绝不引第三族）。 */
+@font-face{font-family:"Source Han Sans SC";src:url("./fonts/SourceHanSansSC-Light.zen.woff2") format("woff2");font-weight:300;font-style:normal;font-display:optional}
+@font-face{font-family:"Source Han Sans SC";src:url("./fonts/SourceHanSansSC-Regular.zen.woff2") format("woff2");font-weight:400;font-style:normal;font-display:optional}
+@font-face{font-family:"Source Han Sans SC";src:url("./fonts/SourceHanSansSC-Medium.zen.woff2") format("woff2");font-weight:500;font-style:normal;font-display:optional}
+@font-face{font-family:"Source Sans 3";src:url("./fonts/SourceSans3.zen.woff2") format("woff2");font-weight:300 700;font-style:normal;font-display:optional}
+</style>
+
+<style>
+/* =========================================================================
+   TOKENS START · zen（演示禅 × 阴翳 × MUJI空 · 暖墨黑「第二种黑」+ 近零彩色方言）
+   暖墨黑底（墨为 void）· 纸白从墨中显形 · 焦点 glow 白（「空/容器」）· 近零彩色（强调靠字重 + 明度·不靠色）。
+   对比度均为 WCAG 2.x node 实测，非目测（00-tokens-locked.md「zen theme」块·与本块 1:1）。
+   ========================================================================= */
+
+/* ---- 全局基底（与主题无关的结构常量）---- */
+:root{
+  /* 字体族（zen 二族  · 思源黑体 + Source Sans 3）
+     中文正文/标题 refined 日系 gothic：Source Han Sans SC（思源黑体·MUJI 调·ma/字间克制·命根身份字）
+       ⚠ --font-cjk 把打包的 "Source Han Sans SC" 放第一·系统 PingFang SC 仅离线兜底·
+         绝不让中文漏到系统字（破「白从墨中显形」命根·防 De Stijl 字体泄漏教训）。
+     拉丁 kicker/数字/页码/拉丁词：Source Sans 3（humanist sans·neutral·与中文同无衬线·身份一致）
+     ⚠ 无 mono / 无第三族：演示禅 = 极简二族·工具层（页码/kicker/folio）走 Source Sans 3（--font-latin）·
+       绝不引第三字体族（too-many-fonts 门上限 3·守二族 Source Han Sans SC / Source Sans 3）。 */
+  --font-cjk:"Source Han Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  --font-latin:"Source Sans 3","Helvetica Neue","Arial",system-ui,sans-serif;
+  /* 混排正文：拉丁 Source Sans 3 在前·中文思源黑体接续（浏览器按字符 glyph 选·均无衬线→身份一致） */
+  --font-body:var(--font-latin),"Source Han Sans SC","PingFang SC",sans-serif;
+
+  /* 间距 8px 刻度（设计决策 · 00-tokens-locked  · 与 validator SPACING_SCALE 1:1·演示禅同守不另立）*/
+  --sp-1:8px; --sp-2:16px; --sp-3:24px; --sp-4:32px;
+  --sp-6:48px; --sp-8:64px; --sp-10:80px; --sp-12:96px; --sp-16:160px;
+  /* 设计决策 细档例外轨（仅组件内部/紧凑/图标-文字/≤14px 小字行内）*/
+  --sp-fine-a:4px; --sp-fine-c:12px; --sp-fine-e:20px;
+
+  /* 画板 */
+  --radius:0px;
+  --deck-w:1280px; --deck-h:720px;
+  --dur-base:.6s; --ease:cubic-bezier(.22,1,.36,1);   /* 禅的呼吸·渐显时长克制（设计规范 fade-only） */
+
+  /* 线宽（复用全局·円相/材质 CSS 构造按需用）*/
+  --line-w:1px; --line-w-hair:.5px;
+
+  /* 舞台 + HUD（暗底人格·舞台比 deck 底再深一档·托起暖墨黑画布）*/
+  --stage-void:#15130F;
+  --hud-fg:#9A9081; --hud-fg-hi:#EAE4D7;
+}
+
+/* ---- zen 主题块（演示禅×阴翳×MUJI空  · 与 00-tokens-locked「zen theme」块 1:1）---- */
+[data-theme="zen"]{
+  --bg:#211E17;                     /* 暖墨黑 · 底面主导 · 墨为 void · L*11.37 · HSL[42,.18,.11] 暖非冷 · ΔE-vs-compute 10.56（「第二种黑」） */
+  --bg-void:#14100B;                /* 最深墨 · 明度弧谷底 · 收束=静止「隐入最深的墨」专用底（暖向 R>G>B 不丧·L*~6·终极审计节奏 restructure·只 zen-closing 用·文字仍 AAA） */
+  --ink:#EAE4D7;                    /* 纸白 · 主文字 · 从墨中显形 · 纸白 on 暖墨黑 13.13 AAA */
+  --ink-soft:#B3A997;               /* 次级暖灰 · 副文/导语 · 极少用·禅克制 · on 暖墨黑 7.16 AAA（暗底投影·载义次级文字须 AAA 7:1 提自 #9A9081/5.29） */
+  --glow:#F4EFE4;                   /* 焦点白 · 更亮 · 「空/容器」(Hara white) · 强调靠明度 · glow on 暖墨黑 14.50 AAA */
+  --mat:#C2B393;                    /* 材质点暖 · kraft/谷崎金箔感 · 稀用 · on 暖墨黑 8.05 AAA · ⚠ 纸白 on mat 仅 1.63 → 材质块上只压墨字 var(--bg) */
+
+  /* 暗细分隔（极淡·阴翳里若有若无·非杂志网格·演示禅去骨架）*/
+  --hair:#3A352B;                   /* 暗细线 on 暖墨黑（结构呼吸点·非信号·稀用） */
+
+  /* 字号地板令牌（设计规范 命根工程 · 守暗底投影可读 · 与 editorial 同量级 · 实现期/5 投影实测锁）
+     换算口径：deck 1280×720 画布 · shot viewport 1280×720 deviceScaleFactor=1 → deck px ≡ 屏幕 CSS px；
+     pt→px = ×4/3。拉丁 24pt=32px · 中文 19pt≈25.33px。正文须 ≥ 此地板；封面「一念」为巨号 display 远超地板。 */
+  --body-floor-latin:32px;          /* 拉丁正文字号地板 = 24pt 等效（设计规范暗底投影对字号更敏感不缩到看不清） */
+  --body-floor-cjk:25.33px;         /* 中文正文字号地板 = 19pt 等效（设计规范） */
+
+  /* 版式常量（极致 ma·空是第一性·封面以张力位摆位非满铺·非对称呼吸）*/
+  --pad-x:84px; --pad-top:72px; --pad-bottom:64px;
+
+  /* 円相笔触宽度（CSS 构造「一笔圆相」的笔锋粗细·签名母题的图形构造参数·设计规范「円相用 CSS border」）。
+     ⚠ 这是「图」的笔触、非  管的分隔/网格/装饰线——token 化既语义正确（版式设计参数本应锁），
+       亦使 line-role 门按其设计口径（宽度为 var() 时静态判不了→跳过·validate-deck  注释）正确放行：
+       円相笔锋不归「线宽白名单 {0.5,1,1.5}」管辖（同 constructivist accent 粗杠豁免的同构理据·实现期 将于门内显式登记 zen 签名豁免）。 */
+  --enso-stroke:13px;
+}
+/* =========================================================================
+   TOKENS END
+   ========================================================================= */
+
+*{margin:0;padding:0;box-sizing:border-box}
+/* 全局禁字体合成（faux-bold/faux-italic）·设计规范 字体命根铁律（继承 ds-cjk-no-faux-bold / editorial 设计决策）：
+   中文落 Source Han Sans SC 仅 Regular 400 + Medium 500 两真面，任何 font-weight:700 的中文都会被浏览器合成假粗（墨量 +25~35%·笔画发糊）。
+   font-synthesis:none 强制「无真面就用最近真面」（思源黑体 400/500），杜绝合成；
+   演示禅强调靠真字重对比（300↔600·浏览器映射到 400/500 真面差）+ 明度（glow），非合成假粗——这正是「白从墨中显形」命根。
+   拉丁 Source Sans 3 可变轴 300–700·不受影响（合成只压"假面"）。 */
+*{font-synthesis:none}
+html,body{height:100%; background:var(--stage-void); overflow:hidden; -webkit-text-size-adjust:100%; text-size-adjust:100%}
+body{font-family:var(--font-body); color:var(--ink); line-break:strict; word-break:normal; overflow-wrap:anywhere; text-wrap:pretty;
+  font-feature-settings:"kern" 1,"liga" 1; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility}
+
+/* ===== 翻页运行时（一次一页 · 横向切换 · 主题无关 · 复用自 editorial/de-stijl 结构） ===== */
+.stage{position:fixed; inset:0; overflow:hidden}
+/* 居中=JS 算 px 平移（非 flex 居中）：手机上 1280px deck 远宽于视口时·transform-origin:top-left + fit() 平移
+   (W−1280s)/2 居中→任意视口确定性居中（移动端正解·见制作规范）。 */
+.deck{position:absolute; left:0; top:0; width:var(--deck-w); height:var(--deck-h); transform-origin:top left}
+.slide{position:absolute; inset:0; width:var(--deck-w); height:var(--deck-h); overflow:hidden;
+  background:var(--bg); color:var(--ink); box-shadow:0 0 0 1px rgba(0,0,0,.5), 0 28px 80px rgba(0,0,0,.6);
+  opacity:0; visibility:hidden; pointer-events:none; z-index:0}
+.slide.is-active{opacity:1; visibility:visible; pointer-events:auto; z-index:2}
+@media (prefers-reduced-motion:no-preference){
+  /* 演示禅动效纪律（设计规范禅的呼吸·静观非炫技）：仅 fade / 渐显——禁滑入/grow/count-up/旋转/位移。
+     ①「念」先显（整页淡入）；② 支撑层（kicker/folio/支撑文）延迟 .35s 淡入＝「念先落·支撑后显」的禅呼吸节奏·只 opacity 无位移。
+     reduced-motion 下整块失效·全部终态可见（自动截图/缩略/PDF 不取空帧）。 */
+  html.js .slide.is-active{animation:fadeIn .6s var(--ease) both}
+  html.js .slide.is-active :is(.zc-kicker, .zc-folio, .zc-sub){ animation:fadeIn .7s var(--ease) .35s both; }
+  @keyframes fadeIn{from{opacity:0} to{opacity:1}}
+}
+
+/* HUD 翻页控件 */
+.hud{position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:50; display:flex; align-items:center; gap:12px; padding:8px 12px;
+  background:rgba(21,19,15,.82); border:1px solid rgba(234,228,215,.18); font-family:var(--font-latin); font-size:12px; color:var(--hud-fg);
+  -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); opacity:0; transition:opacity .28s}
+html.js .hud{opacity:.55} .hud:hover{opacity:1}
+.hud button{font:inherit; color:var(--hud-fg); background:none; border:1px solid rgba(234,228,215,.18); width:28px; height:24px; cursor:pointer; line-height:1}
+.hud button:hover{color:var(--hud-fg-hi); border-color:var(--hud-fg-hi)}
+.hud .cnt{font-variant-numeric:tabular-nums; min-width:54px; text-align:center}
+
+/* no-js fallback */
+.nojs-hint{display:none}
+html.no-js .nojs-hint{display:block; position:fixed; top:0; left:0; right:0; z-index:60; padding:4px 12px; font-family:var(--font-latin); font-size:12px; text-align:center; color:var(--hud-fg); background:rgba(21,19,15,.9)}
+html.no-js body{overflow:auto}
+html.no-js .stage{position:static; display:block; padding:32px 0}
+html.no-js .deck{position:static; width:auto; height:auto; transform:none!important; display:flex; flex-direction:column; align-items:center; gap:16px}
+html.no-js .slide{position:relative; inset:auto; opacity:1; visibility:visible; pointer-events:auto; flex:none}
+html.no-js .hud{display:none}
+
+/* 横屏提示（移动端竖屏引导旋转·演示禅：极克制·纸白细圆点 + 思源黑体·守去骨架近零彩色）*/
+.rotate-hint{display:none}
+@media (orientation:portrait) and (max-width:768px){
+  html.js .rotate-hint{display:flex; position:fixed; inset:0; z-index:120; flex-direction:column; align-items:center; justify-content:center; gap:24px; background:var(--stage-void); color:var(--hud-fg-hi); text-align:center; padding:48px}
+  .rotate-hint .rh-ico{color:var(--ink-soft); animation:rhSpin 2.6s var(--ease) infinite; transform-origin:center}
+  /* 中文「横屏观看更佳」须落思源黑体（CJK·身份），故 --font-cjk 排在通用 sans-serif 终止符之前。
+     weight 500：思源黑体 Medium 真面·防系统字体回退 faux-bold。 */
+  .rotate-hint .rh-msg{display:flex; align-items:center; gap:8px; font-family:"Source Han Sans SC","PingFang SC",sans-serif; font-weight:500; font-size:22px; letter-spacing:.06em}
+  .rotate-hint .rh-dot{width:8px; height:8px; border-radius:50%; background:var(--ink-soft)}
+  .rotate-hint .rh-sub{font-family:var(--font-latin); font-size:14px; color:var(--hud-fg); opacity:.75; line-height:1.6}
+  @keyframes rhSpin{0%,55%{transform:rotate(0)} 75%,100%{transform:rotate(-90deg)}}
+}
+
+/* ============================================================================
+   P1 封面 · zen-cover（签名第一页 · 空显形 · 一图一念 · 一念落下三分张力位）
+   ----------------------------------------------------------------------------
+   构图（暗墨禅封面·墨为 void·「空/白」作为唯一的光从墨中显形·极致 ma·强调靠字重 + 明度非颜色）：
+     · 顶部极淡 kicker（三体系名·无内部代号·Source Sans 3·letter-spacing 宽·禅的留白起手）@ left 84 / top 72。
+     · 一念（纸白 glow·巨号 display·落「下三分」张力位 @ top 404≈0.56h·非死正中·rule-of-thirds 下三分）：
+         weight 300 极细为主·强调词 <b>weight 600（映射思源黑体 Medium 真面·防 faux-bold）+ glow 提亮——
+         「念」被字重 + 明度激活到 slide 之外（Reynolds beyond-the-slide·Hara white=container）。
+       ⚠ 巨号 96px ≫ 字号地板（CJK 25.33 / latin 32）→ 暗底投影远超可读；念上方一道纸白短 mark 收口（极简骨架·非装饰）。
+     · 副念（次级暖灰·一念之下·≥ 地板·极克制两行·解释「空=容器」非缺席）@ 念下方。
+     · folio（右下·Source Sans 3·tabular·极淡·示意页码·禅的克制 wayfinding）。
+   ma 核算（空是被设计的容器·设计规范）：焦点（念）落下三分·上方 0–404 大面积「空」邀请·左右非对称留白——
+     留白率机器测高位（实现期 zen-ma-ratio 门兜底）·绝非偷懒白板（念 + 副念承载一焦点一判断·守 zen-one-focus）。 */
+.zen-cover{ background:var(--bg); }
+
+/* —— 封面氛围锚：极淡円相 ensō（签名母题从 P6 提到 P1·第一眼即「这套的物」·终极审计"一眼吸睛 + 早段签名"restructure）——
+   ★必须 ambient·绝不抢 zc-conv 焦点：大、偏置右上半出画(rising)、glow 极低 alpha（阴翳里若隐的签名）·aria-hidden·class 不入 ZEN_FOCUS_CLASSES（不破 zen-one-focus 命根门）。
+   笔宽走 --enso-stroke token（var()·line-role 门天然豁免·同 P6 円相 设计规范 理据）·留口 + 微旋转=円相 wabi-sabi 笔意。 */
+.zen-cover .zc-anchor{
+  position:absolute; right:-148px; top:-128px; width:552px; height:552px;
+  border:var(--enso-stroke) solid rgba(244,239,228,.075); border-radius:50%;
+  border-right-color:transparent;            /* 留「口」·円相未完成 wabi-sabi（呼应 P6 円相） */
+  transform:rotate(-22deg);                  /* 微旋转·一笔手写笔意·非机械正圆 */
+  box-shadow:0 0 90px -24px rgba(244,239,228,.055);   /* 极淡外晕·阴翳里若隐的光（非信号·不抢焦点） */
+}
+
+/* —— 顶部 kicker（三体系名·无代号·禅留白起手·近零彩色用次级暖灰）——
+   ⚠ kicker 含中文（演示禅/阴翳/无印），字体栈须 Source Sans 3（拉丁「×」）在前 + Source Han Sans SC（中文）紧随、
+     系统 PingFang 仅离线兜底——否则中文落 Source Sans 3 无 CJK 字形 → 漏到系统 PingFang（CDP getPlatformFontsForNode 实测坐实·破「白从墨中显形」字体命根·设计规范 字体泄漏防线）。 */
+.zen-cover .zc-kicker{
+  position:absolute; left:var(--pad-x); top:var(--pad-top);
+  font-family:"Source Sans 3","Source Han Sans SC","PingFang SC",sans-serif; font-weight:500; font-size:13px;
+  letter-spacing:.34em; text-transform:uppercase; color:var(--ink-soft);
+}
+
+/* —— 一念（巨号 display·纸白 glow·落下三分张力位·weight 300 极细·<b> 600 强调 + glow 提亮·一图一念真焦点）——
+   注：原「念上方纸白短横 mark」已删——40×2 横线在中文里被读成游离的「一」字（命根「即时无歧义」实锤），
+   且属 deck 自己论点要减掉的"逻辑/长短/间距不明的多余装饰"·形不服内涵→减。骨架靠竖 mark(章扉)/満宽地平线(横向页)承担。 */
+.zen-cover .zc-conv{
+  position:absolute; left:var(--pad-x); top:404px; right:300px;
+  font-family:var(--font-cjk); font-weight:300;
+  font-size:96px; line-height:1.04; letter-spacing:.02em;
+  color:var(--glow);
+}
+.zen-cover .zc-conv b{ font-weight:600; }   /* 强调=思源黑体 Medium 真面（font-synthesis:none 下 600→500 真面·非 700 合成·守 ds-cjk-no-faux-bold） */
+
+/* —— 副念（次级暖灰·念之下·≥ 字号地板·极克制·解释「空=容器」非缺席·两行呼吸）—— */
+.zen-cover .zc-sub{
+  position:absolute; left:calc(var(--pad-x) + 4px); top:560px; right:360px;
+  font-family:var(--font-cjk); font-weight:300;
+  font-size:25.33px; line-height:1.62; letter-spacing:.04em;
+  color:var(--ink-soft);
+}
+
+/* —— folio（右下·Source Sans 3·tabular·极淡·禅的克制 wayfinding）—— */
+.zen-cover .zc-folio{
+  position:absolute; right:var(--pad-x); bottom:var(--pad-bottom);
+  font-family:var(--font-latin); font-weight:500; font-size:12px; font-variant-numeric:tabular-nums;
+  letter-spacing:.2em; color:var(--ink-soft);
+}
+
+/* —— 共享 · 极简骨架原子（kicker / folio · 内容页复用·去杂件·禅克制）——
+   kicker 含中文（念序/禅律名）→ 字体栈 Source Sans 3 在前 + Source Han Sans SC 紧随（拉丁字间 + 中文身份字·系统 PingFang 仅离线兜底）；
+   folio 纯数字 → Source Sans 3 tabular。两者复用封面同款·相邻版式不另立工具层（守二族·守 too-many-fonts ≤3）。 */
+.zen-page .zp-kicker{
+  position:absolute; left:var(--pad-x); top:var(--pad-top);
+  font-family:"Source Sans 3","Source Han Sans SC","PingFang SC",sans-serif; font-weight:500; font-size:13px;
+  letter-spacing:.34em; text-transform:uppercase; color:var(--ink-soft);
+}
+.zen-page .zp-folio{
+  position:absolute; right:var(--pad-x); bottom:var(--pad-bottom);
+  font-family:var(--font-latin); font-weight:500; font-size:12px; font-variant-numeric:tabular-nums;
+  letter-spacing:.2em; color:var(--ink-soft);
+}
+
+/* ============================================================================
+   P · zen-enso（円相一图一念 · 签名核心版式 · 一图一念真焦点）
+   ----------------------------------------------------------------------------
+   命根（设计规范）：恰好一焦点（CSS 构造的円相 ensō·禅一笔圆相）+ 一句"念"·巨 ma·焦点落张力位非死正中。
+   构图：
+     · 円相落「右上」张力位（rule-of-thirds 右上交点域·中心 @ ~(910,300)·非死正中）——CSS 纯构造、零图库（设计规范）：
+         border 画环 + 一边 border-color:transparent 留「口」（円相留口=未完成 wabi-sabi·禅不求圆满）+ 微旋转（手写笔意·非机械正圆）+
+         纸白 glow 描边 + 极淡外晕（白从墨中显形·阴翳里的光·非装饰）。
+     · 一句"念"落「左下」张力位（与円相对角呼应·下三分）·weight 300 极细叙事 + <b> 强调（思源黑体 Medium 真面·glow 提亮·激活到 slide 之外）。
+   ma 核算：円相 + 念各占一张力位、画面其余大面积「空」邀请——留白率机器测高位（zen-ma-ratio 兜底）·一焦点一念（zen-one-focus 兜底）。
+   ⚠ 円相 draw-on 可选极慢一笔（守克制·下方 @keyframes·全 gate reduced-motion·终态满圆可见）。 */
+.zen-enso .ze-enso{
+  position:absolute; left:740px; top:130px; width:340px; height:340px;
+  border:var(--enso-stroke) solid var(--glow); border-radius:50%;   /* 笔宽走 --enso-stroke token·円相是「图」非装饰线（设计规范） */
+  border-right-color:transparent;            /* 留「口」·円相未完成 wabi-sabi（口朝右·缺笔意） */
+  transform:rotate(-26deg);                  /* 微旋转·一笔手写笔意·非机械正圆 */
+  box-shadow:0 0 60px -12px rgba(244,239,228,.18);  /* 极淡外晕·白从墨中显形（非信号·阴翳里的光） */
+  opacity:.96;
+}
+/* —— 念（左下张力位·与円相对角·weight 300 细·<b>=思源黑体 Medium 真面强调）—— */
+.zen-enso .ze-read{
+  position:absolute; left:var(--pad-x); bottom:140px; width:480px;
+  font-family:var(--font-cjk); font-weight:300;
+  font-size:33.33px; line-height:1.62; letter-spacing:.02em;   /* 33.33px=25pt·中文 ≫ 字号地板 25.33 */
+  color:var(--ink);
+}
+.zen-enso .ze-read b{ font-weight:500; color:var(--glow); }   /* 强调=思源黑体 Medium 真面 + glow 提亮（font-synthesis:none·非 700 合成·守 ds-cjk-no-faux-bold） */
+
+/* ============================================================================
+   P · zen-statement（空当容器 · 签名核心版式 · 一句信念·ma 主角）
+   ----------------------------------------------------------------------------
+   命根（设计规范）：一句信念作唯一焦点（文字即图）+ ma 主角·强调靠**明度（glow）+ 字重（300↔500）**·近零彩色（不靠色·设计规范）。
+   构图：
+     · 信念落「上三分起·偏左」张力位（top ~286·非死正中）·巨号 display weight 300·一句话三行内·大面积下方/右侧「空」承托。
+     · 强调词 <em>（语义=被提亮的判断词）→ weight 500 思源黑体 Medium 真面 + glow（"不能再减"那一刻被照亮·非颜色）。
+     · 源注（禅律/出处·底部·Source Sans 3 + 中文·近零彩色暖灰·极淡）——标信念的禅律根，不喧宾。
+   ma 核算：一句信念居上、下方留巨大「空」邀请——文字即一图一念的焦点（zen-one-focus）·留白率高位（zen-ma-ratio）。 */
+.zen-statement .zs-claim{
+  position:absolute; left:var(--pad-x); right:240px; top:286px;
+  font-family:var(--font-cjk); font-weight:300;
+  font-size:58px; line-height:1.34; letter-spacing:.01em;
+  color:var(--ink);
+}
+.zen-statement .zs-claim em{ font-style:normal; font-weight:500; color:var(--glow); }  /* 强调=Medium 真面 + glow·明度非颜色（守 ds-cjk-no-faux-bold） */
+/* —— 源注（信念的禅律根·底部·近零彩色暖灰·含中文故 Source Sans 3 在前 + 思源黑体紧随）—— */
+.zen-statement .zs-src{
+  position:absolute; left:var(--pad-x); bottom:var(--pad-bottom);
+  font-family:"Source Sans 3","Source Han Sans SC","PingFang SC",sans-serif; font-weight:500; font-size:13px;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--ink-soft);
+}
+
+/* ============================================================================
+   P · zen-shadow（阴翳材质 · 签名核心版式 · 白从墨中显形）
+   ----------------------------------------------------------------------------
+   命根（设计规范谷崎《阴翳礼赞》）：一块「白/空」panel 从墨 void 中亮起（CSS 渐变·谷崎金箔在幽暗里发光感）+ 一句"念"在墨底侧。
+   ⚠⚠ 关键红线（00-tokens zen 块·--mat 注释 + 本任务约束）：panel 是浅材质面 → **纸白 on panel 对比仅 1.63 不达标**，
+       故 panel 内**绝不压任何字**（纯材质·让白自己发光）·所有文字一律落右侧墨底（纸白 on 暖墨黑 AAA）。
+   构图：
+     · panel 占左 0–512px 满高·从墨中亮起：glow 主面 + 极淡 mat（谷崎金箔暖）斜向渐变 + 一道暗向角落（阴翳的「光从一侧来、向暗里隐」·非纯色块=材质感）。
+     · kicker（墨底右区·禅律名）@ left 592 / top 72。
+     · 念（墨底右区·焦点判断·weight 300 + <b> Medium glow）@ top ~300·一句两行内。
+     · 注（出处·谷崎·墨底右区·近零彩色暖灰）·念之下。
+   ma 核算：panel（一焦点·材质的「白」）+ 念（一判断）·右侧墨底大面积留白邀请——一图一念（zen-one-focus）·留白率高位（zen-ma-ratio）。 */
+.zen-shadow .zsh-panel{
+  position:absolute; left:0; top:0; width:512px; height:720px;
+  background:var(--glow);
+  /* 谷崎金箔斜光：左上偏亮(glow)→右下隐入极淡 mat 暖·营造"光从一侧来"的材质（非纯色块·阴翳的微妙光）。
+     ★终极审计·视觉收敛（2 独立审计员收敛点 P12/P13 全场最暖）：glow 占比 46%→54%、mat stop 132%→168% 推更远出画——
+     panel 九成是中性 glow 纸白、暖 mat 只在右下角一丝，把可感暖度压回与其余 18 页同阈（守近零彩色·阴翳"微妙光"非"米色块"）。 */
+  background-image:linear-gradient(118deg, var(--glow) 54%, var(--mat) 168%);
+}
+/* —— panel 向墨侧的暗角（阴翳「向暗里隐」·材质边界从亮到暗·非硬边）—— */
+.zen-shadow .zsh-panel::after{
+  content:""; position:absolute; inset:0;
+  background:linear-gradient(105deg, transparent 58%, rgba(33,30,23,.16));  /* 朝墨底一侧极淡压暗·材质入暗 */
+}
+/* —— kicker（墨底右区·禅律名）—— */
+.zen-shadow .zsh-kicker{
+  position:absolute; left:592px; top:var(--pad-top);
+  font-family:"Source Sans 3","Source Han Sans SC","PingFang SC",sans-serif; font-weight:500; font-size:13px;
+  letter-spacing:.34em; text-transform:uppercase; color:var(--ink-soft);
+}
+/* —— 念（墨底右区·焦点判断·纸白 on 暖墨黑 AAA·<b>=Medium 真面 glow 强调）—— */
+.zen-shadow .zsh-claim{
+  position:absolute; left:592px; top:300px; right:var(--pad-x);
+  font-family:var(--font-cjk); font-weight:300;
+  font-size:44px; line-height:1.32; letter-spacing:.01em;
+  color:var(--ink);
+}
+.zen-shadow .zsh-claim b{ font-weight:500; color:var(--glow); }   /* 强调=Medium 真面 + glow（守 ds-cjk-no-faux-bold） */
+/* —— 注（出处·谷崎·墨底右区·近零彩色暖灰·≥ 字号地板）—— */
+.zen-shadow .zsh-note{
+  position:absolute; left:592px; top:454px; right:120px;
+  font-family:var(--font-cjk); font-weight:300;
+  font-size:25.33px; line-height:1.66; letter-spacing:.03em;     /* 中文 = 字号地板 25.33 */
+  color:var(--ink-soft);
+}
+
+/* —— 円相极慢 draw-on（可选·守克制·设计规范「円相可极慢 draw-on」·一笔意·全 gate reduced-motion·终态满圆可见）——
+   用 conic 遮罩单向揭开 + 整体淡入；reduced-motion 下整块失效→終態（满圆 + 留口）静态可见（自动截图/PDF 不取空帧）。 */
+@media (prefers-reduced-motion:no-preference){
+  html.js .zen-enso.is-active .ze-enso{ animation:ensoDraw 1.5s var(--ease) .2s both; }
+  /* 遮罩用 conic 角度单向揭开（mask 只取 alpha·色相无关，用 currentColor 避裸 hex·raw-hex 门口径）；
+     reduced-motion 下整块失效→終態满圆 + 留口静态可见（自动截图/PDF 不取空帧）。 */
+  @keyframes ensoDraw{
+    from{ -webkit-mask-image:conic-gradient(from -26deg, currentColor 0deg, transparent 0deg); mask-image:conic-gradient(from -26deg, currentColor 0deg, transparent 0deg); opacity:.2 }
+    to{ -webkit-mask-image:conic-gradient(from -26deg, currentColor 360deg, transparent 360deg); mask-image:conic-gradient(from -26deg, currentColor 360deg, transparent 360deg); opacity:.96 }
+  }
+}
+
+/* ============================================================================
+   P · zen-number（单数 · 一图一念的数字版 · 一个巨数作唯一焦点 + 一念）
+   ----------------------------------------------------------------------------
+   命根（设计规范）：一个巨数（量级判断的物化·"图"=数字本身）作唯一焦点 + 一句"念"·巨 ma·数落张力位非死正中。
+   构图：
+     · 巨数（Source Sans 3 weight 300·tabular·落「上三分偏左」张力位 @ top ~196·非死正中）——
+         数字用拉丁面（Source Sans 3·humanist·tabular-nums 对齐）·weight 300 极细呼应「空·轻」·单位/后缀小一档接续。
+     · 一念（巨数之下·纸白·weight 300 + <b> Medium glow 强调·把数字激活成判断）@ 数下方·一句两行内。
+     · 注（出处/口径·近零彩色暖灰·≥ 字号地板·含中文故 Source Sans 3 在前 + 思源黑体紧随）·底部。
+   ma 核算：巨数 + 念占上半张力位、下方/右侧大面积「空」邀请——一焦点一念（zen-one-focus）·留白率高位（zen-ma-ratio）。 */
+.zen-number .zn-fig{
+  position:absolute; left:calc(var(--pad-x) - 4px); top:188px;
+  font-family:var(--font-latin); font-weight:300;
+  font-size:236px; line-height:.92; letter-spacing:-.01em; font-variant-numeric:tabular-nums lining-nums;
+  color:var(--glow);
+}
+.zen-number .zn-fig .unit{ font-size:96px; font-weight:300; letter-spacing:0; }   /* 单位/后缀小一档·同 weight 300·不喧巨数 */
+/* —— 一念（巨数之下·把量级激活成判断·weight 300·<b>=Medium 真面 glow）—— */
+.zen-number .zn-read{
+  position:absolute; left:var(--pad-x); right:300px; top:512px;
+  font-family:var(--font-cjk); font-weight:300;
+  font-size:36px; line-height:1.46; letter-spacing:.01em;   /* 36px=27pt·中文 ≫ 字号地板 25.33 */
+  color:var(--ink);
+}
+.zen-number .zn-read b{ font-weight:500; color:var(--glow); }   /* 强调=Medium 真面 + glow（font-synthesis:none·守 ds-cjk-no-faux-bold） */
+/* —— 注（量级出处/口径·近零彩色暖灰·含中文故 Source Sans 3 在前 + 思源黑体紧随）—— */
+.zen-number .zn-note{
+  position:absolute; left:var(--pad-x); bottom:var(--pad-bottom);
+  font-family:"Source Sans 3","Source Han Sans SC","PingFang SC",sans-serif; font-weight:500; font-size:13px;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--ink-soft);
+}
+
+/* ============================================================================
+   P · zen-quote（拉引文 · 一句引文作唯一焦点 · 大留白）
+   ----------------------------------------------------------------------------
+   命根（设计规范演示禅一句引文页）：一句有出处的引文作唯一焦点 + 巨 ma·引文居中偏上·出处下挂。
+   ⚠ 引文页是「换气」节拍（设计规范 密疏交替·章扉/引文疏）——比内容页更空·让一句话被「正确地看」（枯山水单石）。
+   构图：
+     · 一道纸白短 mark（引文起手·极简骨架·非装饰）@ 引文上方。
+     · 引文（纸白·weight 300 极细·落「上三分起·居中域」@ top ~250·一句三行内·强调词 <b> Medium glow）——
+         字号大但 weight 300（空灵·非沉重）·引文是「别人的判断」故不抢自家念的 glow 峰值、用 --ink 主文字。
+     · 出处（引文之下·近零彩色暖灰·人名 + 作品·标到一手源）·≥ 字号地板。
+   ma 核算：引文居上、四周大面积「空」邀请——一句即一焦点（zen-one-focus）·留白率高位（zen-ma-ratio）。 */
+.zen-quote{ background:var(--bg); }
+/* 注：原引文上方 48×2 横 mark 已删（横线读成「一」）——引文靠引号 + 出处自足，不需起手横杠。 */
+.zen-quote .zq-quote{
+  position:absolute; left:160px; right:160px; top:286px;
+  font-family:var(--font-cjk); font-weight:300;
+  font-size:46px; line-height:1.46; letter-spacing:.015em; text-align:center;
+  color:var(--ink);
+}
+.zen-quote .zq-quote b{ font-weight:500; color:var(--glow); }   /* 引文内强调=Medium 真面 + glow（守 ds-cjk-no-faux-bold） */
+/* —— 出处（人名 + 作品·标一手源·近零彩色暖灰·含中文故 Source Sans 3 在前 + 思源黑体紧随）—— */
+.zen-quote .zq-cite{
+  position:absolute; left:160px; right:160px; bottom:250px; text-align:center;
+  font-family:"Source Sans 3","Source Han Sans SC","PingFang SC",sans-serif; font-weight:500; font-size:14px;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--ink-soft);
+}
+
+/* ============================================================================
+   P · zen-chapter（章扉 · 墨章·章节呼吸断点 · 弧段过渡）
+   ----------------------------------------------------------------------------
+   命根（设计规范「章扉换气」）：墨分隔·章节呼吸断点——一个章序数 + 一句章题作焦点·极致 ma·能量锚（half·密疏交替的「疏」）。
+   构图：
+     · 章序（极淡大号·Source Sans 3·weight 300·落「左·中高」@ left 84/top 232·阴翳里若隐的序数·非信号）——
+         用 --hair 量级的极淡（墨里浮出·近隐）·巨号但近背景明度·不抢章题。
+     · 一道纸白短竖 mark（章题起手·极简骨架）@ 章题左侧。
+     · 章题（纸白·weight 300·落「左·中」@ top ~336·一句·<b> Medium glow 强调弧段命题）。
+     · 导语（章题之下·次级暖灰·一句·≥ 字号地板·点出本章要回答的问题）。
+   ma 核算：序数 + 章题各占左侧张力带、右侧大面积「空」邀请——一焦点（章命题）一念（导语）·留白率高位。 */
+.zen-chapter{ background:var(--bg); }
+/* —— 章序（极淡大号·墨里浮出·近隐·非信号·阴翳的若有若无）—— */
+.zen-chapter .zch-no{
+  position:absolute; left:var(--pad-x); top:200px;
+  font-family:var(--font-latin); font-weight:300;
+  font-size:148px; line-height:1; letter-spacing:-.01em; font-variant-numeric:tabular-nums lining-nums;
+  color:var(--hair);   /* 极淡（墨里若隐·非信号·不抢章题） */
+}
+/* —— 章题起手短竖 mark（极简骨架·标「章由此起」·非装饰几何）—— */
+.zen-chapter .zch-mark{ position:absolute; left:var(--pad-x); top:392px; width:2px; height:88px; background:var(--ink); }
+/* —— 章题（弧段命题·纸白·weight 300·<b>=Medium glow 强调）—— */
+.zen-chapter .zch-title{
+  position:absolute; left:calc(var(--pad-x) + 28px); right:300px; top:388px;
+  font-family:var(--font-cjk); font-weight:300;
+  font-size:60px; line-height:1.18; letter-spacing:.01em;
+  color:var(--ink);
+}
+.zen-chapter .zch-title b{ font-weight:500; color:var(--glow); }   /* 强调=Medium 真面 + glow（守 ds-cjk-no-faux-bold） */
+/* —— 导语（本章要回答的问题·次级暖灰·≥ 字号地板）——
+   ⚠ top:556 = 章题（top 388·2 行 line-height 1.18 → bottom ≈530）下方留 26px 呼吸（零重叠实测·渲染探针 P2/P7/P12 验：
+     章题 2 行 bottom 530 → 导语 top 556 不压章题·守视觉零重叠底线·章题 1 行时呼吸更大不碍事）。 */
+.zen-chapter .zch-lead{
+  position:absolute; left:calc(var(--pad-x) + 28px); right:340px; top:556px;
+  font-family:var(--font-cjk); font-weight:300;
+  font-size:25.33px; line-height:1.62; letter-spacing:.04em;   /* 中文 = 字号地板 25.33 */
+  color:var(--ink-soft);
+}
+
+/* ============================================================================
+   P · zen-closing（收束 · 留白余韵 · end-mark）
+   ----------------------------------------------------------------------------
+   命根（设计规范 反证2「配一句念让每页自足」）：收束·留白余韵——一句收束的信念 + 一个 end-mark·极致 ma·余韵不炸尾（禅的收=静）。
+   构图：
+     · 一念收束句（纸白·weight 300·落「中·偏上」@ top ~300·全 deck 弧的落点·<b> Medium glow 强调）——
+         不是行动号召的炸场（禅 ≠ blast 回峰），是把判断落定后让画面静下来（设计规范 收=静观）。
+     · end-mark（収·一个极简圆点/短线·画面下三分居中·标「演示在此静止」·非 logo·近零彩色）。
+     · 落款（end-mark 之下·近零彩色暖灰·三体系名收尾·呼应封面 kicker·闭环）。
+   ma 核算：收束句居上、end-mark 居下三分、四周大面积「空」承托余韵——一焦点（收束念）·留白率高位（最空的一页·设计规范 收束疏）。 */
+.zen-closing{ background:var(--bg-void); }   /* 收束=静止·隐入最深的墨（near-black 明度极值·终极审计节奏 restructure）——全 deck 明度弧谷底：封面円相微光(开)→P12 cream(峰)→此处最暗(收)·文字仍 AAA（更暗底对比更高·零可读风险） */
+.zen-closing .zcl-claim{
+  position:absolute; left:160px; right:160px; top:268px;
+  font-family:var(--font-cjk); font-weight:300;
+  font-size:50px; line-height:1.4; letter-spacing:.015em; text-align:center;
+  color:var(--ink);
+}
+.zen-closing .zcl-claim b{ font-weight:500; color:var(--glow); }   /* 强调=Medium 真面 + glow（守 ds-cjk-no-faux-bold） */
+/* —— end-mark（収·极简圆点·标「演示在此静止」·近零彩色·非 logo·下三分居中）—— */
+.zen-closing .zcl-mark{
+  position:absolute; left:50%; top:472px; transform:translateX(-50%);
+  width:9px; height:9px; border-radius:50%; background:var(--glow);
+  box-shadow:0 0 48px -2px rgba(244,239,228,.36);   /* 终止·一点光浮在最深的墨里（near-black 明度极值上唯一的光·光从暗中显的最后一点·终极审计 restructure）·呼应円相外晕 */
+}
+/* —— 落款（三体系名收尾·呼应封面 kicker·闭环·近零彩色暖灰·含中文故 Source Sans 3 在前 + 思源黑体紧随）—— */
+.zen-closing .zcl-sign{
+  position:absolute; left:50%; bottom:var(--pad-bottom); transform:translateX(-50%); text-align:center;
+  font-family:"Source Sans 3","Source Han Sans SC","PingFang SC",sans-serif; font-weight:500; font-size:13px;
+  letter-spacing:.34em; text-transform:uppercase; color:var(--ink-soft);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   ▼ 扩建 · 6 独家「空的一图一念」版式（实现期 · 每个 = 不同的「空」打法·锚日本美学·彼此不雷同）
+     强化设计独特性· 根治「单一感」（8 版式 → 14 版式·空的方言谱系扩展）。
+     共守命根：每页恰一焦点 + 一句真「念」· 暖墨黑 · 近零彩色（--ink/--glow/--ink-soft/--mat/--hair·零饱和）·
+       字号 ≥ 地板（CJK 25.33 / latin 32）· weight 300 大标 + <b>/<em>=Medium 真面 glow 强调（font-synthesis:none·绝不 700）·
+       焦点落张力位非死正中（避 left:50%+translateX + top 330–390 死正中域）· ma 高位 · 零重叠（守视觉底线非页脚）。
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ============================================================================
+   P · zen-horizon（一线/地平线 · 原研哉 MUJI「Horizon」2003 标志性母题 · 一条线即终极 ma）
+   ----------------------------------------------------------------------------
+   命根（原研哉地平线·空=容纳的容器·东京 ADC 大奖 2003·乌尤尼盐沼/蒙古地平线实拍的设计转译）：
+     一条极细 glow 横线把墨场分成「上空 / 下地」两片巨大 ma（线落「张力高度」top 444≈0.617h·下三分黄金带·非死中线 360）+
+     一字/一念近线显形——线是终极 ma（一笔分割即一切·零装饰）。
+   构图：
+     · kicker（顶·禅律名）@ left 84 / top 72。
+     · 极细 glow 横线（满宽贯穿·张力高度·线即「图」：一道光从墨中显形·呼应「間」汉字本源「月光透过门」）+ 极淡外晕。
+     · 一念（线之上·贴线·纸白·weight 300·<b> Medium glow·一句两行内·「天与地之间」的判断落在线上方）。
+     · 地名注（线之下·近零彩色暖灰·标原研哉地平线母题出处·≥ 字号地板）。
+   ma 核算：一线分两片大「空」·焦点（念）贴线落上片·线下大面积留白邀请——一焦点一念（zen-one-focus）·留白率高位（zen-ma-ratio）。 */
+.zen-horizon{ background:var(--bg); }
+/* —— 地平线（极细 glow 横线·满宽贯穿·张力高度·线即「图」·一道光从墨中显形）—— */
+.zen-horizon .zhz-line{
+  position:absolute; left:0; right:0; top:444px; height:1px; background:var(--glow); opacity:.9;
+  box-shadow:0 0 52px 1px rgba(244,239,228,.26);   /* 发光地平线·早段明度 accent（终极审计节奏 restructure·前三分之一一道光打断平场·呼应封面円相微光）·白从墨中显形 */
+}
+/* —— 一念（线之上·贴线·纸白·weight 300·<b>=Medium glow·「天地之间」的判断）—— */
+.zen-horizon .zhz-read{
+  position:absolute; left:var(--pad-x); right:300px; bottom:300px;   /* bottom 300 → 念底贴 top 444 横线上方·近线显形 */
+  font-family:var(--font-cjk); font-weight:300;
+  font-size:38px; line-height:1.5; letter-spacing:.02em;            /* 38px=28.5pt·中文 ≫ 字号地板 25.33 */
+  color:var(--ink);
+}
+.zen-horizon .zhz-read b{ font-weight:500; color:var(--glow); }      /* 强调=Medium 真面 + glow（守 ds-cjk-no-faux-bold） */
+/* —— 地名注（原研哉地平线母题出处·线之下·近零彩色暖灰·≥ 字号地板）—— */
+.zen-horizon .zhz-note{
+  position:absolute; left:var(--pad-x); top:492px; right:360px;     /* top 492 → 横线 top 444 下方留 48 呼吸·零重叠 */
+  font-family:var(--font-cjk); font-weight:300;
+  font-size:25.33px; line-height:1.62; letter-spacing:.04em;        /* 中文 = 字号地板 25.33 */
+  color:var(--ink-soft);
+}
+
+/* ============================================================================
+   P · zen-ma-pair（間 diptych · 兩極小元素之間的巨大 ma 才是主角 · 間=间隔本身）
+   ----------------------------------------------------------------------------
+   命根（「間」Ma·gap/pause/interval between things·Wikipedia：emptiness that connects·
+     「distance between two people that defines their relationship」·汉字本源「月光透过门」）：
+     两个极小元素（两枚 glow 点·左上 + 右下对角张力位）+ 它们「之间」的巨大 ma 才是真焦点——
+     間不是空白，是「让两者各自成立」的关系本身（念点出「之间」）。
+   构图：
+     · kicker（顶·禅律名）@ left 84 / top 72。
+     · 两枚极小 glow 点：点 A @ 左上张力位(left 200 / top 232)·点 B @ 右下张力位(right 220 / bottom 220)——
+         两点对角拉开·中间巨大墨场即「間」（点小到几乎是「无」·让「之间」成为主角）·各带极淡外晕（白从墨中显）。
+     · 一念（落画面下三分偏左·点出「之间」的判断·weight 300·<b> Medium glow·一句两行内）。
+     · 注（間=间隔本身·出处·近零彩色暖灰·≥ 字号地板）。
+   ma 核算：两点极小、之间大面积「空」即主角——焦点=「間」承载一念（一图一念·两点是「图」的两极、間是图本身）·留白率高位。 */
+.zen-ma-pair{ background:var(--bg); }
+/* —— 两枚极小 glow 点（间隔本身=主角·点小到近「无」·让「之间」成主角·各带极淡外晕）—— */
+.zen-ma-pair .zmp-dot{
+  position:absolute; width:11px; height:11px; border-radius:50%; background:var(--glow);
+  box-shadow:0 0 22px -2px rgba(244,239,228,.26);   /* 极淡外晕·白从墨中显（非信号·呼应収 end-mark） */
+}
+.zen-ma-pair .zmp-a{ left:200px; top:226px; }       /* 点 A·左上张力位 */
+.zen-ma-pair .zmp-b{ left:auto; right:220px; top:402px; }   /* 点 B·右下张力位·与 A 对角拉开「間」 */
+/* —— 一念（点出「之间」·落下三分偏左·weight 300·<b>=Medium glow）—— */
+.zen-ma-pair .zmp-read{
+  position:absolute; left:var(--pad-x); right:340px; top:512px;
+  font-family:var(--font-cjk); font-weight:300;
+  font-size:36px; line-height:1.5; letter-spacing:.02em;     /* 36px=27pt·中文 ≫ 字号地板 25.33 */
+  color:var(--ink);
+}
+.zen-ma-pair .zmp-read b{ font-weight:500; color:var(--glow); }
+/* —— 注（間=间隔本身·出处·近零彩色暖灰·≥ 字号地板·含中文故 Source Sans 3 在前 + 思源黑体紧随）—— */
+.zen-ma-pair .zmp-note{
+  position:absolute; left:var(--pad-x); bottom:var(--pad-bottom);
+  font-family:"Source Sans 3","Source Han Sans SC","PingFang SC",sans-serif; font-weight:500; font-size:13px;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--ink-soft);
+}
+
+/* ============================================================================
+   P · zen-vertical（竖排 · 一句信念竖排落 ma 中 · 区隔全部横排七人格 · 从右上往下读）
+   ----------------------------------------------------------------------------
+   命根（竖排 tategaki=日文书法/卷轴本源·writing-mode:vertical-rl·从右往左、自上而下）：
+     一句核心信念「竖排」落 ma 中——竖排=慢读=被郑重「正确地看」（区隔全横排七人格·这是 zen 独家的版式指纹）。
+     竖排让一句话变成一道「垂直的物」，读者须慢下来、逐字下行——形式（竖）即承载（郑重·克制·主动）。
+   构图：
+     · kicker（顶·禅律名）@ left 84 / top 72。
+     · 竖排信念（writing-mode:vertical-rl·落「右区·上起」张力位 right 200 / top 120·从右上往下读·一列为主、长则左溢第二列）——
+         weight 300 极细·<b> Medium glow 强调判断词·字间 letter-spacing 拉开呼吸（竖排行距=横向列距）。
+     · 一道纸白短竖 mark（竖排起手·标「由此下读」·极简骨架·非装饰）@ 竖排右侧上端。
+     · 源注（横排·底部·近零彩色暖灰·标竖排=慢读的禅理·≥ 字号地板）——横排注与竖排念对比，强化竖的「特意」。
+   ma 核算：竖排占右区一列、左侧大面积「空」邀请——一焦点（竖排信念）一念·留白率高位（竖排比横排更省面积·ma 更大）。 */
+.zen-vertical{ background:var(--bg); }
+/* 注：原「起手短竖 mark」已删——注释写"竖"实则渲染 40×2 横线，恰在竖排列首上方被读成「一」（命根「即时无歧义」破）。竖排从右上首字直接起读，无需横杠引导。 */
+/* —— 竖排信念（writing-mode:vertical-rl·右上起·从右往左下行读·weight 300·<b>=Medium glow）—— */
+.zen-vertical .zvt-claim{
+  position:absolute; right:176px; top:120px; max-height:480px;   /* 右区·上起张力位·max-height 限竖排列长·长则自然向左续列 */
+  writing-mode:vertical-rl; text-orientation:upright;            /* 竖排·从右往左·字直立（中文竖排正解·区隔全横排人格） */
+  font-family:var(--font-cjk); font-weight:300;
+  font-size:46px; line-height:1.9; letter-spacing:.14em;          /* 46px ≫ 地板·line-height=横向列距·letter-spacing=竖向字距（竖排呼吸） */
+  color:var(--ink);
+}
+.zen-vertical .zvt-claim b{ font-weight:500; color:var(--glow); }  /* 强调=Medium 真面 + glow（守 ds-cjk-no-faux-bold） */
+/* —— 源注（横排·底部·竖排=慢读的禅理·近零彩色暖灰·含中文故 Source Sans 3 在前 + 思源黑体紧随）—— */
+.zen-vertical .zvt-src{
+  position:absolute; left:var(--pad-x); bottom:var(--pad-bottom);
+  font-family:"Source Sans 3","Source Han Sans SC","PingFang SC",sans-serif; font-weight:500; font-size:13px;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--ink-soft);
+}
+
+/* ============================================================================
+   P · zen-karesansui（枯山水 · 非对称单「石」+ 极淡耙痕 · 「一物被正确地看」· 龙安寺石庭）
+   ----------------------------------------------------------------------------
+   命根（枯山水/龙安寺石庭·十五石总有一石被遮·从任何角度看不全·寓「视角有限·一物被正确地看」·
+     viewer's imagination as design tool）：
+     一个非对称单「石」（CSS 构造的 glow 椭石·落偏位张力位·非死正中）+ 极淡耙痕（同心弧暗示线·砂纹绕石）——
+     孤立一物、四周耙开，那一物才「被正确地看」（念在侧：减到只剩一物，才看得见它）。零图库（纯 CSS 椭圆 + 径向砂纹）。
+   构图：
+     · kicker（顶·禅律名）@ left 84 / top 72。
+     · 单「石」（CSS 椭圆·glow→mat 渐变如苔石质感·落「右·中偏下」偏位张力位 left 800 / top 320·微旋转手意·非机械正圆）+ 极淡外晕。
+     · 耙痕（石周极淡同心椭圆弧·radial 砂纹·--hair 量级若有若无·绕石如龙安寺白砂耙纹·非装饰=「被看的痕迹」）。
+     · 一念（左区·与石呼应·weight 300·<b> Medium glow·一句·「一物被正确地看」的判断）。
+     · 注（龙安寺石庭出处·近零彩色暖灰·≥ 字号地板）。
+   ma 核算：单石占右偏位、耙痕极淡、左侧大面积「空」邀请——一焦点（单石/一物）一念·留白率高位（枯山水=极致 ma 的庭）。 */
+.zen-karesansui{ background:var(--bg); }
+/* —— 耙痕（石周极淡同心砂纹·绕石若有若无·「被看的痕迹」·非装饰·radial 极淡）——
+   置于石「下层」（先声明·DOM 在石前）·径向极淡椭圆环模拟白砂耙纹（--hair 量级·阴翳的若隐）。 */
+.zen-karesansui .zks-rake{
+  position:absolute; left:648px; right:88px; top:158px; bottom:176px;
+  /* 枯山水砂纹（一眼可辨·非歧义物）：极淡平行耙线 + 一处同心涟漪·中心「空」=未见之石（龙安寺「总有一石你看不见」·形服内涵）。
+     rgba 暖墨灰阶（~40°低饱和·near-zero 放行）·两端 mask 淡出入墨（阴翳里隐）。 */
+  background:
+    radial-gradient(circle at 58% 50%, transparent 0 62px, rgba(146,134,108,.42) 63px 65px, transparent 66px 102px, rgba(146,134,108,.27) 103px 105px, transparent 106px 142px, rgba(146,134,108,.15) 143px 145px, transparent 146px),
+    repeating-linear-gradient(0deg, rgba(62,57,46,.34) 0 1px, transparent 1px 21px);
+  -webkit-mask-image:linear-gradient(95deg, transparent, rgba(0,0,0,1) 14%, rgba(0,0,0,1) 86%, transparent);
+  mask-image:linear-gradient(95deg, transparent, rgba(0,0,0,1) 14%, rgba(0,0,0,1) 86%, transparent);
+}
+/* —— 一念（左区·与石呼应·「一物被正确地看」的判断·weight 300·<b>=Medium glow）—— */
+.zen-karesansui .zks-read{
+  position:absolute; left:var(--pad-x); top:300px; width:440px;
+  font-family:var(--font-cjk); font-weight:300;
+  font-size:36px; line-height:1.5; letter-spacing:.02em;    /* 36px=27pt·中文 ≫ 字号地板 25.33 */
+  color:var(--ink);
+}
+.zen-karesansui .zks-read b{ font-weight:500; color:var(--glow); }
+/* —— 注（龙安寺石庭出处·左区·念之下·近零彩色暖灰·≥ 字号地板）——
+   ⚠ top:472 = 念（top 300·2 行 line-height 1.5 → bottom ≈408）下方留 64 呼吸·零重叠。 */
+.zen-karesansui .zks-note{
+  position:absolute; left:var(--pad-x); top:472px; width:420px;
+  font-family:var(--font-cjk); font-weight:300;
+  font-size:25.33px; line-height:1.62; letter-spacing:.04em;  /* 中文 = 字号地板 25.33 */
+  color:var(--ink-soft);
+}
+
+/* ============================================================================
+   P · zen-gradient（渐变阴翳 · 谷崎·光从暗中渐显的色调场 + 一字从渐变中显形）
+   ----------------------------------------------------------------------------
+   命根（谷崎《阴翳礼赞》·光从幽暗里渐显·非开关式明暗·而是连续的、从暗到亮挣出来的层次）：
+     一片从墨 void 中渐显的 radial glow 色调场（光从一角渐起·非硬边色块·区隔 zen-shadow 的硬边 panel）+
+     一字/一念从渐变中显形——「亮，是从暗里挣出来的」（念：对比来自克制·减去光，白才更亮）。
+   ⚠ 区隔 zen-shadow：shadow 是「硬边材质 panel + 字落墨底」；gradient 是「无边的连续光晕场 + 字直接落在渐变上」（光本身即图）。
+   构图：
+     · 渐变场（radial-gradient 从「右上角」渐起·glow 核 → 极淡 mat 暖 → 隐入墨 void·满画布连续·光从一侧来向暗里隐·谷崎阴翳）。
+     · kicker（顶左·墨深区·禅律名）@ left 84 / top 72。
+     · 一念（落「左·中偏下」墨深区·从暗向亮的过渡带·weight 300·<b> Medium glow·字从渐变中显形·一句两行内）——
+         念落渐变的「中明度」带（对比足·守暗底可读·非落最亮核也非落最暗角）。
+     · 注（谷崎出处·近零彩色暖灰·≥ 字号地板）。
+   ma 核算：光晕占右上、左下墨深区承念、过渡带大面积连续「空」——一焦点（光/一念）·留白率高位（光晕本身即被设计的 ma）。 */
+.zen-gradient{
+  /* 谷崎渐变阴翳：光从右上角渐起（glow 核·极淡）→ mat 暖中调 → 隐入墨 void·连续无边（非硬边色块·光从暗中挣出） */
+  background:
+    radial-gradient(120% 120% at 82% 16%,
+      rgba(244,239,228,.11) 0%,
+      rgba(194,179,147,.05) 24%,
+      rgba(194,179,147,.02) 44%,
+      var(--bg) 66%);
+  background-color:var(--bg);
+}
+/* —— kicker（顶左·墨深区·禅律名）—— */
+.zen-gradient .zgr-kicker{
+  position:absolute; left:var(--pad-x); top:var(--pad-top);
+  font-family:"Source Sans 3","Source Han Sans SC","PingFang SC",sans-serif; font-weight:500; font-size:13px;
+  letter-spacing:.34em; text-transform:uppercase; color:var(--ink-soft);
+}
+/* —— 一念（左·中偏下墨深区·字从渐变中显形·weight 300·<b>=Medium glow·守暗底可读落中明度带）—— */
+.zen-gradient .zgr-read{
+  position:absolute; left:var(--pad-x); right:420px; top:360px;
+  font-family:var(--font-cjk); font-weight:300;
+  font-size:44px; line-height:1.4; letter-spacing:.01em;    /* 44px·中文 ≫ 字号地板 25.33 */
+  color:var(--ink);
+}
+.zen-gradient .zgr-read b{ font-weight:500; color:var(--glow); }
+/* —— 注（谷崎出处·左·念之下·近零彩色暖灰·≥ 字号地板）——
+   ⚠ top:512 = 念（top 360·2 行 line-height 1.4 → bottom ≈483）下方留 29 呼吸·零重叠。 */
+.zen-gradient .zgr-note{
+  position:absolute; left:var(--pad-x); top:512px; right:460px;
+  font-family:var(--font-cjk); font-weight:300;
+  font-size:25.33px; line-height:1.62; letter-spacing:.03em;  /* 中文 = 字号地板 25.33 */
+  color:var(--ink-soft);
+}
+
+/* ============================================================================
+   P · zen-sequence（序列呼吸 · 3–5 个极小标记·间隔=ma·节奏即内容 · 念点「减」的节奏）
+   ----------------------------------------------------------------------------
+   命根（节奏 rhythm=ma 的时间维·间隔本身即设计·呼吸有节拍）：
+     一排 4 个极小标记/点（水平排开·间隔渐变=ma 的节奏：紧→疏·像呼吸放缓）+ 念点「减」的节奏——
+     节奏即内容：不是 4 个点重要，是「点与点之间的间隔」在说话（减，是有节奏的·一步一步、越来越慢、越来越空）。
+   ⚠ 区隔 zen-ma-pair：ma-pair 是「两点 + 之间一个大 ma」（空间的間）；sequence 是「多点 + 渐变间隔」（时间的节奏/呼吸·一排序列）。
+   构图：
+     · kicker（顶·禅律名）@ left 84 / top 72。
+     · 4 枚极小标记（水平一排·落「中高」张力带 top 300·间隔渐变：第1↔2 近、2↔3 中、3↔4 远——节奏放缓的「呼吸」）+ 各带极淡外晕。
+     · 一念（标记之下·点出「减的节奏」·weight 300·<b> Medium glow·一句两行内）。
+     · 注（节奏=ma 的时间维·近零彩色暖灰·≥ 字号地板）。
+   ma 核算：4 点极小、间隔即内容、上下大面积「空」——焦点=序列（节奏本身是「图」）承载一念·留白率高位（点小、间隔即 ma）。 */
+.zen-sequence{ background:var(--bg); }
+/* —— 序列容器（4 枚极小标记·水平一排·落中高张力带·间隔渐变=节奏放缓的呼吸）——
+   不用等距 flex（等距=机械节拍），用绝对定位逐枚摆位·间隔递增（紧→疏·呼吸放缓·节奏即内容）。 */
+.zen-sequence .zsq-row{ position:absolute; left:var(--pad-x); top:300px; width:760px; height:12px; }
+.zen-sequence .zsq-row i{
+  position:absolute; top:0; width:10px; height:10px; border-radius:50%; background:var(--glow);
+  box-shadow:0 0 18px -3px rgba(244,239,228,.24);   /* 极淡外晕·白从墨中显（非信号·呼应収 end-mark） */
+}
+/* 间隔递增（紧→疏·呼吸放缓·节奏即内容·非等距机械节拍）：0 → 120 → 280 → 480px */
+.zen-sequence .zsq-row i:nth-child(1){ left:0; }
+.zen-sequence .zsq-row i:nth-child(2){ left:120px; }
+.zen-sequence .zsq-row i:nth-child(3){ left:280px; }
+.zen-sequence .zsq-row i:nth-child(4){ left:480px; opacity:.78; }   /* 末枚更淡·渐隐入空（节奏的尾韵） */
+/* —— 一念（标记之下·点出「减的节奏」·weight 300·<b>=Medium glow）—— */
+.zen-sequence .zsq-read{
+  position:absolute; left:var(--pad-x); right:320px; top:392px;
+  font-family:var(--font-cjk); font-weight:300;
+  font-size:36px; line-height:1.5; letter-spacing:.02em;    /* 36px=27pt·中文 ≫ 字号地板 25.33 */
+  color:var(--ink);
+}
+.zen-sequence .zsq-read b{ font-weight:500; color:var(--glow); }
+/* —— 注（节奏=ma 的时间维·近零彩色暖灰·≥ 字号地板）——
+   ⚠ top:540 = 念（top 392·2 行 line-height 1.5 → bottom ≈500）下方留 40 呼吸·零重叠。 */
+.zen-sequence .zsq-note{
+  position:absolute; left:var(--pad-x); top:540px; right:360px;
+  font-family:var(--font-cjk); font-weight:300;
+  font-size:25.33px; line-height:1.62; letter-spacing:.04em;  /* 中文 = 字号地板 25.33 */
+  color:var(--ink-soft);
+}
+</style>
+</head>
+<body>
+
+<div class="nojs-hint">本演示在启用 JavaScript 后可逐页翻阅；当前为静态回退视图。</div>
+
+<div class="stage">
+  <div class="deck" id="deck">
+
+    <!-- ====================================================================
+         demo「克制 / 做减法 · Less but Better」· 20 页 · 三段弧 · 14 版式（8 原 + 6 扩·空的方言谱系）
+           弧① 为何要减（P02–P08·加无尽头→画线/选择暴政/iPod案例/簡素/一物被看/Rams）
+           弧② 怎么减（P09–P16·只剩本质→判断够了/竖排主动选择/阴翳/亮从暗挣出/留白容器/之间/Hara）
+           弧③ 减后所得（P17–P20·换回专注→专注即信念/减的节奏/留白余韵闭环）
+         每页恰一焦点 + 一句不容回避的判断（念）·相邻不重复版式·密疏交替（章扉/引文=疏=换气·data-energy half）。
+         6 扩版式各承载一个不重复的真「念」（深化「为何减/怎么减/减后所得」·绝不为凑页灌水·查不到的出处标示意）：
+           zen-horizon(画线·一线即终极ma·原研哉地平线) / zen-karesansui(一物被正确地看·龙安寺石庭)
+           / zen-vertical(竖排=慢读=主动选择·区隔全横排) / zen-gradient(亮从暗挣出·谷崎渐变阴翳)
+           / zen-ma-pair(之间才是主角·間Ma) / zen-sequence(减的节奏·节奏即内容)。
+         data-energy 节律：calm 内容·half 换气(章扉/引文/收束)——刻意打散 calm 连段（最长 3 连·守 energy-curve）·
+           收束 half（禅的收=静观余韵·非 blast 炸尾·zen ∈ END_NOT_PEAK_EXEMPT）。
+         data-role 覆盖 state/ground/insight/act（封面/章扉=state·证据/引文/数/材质=ground·信念=insight·落点=act）。
+         ==================================================================== -->
+
+    <!-- P1 封面 · zen-cover · 空显形（一图一念·一念落下三分张力位·暖墨黑·强调靠字重 + 明度·弧序起） -->
+    <section class="slide zen-cover" data-layout="zen-cover" data-role="state" data-energy="calm">
+      <div class="zc-anchor" aria-hidden="true"></div>
+      <div class="zc-kicker">演示禅 × 阴翳 × 无印</div>
+      <h1 class="zc-conv">少，是一种<b>设计</b>。</h1>
+      <p class="zc-sub">这份演示，只谈一件事——<br>怎样把多余的，一样一样减掉。</p>
+      <div class="zc-folio">01</div>
+    </section>
+
+    <!-- ===== 弧① 为何要减 ===== -->
+
+    <!-- P2 墨章扉 · zen-chapter · 弧① 换气(疏·half)（章序若隐 + 弧命题 + 导语·章节呼吸断点） -->
+    <section class="slide zen-page zen-chapter" data-layout="zen-chapter" data-role="state" data-energy="half">
+      <div class="zp-kicker">第一章 · 为何要减</div>
+      <div class="zch-no" aria-hidden="true">01</div>
+      <div class="zch-mark" aria-hidden="true"></div>
+      <h2 class="zch-title">「加」是默认，<br>所以<b>非减不可</b>。</h2>
+      <p class="zch-lead">加得越多，看的人越被淹没——最后什么也没记住。</p>
+      <div class="zp-folio">02</div>
+    </section>
+
+    <!-- P3 空当容器 · zen-statement · 选择的暴政（一句信念·ma 主角·强调靠明度 glow + 字重·非颜色） -->
+    <section class="slide zen-page zen-statement" data-layout="zen-statement" data-role="insight" data-energy="calm">
+      <div class="zp-kicker">弧① · 选择的暴政</div>
+      <h2 class="zs-claim">给得越多，<br>对方能<em>带走的</em>，<br>反而越少。</h2>
+      <div class="zs-src">The Tyranny of Choice · 选择的暴政</div>
+      <div class="zp-folio">03</div>
+    </section>
+
+    <!-- P4 一线/地平线 · zen-horizon · 加无尽头·先画线（原研哉 MUJI Horizon 2003·一条线即终极 ma·线落张力高度） -->
+    <section class="slide zen-page zen-horizon" data-layout="zen-horizon" data-role="insight" data-energy="half">
+      <div class="zp-kicker">弧① · 一条线</div>
+      <h2 class="zhz-read">加，没有尽头。<br>所以先得<b>画一条线</b>——<br>线那头，都不要。</h2>
+      <div class="zhz-line" aria-hidden="true"></div>
+      <p class="zhz-note">原研哉 MUJI「地平线」2003：一条线，分出天与地。</p>
+      <div class="zp-folio">04</div>
+    </section>
+
+    <!-- P5 单数 · zen-number · 真实案例锚（初代 iPod·一手源 Apple 官方新闻稿 2001-10-23·一图一念=一个案例 + 一句判断）：
+         巨数 1000 = 初代 iPod 5GB「1,000 CD-quality songs」官方硬事实；念把量级激活成减法判断（砍到只剩一个转盘·单手）。
+         ⚠ 史实红线（一手源核实）：初代是机械 scroll wheel·非 click wheel（后者 2004 第四代）→ 不写 click wheel；
+           「装进口袋」是 Apple 官方表述（"fits in your pocket"）·七字短语"1000 songs in your pocket"标为发布语非新闻稿逐字。 -->
+    <section class="slide zen-page zen-number" data-layout="zen-number" data-role="ground" data-energy="calm">
+      <div class="zp-kicker">弧① · 一个案例 · iPod</div>
+      <div class="zn-fig" aria-hidden="true">1000<span class="unit">首</span></div>
+      <h2 class="zn-read">把一千首歌装进口袋——<br>靠的是<b>砍到只剩一个转盘</b>。</h2>
+      <div class="zn-note">初代 iPod · Apple 发布语「1,000 songs in your pocket」· 2001</div>
+      <div class="zp-folio">05</div>
+    </section>
+
+    <!-- P6 円相一图一念 · zen-enso · 簡素 KANSO（CSS 构造円相落右上张力位·一念左下对角·零图库） -->
+    <section class="slide zen-page zen-enso" data-layout="zen-enso" data-role="state" data-energy="calm">
+      <div class="zp-kicker">弧① · 簡素 KANSO</div>
+      <div class="ze-enso" aria-hidden="true"></div>
+      <h2 class="ze-read">满，会互相遮挡。<br>留出空，那一笔<br>才<b>被看见</b>。</h2>
+      <div class="zp-folio">06</div>
+    </section>
+
+    <!-- P7 枯山水 · zen-karesansui · 一物被正确地看（龙安寺石庭单石+耙痕·孤立一物才看得见·CSS 椭石零图库） -->
+    <section class="slide zen-page zen-karesansui" data-layout="zen-karesansui" data-role="insight" data-energy="calm">
+      <div class="zp-kicker">弧① · 一物被看</div>
+      <div class="zks-rake" aria-hidden="true"></div>
+      <h2 class="zks-read">孤立出一物，<br>四周耙开，<br>它才<b>被看见</b>。</h2>
+      <p class="zks-note">龙安寺石庭：十五石，总有一石你看不见——所以更想看。</p>
+      <div class="zp-folio">07</div>
+    </section>
+
+    <!-- P8 拉引文 · zen-quote · Rams（弧①→② 换气·疏·half·一句引文·大留白·标一手源） -->
+    <section class="slide zen-page zen-quote" data-layout="zen-quote" data-role="ground" data-energy="half">
+      <div class="zp-kicker">弧① · 一句判断</div>
+      <blockquote class="zq-quote">「少，<b>却更好</b>——<br>因为它专注于本质。」</blockquote>
+      <div class="zq-cite">Dieter Rams · 少却更好 · 设计十诫第十条之本意 · Less but better</div>
+      <div class="zp-folio">08</div>
+    </section>
+
+    <!-- ===== 弧② 怎么减 ===== -->
+
+    <!-- P9 墨章扉 · zen-chapter · 弧② 换气(疏·half)（章序若隐 + 弧命题 + 导语·章节呼吸断点） -->
+    <section class="slide zen-page zen-chapter" data-layout="zen-chapter" data-role="insight" data-energy="half">
+      <div class="zp-kicker">第二章 · 怎么减</div>
+      <div class="zch-no" aria-hidden="true">02</div>
+      <div class="zch-mark" aria-hidden="true"></div>
+      <h2 class="zch-title">不是删到空，<br>是减到<b>只剩本质</b>。</h2>
+      <p class="zch-lead">方法只有一条：一次，只让一件事说话。</p>
+      <div class="zp-folio">09</div>
+    </section>
+
+    <!-- P10 空当容器 · zen-statement ·「够了」是一种判断（哲学拍正 拍向 Reynolds 强观点：
+         主动判断 WHEN to stop=判断勇气·非 MUJI「これでいい」被动谦逊——与 P8 Rams「却更好」自洽不打架） -->
+    <section class="slide zen-page zen-statement" data-layout="zen-statement" data-role="insight" data-energy="calm">
+      <div class="zp-kicker">弧② · 判断「够了」</div>
+      <h2 class="zs-claim">敢说<em>到此为止</em>，<br>是减法里，<br>最难的那一下。</h2>
+      <div class="zs-src">Presentation Zen · 何时收手，是设计判断</div>
+      <div class="zp-folio">10</div>
+    </section>
+
+    <!-- P11 竖排 · zen-vertical · 减是主动选择（一句信念竖排·慢读=郑重·区隔全横排·从右上往下读） -->
+    <section class="slide zen-page zen-vertical" data-layout="zen-vertical" data-role="insight" data-energy="half">
+      <div class="zp-kicker">弧② · 主动地选</div>
+      <h2 class="zvt-claim">减，不是<b>少</b>，<br>是主动地选。</h2>
+      <div class="zvt-src">竖排一句 · 慢读即郑重 · 被减掉的，也是你的决定</div>
+      <div class="zp-folio">11</div>
+    </section>
+
+    <!-- P12 阴翳材质 · zen-shadow · 白从墨中显形（panel 从墨亮起·谷崎金箔感·panel 不压字·念落墨底） -->
+    <section class="slide zen-page zen-shadow" data-layout="zen-shadow" data-role="ground" data-energy="calm">
+      <div class="zsh-panel" aria-hidden="true"></div>
+      <div class="zsh-kicker">弧② · 阴翳 IN PRAISE OF SHADOWS</div>
+      <h2 class="zsh-claim">先减去光，<br><b>白才显形</b>。</h2>
+      <p class="zsh-note">谷崎润一郎《阴翳礼赞》：金箔在幽暗里才发光。<br>留白也一样——空出来，重点自己亮起来。</p>
+      <div class="zp-folio">12</div>
+    </section>
+
+    <!-- P13 渐变阴翳 · zen-gradient · 亮从暗里挣出（谷崎·光从暗中渐显的色调场·对比来自克制·一字从渐变中显形） -->
+    <section class="slide zen-page zen-gradient" data-layout="zen-gradient" data-role="insight" data-energy="half">
+      <div class="zgr-kicker">弧② · 对比来自克制</div>
+      <h2 class="zgr-read">亮，是从暗里<b>挣出来的</b>。<br>全亮，就<b>不是</b>亮。</h2>
+      <p class="zgr-note">谷崎润一郎《阴翳礼赞》：美，不在物上，在明暗交界的层次里。</p>
+      <div class="zp-folio">13</div>
+    </section>
+
+    <!-- P14 单数 · zen-number · 留白当容器（一个巨数作焦点·留白率本身就是设计·示意口径） -->
+    <section class="slide zen-page zen-number" data-layout="zen-number" data-role="ground" data-energy="calm">
+      <div class="zp-kicker">弧② · 留白即容器</div>
+      <div class="zn-fig" aria-hidden="true">70<span class="unit">%</span></div>
+      <h2 class="zn-read">这页七成是空的——<br>那是给重点<b>留的位置</b>。</h2>
+      <div class="zn-note">本页留白率 · 示意口径 · 原研哉「白＝想象的容器」</div>
+      <div class="zp-folio">14</div>
+    </section>
+
+    <!-- P15 間 diptych · zen-ma-pair · 之间才是主角（两极小点 + 之间巨大 ma·間=关系本身·让两者各自成立） -->
+    <section class="slide zen-page zen-ma-pair" data-layout="zen-ma-pair" data-role="insight" data-energy="calm">
+      <div class="zp-kicker">弧② · 間 · 之间</div>
+      <div class="zmp-dot zmp-a" aria-hidden="true"></div>
+      <div class="zmp-dot zmp-b" aria-hidden="true"></div>
+      <h2 class="zmp-read">两件事<b>之间</b>的空，<br>比两件事本身，更要紧。</h2>
+      <div class="zmp-note">間 MA · 间隔本身即设计 · 月光透过门，才显形</div>
+      <div class="zp-folio">15</div>
+    </section>
+
+    <!-- P16 拉引文 · zen-quote · Hara（弧②→③ 换气·疏·half·一句引文·大留白·标一手源） -->
+    <section class="slide zen-page zen-quote" data-layout="zen-quote" data-role="ground" data-energy="half">
+      <div class="zp-kicker">弧② · 一句判断</div>
+      <blockquote class="zq-quote">「空，不是简单——<br>是<b>想象的容器</b>。」</blockquote>
+      <div class="zq-cite">原研哉 Kenya Hara · 《白》/ Designing Design</div>
+      <div class="zp-folio">16</div>
+    </section>
+
+    <!-- ===== 弧③ 减后所得 ===== -->
+
+    <!-- P17 墨章扉 · zen-chapter · 弧③ 换气(疏·half)（章序若隐 + 弧命题 + 导语·章节呼吸断点） -->
+    <section class="slide zen-page zen-chapter" data-layout="zen-chapter" data-role="insight" data-energy="half">
+      <div class="zp-kicker">第三章 · 减后所得</div>
+      <div class="zch-no" aria-hidden="true">03</div>
+      <div class="zch-mark" aria-hidden="true"></div>
+      <h2 class="zch-title">减掉之后，<br>你换回了<b>专注</b>。</h2>
+      <p class="zch-lead">省下的不是版面，是看的人那一点注意力。</p>
+      <div class="zp-folio">17</div>
+    </section>
+
+    <!-- P18 空当容器 · zen-statement · 专注即信念（一句信念·弧落点·act 行动·强调靠明度 glow + 字重） -->
+    <section class="slide zen-page zen-statement" data-layout="zen-statement" data-role="act" data-energy="calm">
+      <div class="zp-kicker">弧③ · 专注是一种信念</div>
+      <h2 class="zs-claim">敢于<em>只说一件事</em>，<br>是因为你已经<br>想清楚那件事。</h2>
+      <div class="zs-src">Presentation Zen · Shibumi 渋 · 克制的优雅</div>
+      <div class="zp-folio">18</div>
+    </section>
+
+    <!-- P19 序列呼吸 · zen-sequence · 减的节奏（4 极小点·间隔渐变=ma 的节奏·节奏即内容·一步一步越来越空） -->
+    <section class="slide zen-page zen-sequence" data-layout="zen-sequence" data-role="act" data-energy="calm">
+      <div class="zp-kicker">弧③ · 减的节奏</div>
+      <div class="zsq-row" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <h2 class="zsq-read">减，是<b>一步一步</b>的；<br>到<b>够了</b>，就收手。</h2>
+      <p class="zsq-note">节奏即内容 · 间隔本身在说话 · 难的不是减，是看出够了</p>
+      <div class="zp-folio">19</div>
+    </section>
+
+    <!-- P20 收束 · zen-closing · 留白余韵（一句收束的信念 + end-mark·余韵不炸尾·act·闭环呼应封面） -->
+    <section class="slide zen-page zen-closing" data-layout="zen-closing" data-role="act" data-energy="half">
+      <h2 class="zcl-claim">把多余的减掉，<br>剩下的，<b>就是你的判断</b>。</h2>
+      <div class="zcl-mark" aria-hidden="true"></div>
+      <div class="zcl-sign">演示禅 × 阴翳 × 无印 · 空的信念</div>
+      <div class="zp-folio">20</div>
+    </section>
+
+  </div><!-- /deck -->
+</div><!-- /stage -->
+
+<nav class="hud" aria-label="导航">
+  <button id="navPrev" aria-label="上一页">‹</button>
+  <span class="cnt" id="navCnt">01 / 01</span>
+  <button id="navNext" aria-label="下一页">›</button>
+</nav>
+
+<div class="rotate-hint" aria-hidden="true">
+  <svg class="rh-ico" viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v4h-4"/></svg>
+  <div class="rh-msg"><span class="rh-dot"></span>横屏观看更佳</div>
+  <div class="rh-sub">旋转手机以全屏查看这份演示</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var root=document.documentElement; root.classList.remove("no-js"); root.classList.add("js");
+  var deck=document.getElementById("deck");
+  var slides=[].slice.call(deck.querySelectorAll(".slide"));
+  var total=slides.length, cntEl=document.getElementById("navCnt"), i=0;
+  var pad2=function(n){return (n<10?"0":"")+n;};
+  function fit(){var s=Math.min(window.innerWidth/1280, window.innerHeight/720); var x=(window.innerWidth-1280*s)/2, y=(window.innerHeight-720*s)/2; deck.style.transform="translate("+x+"px,"+y+"px) scale("+s+")";}
+  function clamp(n){return Math.max(0,Math.min(total-1,n));}
+  function render(){
+    slides.forEach(function(sl,idx){sl.classList.toggle("is-active",idx===i);});
+    cntEl.textContent=pad2(i+1)+" / "+pad2(total);
+    if(("#"+(i+1))!==location.hash) history.replaceState(null,"","#"+(i+1));
+  }
+  function go(n){i=clamp(n);render();}
+  function next(){go(i+1);} function prev(){go(i-1);}
+  function fromHash(){var n=parseInt((location.hash||"").replace("#",""),10); if(!isNaN(n)&&n>=1&&n<=total)i=n-1;}
+  document.addEventListener("keydown",function(e){
+    switch(e.key){
+      case "ArrowRight": case "PageDown": case " ": e.preventDefault(); next(); break;
+      case "ArrowLeft": case "PageUp": e.preventDefault(); prev(); break;
+      case "Home": e.preventDefault(); go(0); break;
+      case "End": e.preventDefault(); go(total-1); break;
+    }
+  });
+  var tx=0,ty=0,tk=false;
+  document.addEventListener("touchstart",function(e){if(e.touches.length!==1)return;tk=true;tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
+  document.addEventListener("touchend",function(e){if(!tk)return;tk=false;var t=e.changedTouches[0],dx=t.clientX-tx,dy=t.clientY-ty;if(Math.abs(dx)>48&&Math.abs(dx)>Math.abs(dy)*1.4){dx<0?next():prev();}},{passive:true});
+  document.getElementById("navNext").addEventListener("click",next);
+  document.getElementById("navPrev").addEventListener("click",prev);
+  window.addEventListener("hashchange",function(){fromHash();render();});
+  window.addEventListener("resize",fit);
+  fromHash(); fit(); render();
+})();
+</script>
+</body>
+</html>

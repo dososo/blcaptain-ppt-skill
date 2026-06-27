@@ -1,0 +1,1448 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="instrument-cool" data-accent="night-cyan" data-scene="deck" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>AI 算力现状 2026</title>
+<meta name="description" content="AI 算力现状 2026 · 状态报告">
+
+<!-- 主题色选择（设计决策 · 3 档可选，整份 deck 一种主基调）：
+       绿/青 = night-cyan(默认) · 蓝 = deep-blue · 黄/琥珀 = safety-amber
+     切换二选一：① 改 <html data-accent="…">；② URL 加 ?accent=deep-blue（无需改文件，便于预览/分享）。
+     仅换 --accent 信号色（高亮/巨号/图表/签名/发光随之换），暗场仪表底不变。
+     封面 hybrid：默认(青)用 AI hero 图（下方 preload 提前抓取，防"标题先出、图后到"）；蓝/琥珀用可染色 SVG 等值场，随主基调换色。 -->
+
+<!-- 封面 hero 图提前高优先加载：消除"标题先出现、背景图后出现"的滞后 -->
+<link rel="preload" as="image" href="./assets/cover-hero.png" fetchpriority="high">
+
+<!-- preload 首屏主力字重（crossorigin 必须·制作规范：preload + font-display:optional 根治 FOUT 跳字） -->
+<link rel="preload" href="./fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="./fonts/GlowSansSC-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="./fonts/GlowSansSC-Medium.woff2" as="font" type="font/woff2" crossorigin>
+
+
+<!-- 字体（决策①②）：Geist Sans 可变轴 + Geist Mono（均 OFL）。
+     铁律（00-tokens-locked.md）：禁用 Google Fonts 版做正式产出——Google Fonts 版不含 OT 特性，
+     tabular-nums/liga 会失效，而本 deck 的刻度槽签名重度依赖 tabular-nums。正式产出须用官方 NPM/zip 版：
+       npm i geist   或  从 vercel.com/font 下载 .zip
+     把字体文件放到与本 HTML 同级的 ./fonts/ 目录后，下方 @font-face 即生效（可变轴单文件）。
+     未安装时自动走 TOKENS 区块 --font-* 的系统回退栈（system-ui / PingFang SC 等），离线仍可读。
+     中文回退用系统 Noto Sans SC / PingFang SC / 微软雅黑，不外链。 -->
+<style>
+  @font-face{
+    font-family:"Geist";
+    src:url("./fonts/Geist-Variable.woff2") format("woff2-variations");
+    font-weight:100 900; font-style:normal; font-display:optional;
+  }
+  @font-face{
+    font-family:"Geist Mono";
+    src:url("./fonts/GeistMono-Variable.woff2") format("woff2-variations");
+    font-weight:100 900; font-style:normal; font-display:optional;
+  }
+  /* 中文 = 未来荧黑 Glow Sans SC（OFL 可嵌入分发）· 子集化 · 两档覆盖全权重 */
+  @font-face{
+    font-family:"Glow Sans SC";
+    src:url("./fonts/GlowSansSC-Regular.woff2") format("woff2");
+    font-weight:100 450; font-style:normal; font-display:optional;
+  }
+  @font-face{
+    font-family:"Glow Sans SC";
+    src:url("./fonts/GlowSansSC-Medium.woff2") format("woff2");
+    font-weight:451 900; font-style:normal; font-display:optional;
+  }
+</style>
+
+<style>
+/* =========================================================================
+   TOKENS START · technical-sublime · 技术崇高 instrument-cool
+   令牌一字不差取自 00-tokens-locked.md。决策：Geist Sans(可变轴)+Geist Mono ·
+   关键标题中间档 510 · 圆角全系 0 · 纯暗场冷光禁渐变。对比度均 WCAG node 实测。
+   validator 只在这对标记间允许裸 hex；区块外必须 var(--…)。
+   ========================================================================= */
+
+/* ---- 全局基底（与主题无关的结构常量）---- */
+:root{
+  /* 字体族（决策①②：Geist Sans 可变 + Geist Mono；不引 Inter；守"一支无衬线+一支等宽"） */
+  --font-sans:"Geist","Geist Sans","Glow Sans SC","Noto Sans SC","PingFang SC","Microsoft YaHei UI",system-ui,-apple-system,sans-serif;
+  --font-mono:"Geist Mono","SFMono-Regular",ui-monospace,"JetBrains Mono",monospace;
+  --font-serif:var(--font-sans);
+
+  /* 字阶 modular scale · ratio 1.25 · base 18px · h2 故意跳级 */
+  --fs-meta:13px;
+  --fs-body:18px;
+  --fs-lead:22.5px;
+  --fs-h3:28px;
+  --fs-h2:43.95px;
+  --fs-h1:clamp(44px,6.4vw,86px);
+
+  /* 字重（越大越细 = 技术崇高签名；关键标题 510 拿权威感） */
+  --w-hero:400;
+  --w-title:400;
+  --w-body:400;
+  --w-label:600;
+
+  /* 字距（display 负、正文零、大写正） */
+  --ls-hero:-0.02em;
+  --ls-title:-0.01em;
+  --ls-body:0;
+  --ls-caps:0.08em;
+
+  /* 行高（字越大越紧） */
+  --lh-hero:1.05;
+  --lh-title:1.08;
+  --lh-body:1.5;
+
+  /* 间距 8px 节拍 */
+  --sp-1:8px;  --sp-2:16px; --sp-3:24px; --sp-4:32px;
+  --sp-6:48px; --sp-8:64px; --sp-10:80px; --sp-12:96px; --sp-16:160px;
+
+  /* 网格（16:9 画板 · 16 栏密对称稳） */
+  --grid-cols:16; --gutter:24px; --pad:80px;
+  --deck-w:1280px; --deck-h:720px;
+
+  /* 圆角（决策④：全系 0px 直角） */
+  --radius-sm:0px; --radius:0px; --radius-lg:0px; --radius-pill:0px;
+
+  /* 线条（发丝线 alpha 在主题块内定；线宽常量） */
+  --line-w:1px; --line-w-hair:0.5px;
+
+  /* 动效（守公理7：UI <300ms） */
+  --dur-fast:.15s;
+  --dur-base:.28s;
+  --ease:cubic-bezier(.22,1,.36,1);
+  --ease-out-quart:cubic-bezier(0.165,0.84,0.44,1);
+  --ease-inout:cubic-bezier(0.645,0.045,0.355,1);
+
+  /* OpenType 特性默认 */
+  --ot-base:"kern" 1,"liga" 1;
+
+  /* 结构性底色常量（与主题无关；放进 TOKENS 块以满足"区块外不得裸 hex"红线） */
+  --void:#000;          /* 浏览器外底（比画布更深一档，衬出 16:9 帧） */
+  --stage-void:#07090C; /* 舞台背景（近黑石墨外场） */
+  --print-paper:#fff;   /* @media print 纸白 */
+}
+
+/* ---- 技术崇高 人格：instrument-cool（暗场冷光）---- */
+:root[data-theme="instrument-cool"]{
+  /* 中性场（近黑非纯黑·带蓝色温） */
+  --bg:#11161B;
+  --surface:#161D24;
+  --surface-2:#1C2530;
+
+  /* 文字三档明度（88/60/38 量级；暗底不用纯白防 halation） */
+  --ink:#E8EEF2;       /* 主 · 15.54:1 on bg */
+  --ink-mid:#9AA6B0;   /* 中 · 用于中文导语 */
+  --ink-dim:#7E8A94;   /* 次 · 5.15:1 on bg（过 AA 小字） */
+  --ink-faint:#525C66; /* 弱 · 2.67:1（仅占位/装饰，不承载关键信息） */
+
+  /* 发丝线（半透明前景色 = 随底色呼吸，非固定灰） */
+  --hairline:rgba(255,255,255,.14);
+  --hairline-2:rgba(255,255,255,.05);
+  --hairline-3:rgba(255,255,255,.16);
+
+  /* 单一信号色（暗底降饱和·hue∈[160,210]·面积≤10%；与 Geist 官方 teal H172–174 同源） */
+  --accent:#3FD6C2;    /* 信号青 H172 · 10.06:1 on bg */
+  --accent-dim:rgba(63,214,194,.14);
+  --accent-glow:rgba(63,214,194,.42);
+
+  /* 语义色（只在数据语义用，不当装饰） */
+  --warn:#F2B23E;
+  --danger:#FF5C5C;
+  --illus:#8A7CC2;
+
+  /* 阴影/层叠（默认无投影；浮起卡才用极淡叠层 ring） */
+  --shadow:none;
+  --shadow-card:0 0 0 1px rgba(255,255,255,.06), 0 2px 8px rgba(0,0,0,.30), 0 12px 24px -12px rgba(0,0,0,.40);
+
+  /* 字体特性映射 */
+  --num-tabular:tabular-nums lining-nums;
+  --num-prose:proportional-nums;
+}
+
+/* ---- accent 场景子档（语义信号非审美·只切 --accent / --accent-dim / --accent-glow）---- */
+:root[data-theme="instrument-cool"][data-accent="night-cyan"]{
+  --accent:#3FD6C2; --accent-dim:rgba(63,214,194,.14); --accent-glow:rgba(63,214,194,.42);
+}
+:root[data-theme="instrument-cool"][data-accent="deep-blue"]{
+  --accent:#3D7BFF; --accent-dim:rgba(61,123,255,.16); --accent-glow:rgba(61,123,255,.40);
+}
+:root[data-theme="instrument-cool"][data-accent="safety-amber"]{
+  --accent:#FF8A3D; --accent-dim:rgba(255,138,61,.16); --accent-glow:rgba(255,138,61,.40);
+}
+/* =========================================================================
+   TOKENS END
+   ========================================================================= */
+
+/* ===================== 基础重置 + 字体特性 ===================== */
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%; -webkit-text-size-adjust:100%; text-size-adjust:100%}
+html{background:var(--void)}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--font-sans);
+  font-feature-settings:var(--ot-base);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  text-rendering:optimizeLegibility;
+  font-variant-numeric:var(--num-prose);
+  overflow:hidden;
+}
+.prose{font-variant-numeric:var(--num-prose)}
+
+/* ===================== CJK 高端排印（R1 调研：标点挤压 + 避头尾 + 防孤字）=====================
+   text-spacing-trim：全角标点（，。：；「」）自动收紧字间空洞——渐进增强，旧浏览器无害。
+   line-break:strict + word-break:normal：收紧 CJK 换行、守避头尾（禁 break-all 否则毁避头尾）。
+   text-wrap:pretty：改善末行孤字。负字距是拉丁/Geist 专利，不施于中文正文（中文 tracking=0）。 */
+html{ text-spacing-trim:normal; }
+p,.lead,.note,.txt,.ds,.sub,blockquote,.q p,.unit p,.col p{
+  line-break:strict; word-break:normal; overflow-wrap:anywhere; text-wrap:pretty;
+}
+
+/* ===================== 舞台（16:9 缩放容器）===================== */
+.stage{
+  position:fixed; inset:0; overflow:hidden;
+  background:
+    radial-gradient(120% 80% at 50% -20%, rgba(255,255,255,.018), transparent 60%),
+    var(--stage-void);
+}
+/* 移动端居中正解(同 info-data)：transform-origin:top-left + fit() 算 px 平移居中，避 flex 溢出盒偏右(真机第4缝) */
+.deck{
+  position:absolute; left:0; top:0;
+  width:var(--deck-w); height:var(--deck-h);
+  transform-origin:top left;
+}
+
+/* 横屏提示：16:9 deck 在竖屏手机=小条幅，引导旋转到横屏(横屏铺满·移动端正解)；旋转后媒体查询失配→自动隐藏。仅 js 路径(no-js 走滚动 fallback)。搬自 info-data·token 映射(技术崇高)：--hud-fg-hi→--ink / --accent-hot→--accent / --hud-fg→--ink-dim / --font-data→--font-sans。 */
+.rotate-hint{display:none}
+@media (orientation:portrait) and (max-width:768px){
+  html.js .rotate-hint{display:flex; position:fixed; inset:0; z-index:120; flex-direction:column; align-items:center; justify-content:center; gap:24px; background:var(--stage-void); color:var(--ink); text-align:center; padding:48px}
+  .rotate-hint .rh-ico{color:var(--accent); animation:rhSpin 2.6s var(--ease) infinite; transform-origin:center}
+  .rotate-hint .rh-msg{display:flex; align-items:center; gap:8px; font-family:var(--font-sans); font-weight:600; font-size:21px; letter-spacing:.02em}
+  .rotate-hint .rh-sq{width:12px; height:12px; background:var(--accent)}
+  .rotate-hint .rh-sub{font-family:var(--font-mono); font-size:13px; color:var(--ink-dim); opacity:.75; line-height:1.6}
+  @keyframes rhSpin{0%,55%{transform:rotate(0)} 75%,100%{transform:rotate(-90deg)}}
+}
+
+/* ===================== 单页 frame ===================== */
+.slide{
+  position:absolute; inset:0;
+  width:var(--deck-w); height:var(--deck-h);
+  background:var(--bg); color:var(--ink);
+  overflow:hidden;
+  box-shadow:0 0 0 1px var(--hairline-2), 0 28px 80px rgba(0,0,0,.55);
+  /* 默认隐藏，仅 .is-active 显示（JS 模式）。no-js 下全部铺开见下方降级。 */
+  opacity:0; visibility:hidden; pointer-events:none;
+  z-index:0;
+}
+.slide.is-active{
+  opacity:1; visibility:visible; pointer-events:auto; z-index:2;
+}
+
+/* 进场微动效：translateY ≤16px + opacity，自定义 ease-out，可被 reduced-motion 降级 */
+@media (prefers-reduced-motion:no-preference){
+  html.js .slide.is-active .anim{
+    animation:riseIn var(--dur-base) var(--ease) both;
+  }
+  html.js .slide.is-active .anim.d1{animation-delay:.05s}
+  html.js .slide.is-active .anim.d2{animation-delay:.11s}
+  html.js .slide.is-active .anim.d3{animation-delay:.17s}
+  html.js .slide.is-active .anim.d4{animation-delay:.23s}
+  @keyframes riseIn{
+    from{opacity:0; transform:translateY(14px)}
+    to{opacity:1; transform:translateY(0)}
+  }
+}
+
+/* ===================== 全局信号脉冲（仅 cover 用，reduced-motion 停）===================== */
+@media (prefers-reduced-motion:no-preference){
+  html.js .live-dot{animation:pulse 2.4s var(--ease-inout) infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.34}}
+}
+
+/* ===================== grain（feTurbulence 2–3%，仅封面/章节/金句）===================== */
+.grain::after{
+  content:""; position:absolute; inset:0; pointer-events:none; z-index:6;
+  opacity:.03; mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23g)'/></svg>");
+}
+
+/* ===================== 通用语汇 ===================== */
+.eyebrow{
+  font-family:var(--font-mono); font-size:var(--fs-meta); font-weight:500;
+  letter-spacing:var(--ls-caps); text-transform:uppercase; color:var(--accent);
+}
+.eyebrow.dim{color:var(--ink-dim)}
+
+/* 情报戳（mono · tabular · 右下角签名指纹） */
+.intel-stamp{
+  position:absolute; right:var(--sp-8); bottom:var(--sp-6); z-index:5;
+  font-family:var(--font-mono); font-size:12px; font-weight:400; letter-spacing:.05em;
+  color:var(--ink-dim); font-variant-numeric:var(--num-tabular);
+}
+.intel-stamp b{color:var(--ink-mid); font-weight:500}
+.intel-stamp .live{color:var(--accent)}
+
+/* 页眉章节标记 + 页码刻度（进度刻度替代滚动条） */
+.chrome{
+  position:absolute; top:var(--sp-6); left:var(--sp-8); right:var(--sp-8); z-index:5;
+  display:flex; justify-content:space-between; align-items:center;
+  font-family:var(--font-mono); font-size:12px; letter-spacing:.06em; color:var(--ink-dim);
+}
+.chrome .sec{font-weight:500; color:var(--ink-mid)}
+.chrome .pg{display:flex; align-items:center; gap:8px; font-variant-numeric:var(--num-tabular)}
+.chrome .ruler{display:flex; gap:4px; align-items:center}
+.chrome .ruler i{width:8px; height:2px; background:var(--hairline-3); display:block}
+.chrome .ruler i.lit{background:var(--accent); box-shadow:0 0 8px var(--accent-glow)}
+
+/* 标题层级（hero 负字距 · 关键标题 510 中间档） */
+.h-hero{font-weight:var(--w-hero); font-size:var(--fs-h1); line-height:var(--lh-hero); letter-spacing:var(--ls-hero)}
+.h2{font-weight:var(--w-title); font-size:var(--fs-h2); line-height:var(--lh-title); letter-spacing:var(--ls-title)}
+.h3{font-weight:var(--w-title); font-size:var(--fs-h3); line-height:1.16; letter-spacing:var(--ls-title)}
+.hi{color:var(--accent)}
+.lead{font-weight:400; font-size:var(--fs-lead); line-height:var(--lh-body); color:var(--ink-mid)}
+
+/* KPI 刻度槽（签名组件） */
+.kpi-slot{position:relative; padding-left:24px}
+.kpi-slot .ticks{position:absolute; left:0; top:6%; bottom:6%; width:14px; border-left:1px solid var(--hairline)}
+.kpi-slot .ticks i{position:absolute; left:0; height:1px; background:var(--hairline)}
+.kpi-slot .ticks i.lit{background:var(--accent); box-shadow:0 0 10px var(--accent-glow)}
+.kpi-num{
+  font-family:var(--font-mono); font-variant-numeric:tabular-nums lining-nums;
+  letter-spacing:-.02em; line-height:.9;
+}
+.kpi-num .u{font-size:.36em; color:var(--ink-dim); font-weight:400; letter-spacing:0; margin-left:.08em}
+
+/* 证据 chip（四档定版色） */
+.chip{
+  display:inline-block; font-family:var(--font-mono); font-size:11px; font-weight:600;
+  letter-spacing:.1em; text-transform:uppercase; padding:4px 8px; border:1px solid var(--hairline);
+  color:var(--ink-dim);
+}
+.chip--infer{color:var(--warn); border-color:var(--warn)}
+.chip--illus{color:var(--illus); border-color:var(--illus)}
+.tag-illus{
+  font-family:var(--font-mono); font-size:10px; color:var(--illus);
+  border:1px solid var(--illus); padding:1px 4px; letter-spacing:.06em; white-space:nowrap;
+}
+
+/* 来源条 */
+.src{font-family:var(--font-mono); font-size:11px; letter-spacing:.03em; color:var(--ink-dim); font-variant-numeric:var(--num-tabular)}
+
+/* ===================== SVG 颜色驱动（关键：不在 TOKENS 外写裸 hex）=====================
+   所有内联 SVG 的笔触/填充/渐变止点全部走这些类，引用 var()，避免 validator 误判裸 hex */
+svg{display:block}
+.s-stroke-accent{stroke:var(--accent)}
+.s-fill-accent{fill:var(--accent)}
+.s-stroke-dim{stroke:var(--ink-dim)}
+.s-fill-dim{fill:var(--ink-dim)}
+.s-stroke-hair{stroke:var(--hairline)}
+.s-stroke-warn{stroke:var(--warn)}
+.s-fill-warn{fill:var(--warn)}
+.s-stroke-danger{stroke:var(--danger)}
+.s-fill-danger{fill:var(--danger)}
+.s-fill-illus{fill:var(--illus)}
+.s-stroke-illus{stroke:var(--illus)}
+.stop-accent{stop-color:var(--accent)}
+.glow-line{stroke:var(--accent); fill:none; filter:url(#glow)}
+.svg-label{font-family:var(--font-mono); font-size:9px; fill:var(--ink-dim); font-variant-numeric:tabular-nums}
+.svg-label.dng{fill:var(--danger)}
+
+/* =====================================================================
+   ① signal-cover · 满版数据 hero（area+line 辉光 + 巨号 KPI）— 🔴 炸
+   ===================================================================== */
+/* 分区栅格：题首 / 标题 / 副题 / 图带(1fr) / 读数 —— 物理分行，图与巨号不可能重叠 */
+.cover{padding:48px var(--sp-8) 48px; display:flex; flex-direction:column; justify-content:center; overflow:hidden}
+.cover .topline{display:flex; align-items:center; gap:8px; position:absolute; top:46px; left:var(--sp-8); z-index:5;
+  font-family:var(--font-mono); font-size:13px; font-weight:600; letter-spacing:.14em; color:var(--accent)}
+.cover .live-dot{width:8px; height:8px; background:var(--accent); box-shadow:0 0 14px var(--accent-glow)}
+.cover h1{position:relative; z-index:5; margin-top:24px; max-width:15.5em;
+  font-weight:var(--w-title); font-size:66px; line-height:1.06; letter-spacing:var(--ls-hero);
+  text-shadow:0 1px 30px rgba(17,22,27,.55)} /* 标题叠图双保险：柔和暗投影，配合 hero-bg 双层遮罩 */
+.cover .sub{position:relative; z-index:5; margin-top:16px; max-width:33em;
+  font-weight:400; font-size:17px; line-height:var(--lh-body); color:var(--ink-mid)}
+.cover .chart{display:none}
+/* 封面 hero = 可染色签名（设计决策 L2 + 设计决策 主题色）：themeable accent 辉光 + .sig-field 等值场 SVG，
+   随 --accent 整体换主基调（绿/蓝/琥珀）。原 AI PNG(青色烤死)弃用，改用自包含可染色 SVG。 */
+/* —— 封面 hybrid（设计决策 降级链 + 设计决策 主题色 · 团队决定）——
+   默认(青)= AI hero 图(L1,最丰富)+ 双层强遮罩(横向压左护标题 + 纵向托底护巨号)；SVG 隐藏。
+   蓝/琥珀 = 可染色 SVG 等值场(L2)+ accent 辉光（无 AI 图，确保整体换色一致）。
+   蓝/琥珀的 AI 图 assets/cover-hero-{blue,amber}.png 留作未来"全 B"素材。 */
+.cover .hero-bg{position:absolute; inset:0; z-index:0; background:
+  linear-gradient(90deg, rgba(17,22,27,.96) 0%, rgba(17,22,27,.90) 44%, rgba(17,22,27,.66) 64%, rgba(17,22,27,.24) 82%, rgba(17,22,27,.04) 100%),
+  linear-gradient(0deg, rgba(17,22,27,.90) 0%, rgba(17,22,27,.06) 44%),
+  url("./assets/cover-hero.png") center/cover no-repeat}
+.cover .sig-field{display:none}
+:root[data-accent="deep-blue"] .cover .hero-bg,
+:root[data-accent="safety-amber"] .cover .hero-bg{background:radial-gradient(64% 88% at 76% 36%, var(--accent-dim), transparent 62%)}
+:root[data-accent="deep-blue"] .cover .sig-field,
+:root[data-accent="safety-amber"] .cover .sig-field{display:block}
+.cover .hero-kpi{position:relative; z-index:5; margin-top:80px; display:flex; align-items:flex-end; gap:32px}
+.cover .hero-kpi .kpi-num{font-size:128px; line-height:.86; font-weight:400; color:var(--accent); text-shadow:0 0 46px var(--accent-glow); font-variant-numeric:var(--num-tabular)}
+.cover .hero-kpi .meta{padding-bottom:12px}
+.cover .intel-stamp{position:absolute; left:auto; right:var(--sp-8); bottom:30px}
+.cover .hero-kpi .meta .l{font-family:var(--font-mono); font-size:13px; letter-spacing:.07em; color:var(--ink-dim); text-transform:uppercase; display:flex; align-items:center; gap:8px}
+.cover .hero-kpi .meta .d{font-family:var(--font-mono); font-size:19px; font-weight:500; color:var(--ink); margin-top:8px; font-variant-numeric:var(--num-tabular)}
+.cover .hero-kpi .meta .d em{font-style:normal; color:var(--accent)}
+
+/* =====================================================================
+   数据动效层（Heer&Robertson 2007 感知增益 + Duarte 渐进揭示；红线：入场播
+   一次 · <300–1200ms ease-out · prefers-reduced-motion / 打印 = 静态终态）
+   ① 折线 draw-on：带 .draw + pathLength="1" 的描边，按 is-active 进场画出
+   ② 巨号 count-up：见底部脚本（DOM 文本插值，tabular-nums 防抖宽）
+   ===================================================================== */
+@media (prefers-reduced-motion:no-preference){
+  .slide.is-active .draw{ stroke-dasharray:1; stroke-dashoffset:1;
+    animation:drawOn .55s cubic-bezier(.22,.61,.36,1) .05s forwards; }
+}
+@keyframes drawOn{ to{ stroke-dashoffset:0 } }
+/* 打印/PDF：禁动效，强制终态（线全显） */
+@media print{ .draw{ stroke-dasharray:none!important; stroke-dashoffset:0!important; animation:none!important } }
+
+/* ③ 柱状 grow（scaleY 从基线长出）④ 雷达 expand（从中心张开）— R2 调研：入场 ease-out
+   cubic-bezier(0,0,.2,1)、上下文柱齐升、焦点柱最后单独长出=强调、组 ≤1.1s。 */
+@media (prefers-reduced-motion:no-preference){
+  .slide.is-active .bars rect{ transform-box:fill-box; transform-origin:50% 100%;
+    animation:barGrow .5s cubic-bezier(0,0,.2,1) both; }
+  .slide.is-active .bars rect:nth-of-type(1){animation-delay:.08s}
+  .slide.is-active .bars rect:nth-of-type(2){animation-delay:.14s}
+  .slide.is-active .bars rect:nth-of-type(3){animation-delay:.20s}
+  .slide.is-active .bars rect:nth-of-type(4){animation-delay:.26s}
+  .slide.is-active .bars rect:nth-of-type(5){animation-delay:.32s}
+  .slide.is-active .bars rect:nth-of-type(6){animation-delay:.38s}
+  .slide.is-active .bar-lead{ transform-box:fill-box; transform-origin:50% 100%;
+    animation:barGrow .5s cubic-bezier(0,0,.2,1) .50s both; }  /* 焦点柱最后长出 */
+  .slide.is-active .radar-poly{ transform-box:fill-box; transform-origin:50% 50%;
+    animation:radarExpand .65s cubic-bezier(0,0,.2,1) .12s both; }
+}
+@keyframes barGrow{ from{transform:scaleY(0)} to{transform:scaleY(1)} }
+@keyframes radarExpand{ from{transform:scale(.25); opacity:0} to{transform:scale(1); opacity:1} }
+@media print{ .bars rect,.bar-lead,.radar-poly{ transform:none!important; animation:none!important; opacity:1!important } }
+
+/* =====================================================================
+   ② context-map · 非对称 5:7 分栏（左窄标签栏 + 右语境单元）— ⚪ 克制
+   ===================================================================== */
+.ctx{display:grid; grid-template-columns:5fr 7fr}
+.ctx .rail{padding:96px var(--sp-6) 64px var(--sp-8); border-right:1px solid var(--hairline);
+  display:flex; flex-direction:column; justify-content:center; background:var(--surface)}
+.ctx .rail h2{margin:20px 0 24px; font-weight:var(--w-title); font-size:36px; line-height:1.14; letter-spacing:var(--ls-title)}
+.ctx .rail .note{font-weight:400; font-size:16px; line-height:1.6; color:var(--ink-dim); max-width:18em}
+.ctx .units{padding:96px var(--sp-8) 64px var(--sp-8); display:flex; flex-direction:column; justify-content:center; gap:0}
+.ctx .unit{display:grid; grid-template-columns:64px 1fr; gap:24px; padding:24px 0; border-top:1px solid var(--hairline)}
+.ctx .unit:last-child{border-bottom:1px solid var(--hairline)}
+.ctx .unit .no{font-family:var(--font-mono); font-size:15px; font-weight:500; color:var(--accent); letter-spacing:.04em; font-variant-numeric:var(--num-tabular)}
+.ctx .unit.muted .no{color:var(--ink-dim)}
+.ctx .unit h3{font-weight:var(--w-title); font-size:21px; letter-spacing:var(--ls-title); margin-bottom:8px}
+.ctx .unit p{font-weight:400; font-size:16px; line-height:1.6; color:var(--ink-mid); max-width:30em}
+.ctx .unit .v{font-family:var(--font-mono); font-size:13px; color:var(--ink-dim); margin-top:8px; font-variant-numeric:var(--num-tabular)}
+.ctx .unit .v em{font-style:normal; color:var(--accent)}
+
+/* =====================================================================
+   ③ paradigm-shift · 旧→新对比（左灰降噪 / 右 accent 新范式）— 🟡 半炸
+   ===================================================================== */
+.shift{display:grid; grid-template-columns:1fr 1fr; position:relative}
+.shift .col{padding:96px var(--sp-8) 64px; display:flex; flex-direction:column; justify-content:center}
+.shift .col.old{background:var(--bg)}
+.shift .col.new{background:var(--surface); border-left:1px solid var(--hairline)}
+.shift .col .tag{font-family:var(--font-mono); font-size:12px; letter-spacing:.16em; text-transform:uppercase}
+.shift .col.old .tag{color:var(--ink-dim)}
+.shift .col.new .tag{color:var(--accent)}
+.shift .col h2{margin:16px 0 20px; font-weight:var(--w-title); font-size:40px; line-height:1.1; letter-spacing:var(--ls-title)}
+.shift .col.old h2{color:var(--ink-mid)}
+.shift .col p{font-weight:400; font-size:16px; line-height:1.6; max-width:24em}
+.shift .col.old p{color:var(--ink-mid)}
+.shift .col.new p{color:var(--ink-mid)}
+.shift .col .marks{margin-top:24px; display:flex; flex-direction:column; gap:12px}
+.shift .col .mk{display:flex; align-items:baseline; gap:12px; font-size:14px; font-weight:400}
+.shift .col.old .mk{color:var(--ink-mid)}
+.shift .col .mk .b{font-family:var(--font-mono); font-size:12px}
+.shift .col.old .mk .b{color:var(--ink-dim)}
+.shift .col.new .mk .b{color:var(--accent)}
+.shift .arrow{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:4;
+  width:64px; height:64px; background:var(--bg); border:1px solid var(--hairline-3);
+  display:flex; align-items:center; justify-content:center}
+.shift .arrow svg{width:28px; height:28px}
+
+/* =====================================================================
+   ④ evidence-wall · 四档证据墙（fact/observation/inference/illustrative）— ⚪ 克制
+   ===================================================================== */
+.ev{padding:96px var(--sp-8) 64px; display:flex; flex-direction:column}
+.ev .hd{display:flex; justify-content:space-between; align-items:flex-end}
+.ev .hd .legend{display:flex; gap:8px}
+.ev h2{margin-top:12px; font-weight:var(--w-title); font-size:34px; letter-spacing:var(--ls-title)}
+.ev .wall{margin-top:32px; flex:1; display:grid; grid-template-columns:repeat(4,1fr); gap:1px;
+  background:var(--hairline-2)}
+.ev .card{background:var(--surface); padding:24px 20px; display:flex; flex-direction:column; gap:12px; position:relative}
+.ev .card .chip{border-color:transparent; padding-left:0; padding-right:0}
+.ev .card .stat{font-family:var(--font-mono); font-weight:500; font-size:46px; letter-spacing:-.02em;
+  color:var(--ink); font-variant-numeric:var(--num-tabular); line-height:.95}
+.ev .card .stat .u{font-size:.42em; color:var(--ink-dim); font-weight:400}
+.ev .card[data-evidence-type="inference"] .stat{color:var(--warn)}
+.ev .card[data-evidence-type="illustrative"] .stat{color:var(--illus)}
+.ev .card .delta{font-family:var(--font-mono); font-size:12px; letter-spacing:.03em; color:var(--ink-dim); font-variant-numeric:var(--num-tabular)}
+.ev .card .delta em{font-style:normal; color:var(--accent)}
+.ev .card[data-evidence-type="inference"] .delta em{color:var(--warn)}
+.ev .card[data-evidence-type="illustrative"] .delta em{color:var(--illus)}
+.ev .card .spark{margin-top:20px; height:58px; width:100%}
+.ev .card .txt{font-size:16px; line-height:1.55; color:var(--ink-mid); margin-top:auto; font-weight:400}
+.ev .card .ref{font-family:var(--font-mono); font-size:10.5px; letter-spacing:.02em; color:var(--ink-dim)}
+.ev .foot{margin-top:20px; font-family:var(--font-mono); font-size:11.5px; color:var(--ink-dim); letter-spacing:.02em}
+
+/* =====================================================================
+   ⑤ kpi-wall · 巨数字独占页 Tufte 擦除（一个读数顶天 + 刻度槽 + 对照降灰）— 🔴 炸
+   ===================================================================== */
+.hero{padding:0 var(--sp-8); display:flex; flex-direction:column; justify-content:center}
+.hero .lead-m{font-family:var(--font-mono); font-size:16px; letter-spacing:.2em; text-transform:uppercase; color:var(--ink-dim); display:flex; gap:8px; align-items:center}
+.hero .big{margin-top:12px; display:flex; align-items:center; justify-content:space-between; gap:48px}
+.hero .big .kpi-num{font-size:310px; font-weight:400; color:var(--accent); text-shadow:0 0 60px var(--accent-glow); font-variant-numeric:var(--num-tabular)}
+.hero .big .kpi-num .pct{font-size:.32em; color:var(--ink-dim); font-weight:400; margin-left:8px}
+.hero .big .kpi-slot{padding-left:32px}
+.hero .big .ticks{width:16px}
+.hero .side{margin-left:64px; align-self:center; max-width:26em}
+.hero .side .t{font-weight:var(--w-title); font-size:22px; line-height:1.3; color:var(--ink); letter-spacing:var(--ls-title)}
+.hero .side .t em{font-style:normal; color:var(--accent)}
+.hero .side .d{font-weight:400; font-size:15px; line-height:1.55; color:var(--ink-mid); margin-top:12px}
+.hero .compare{margin-top:32px; display:flex; gap:32px; flex-wrap:wrap}
+.hero .compare .c{font-family:var(--font-mono); color:var(--ink-faint); font-variant-numeric:var(--num-tabular)}
+.hero .compare .c .v{font-size:30px; font-weight:400; display:block; letter-spacing:-.01em}
+.hero .compare .c .l{font-size:11px; letter-spacing:.08em; text-transform:uppercase; margin-top:8px; display:block}
+.hero .compare .c.now .v{color:var(--accent)}
+.hero .compare .c.now .l{color:var(--ink-dim)}
+
+/* =====================================================================
+   ⑥ timeline-impact · 横向单轴（节点间距按真实时间比例）— ⚪ 克制
+   ===================================================================== */
+.tl{padding:80px var(--sp-8) 64px; display:flex; flex-direction:column; justify-content:center}
+.tl h2{margin-top:12px; font-weight:var(--w-title); font-size:32px; letter-spacing:var(--ls-title)}
+.tl .track{position:relative; flex:1; margin-top:48px}
+.tl .axis{position:absolute; left:0; right:0; top:100px; height:2px; background:var(--ink-faint)}
+.tl .node{position:absolute; top:124px; width:150px}  /* top=124 定位(设计决策 光学摆位豁免)；内容自此下流，day/dot 以负偏移上挂 */
+.tl .node .day{position:absolute; top:-72px; font-family:var(--font-mono); font-size:12.5px; font-weight:500; letter-spacing:.04em; color:var(--ink-mid); font-variant-numeric:var(--num-tabular)}
+.tl .node.key .day{color:var(--accent)}
+.tl .node .dot{position:absolute; top:-30px; left:0; width:12px; height:12px; background:var(--ink-faint); border:1px solid var(--ink-mid)}
+.tl .node.key .dot{background:var(--accent); border-color:var(--accent); box-shadow:0 0 14px var(--accent-glow)}
+.tl .node .tk{font-weight:var(--w-title); font-size:15.5px; line-height:1.3; color:var(--ink); max-width:9.2em; letter-spacing:var(--ls-title)}
+.tl .node .ds{font-weight:400; font-size:13.5px; line-height:1.45; color:var(--ink-mid); margin-top:8px; max-width:10em}
+.tl .node .imp{font-family:var(--font-mono); font-size:12px; color:var(--accent); margin-top:8px; font-variant-numeric:var(--num-tabular)}
+.tl .scaleNote{margin-top:8px; font-family:var(--font-mono); font-size:11px; color:var(--ink-dim); letter-spacing:.03em; align-self:flex-end}
+
+/* =====================================================================
+   ⑦ risk-radar · 雷达 + 2×2 象限（warn/danger 点睛）— 🟡 半炸
+   ===================================================================== */
+.rr{display:grid; grid-template-columns:5fr 7fr}
+.rr .rail{padding:96px var(--sp-6) 48px var(--sp-8); border-right:1px solid var(--hairline); background:var(--surface); display:flex; flex-direction:column}
+.rr .rail h2{margin:20px 0 20px; font-weight:var(--w-title); font-size:30px; line-height:1.16; letter-spacing:var(--ls-title)}
+.rr .rail .radar{width:100%; max-width:300px; margin:4px auto 20px}
+.rr .rail .note{font-weight:400; font-size:16px; line-height:1.6; color:var(--ink-mid); margin-top:auto}
+.rr .matrix{padding:80px var(--sp-8) 48px; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:1px; background:var(--hairline)}
+.rr .q{background:var(--bg); padding:24px; position:relative; display:flex; flex-direction:column}
+.rr .q .qh{font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-dim)}
+.rr .q h3{margin:12px 0 8px; font-weight:var(--w-title); font-size:19px; letter-spacing:var(--ls-title)}
+.rr .q p{font-weight:400; font-size:16px; line-height:1.5; color:var(--ink-mid)}
+.rr .q .sev{position:absolute; right:24px; top:24px; font-family:var(--font-mono); font-size:12px; font-weight:600; letter-spacing:.04em}
+.rr .q .sev.ok{color:var(--accent)}
+.rr .q .sev.warn{color:var(--warn)}
+.rr .q.alert{box-shadow:inset 0 0 0 1px rgba(255,92,92,.42)}
+.rr .q.alert h3{color:var(--danger)}
+.rr .q.alert .sev{color:var(--danger)}
+
+/* =====================================================================
+   ⑧ decision-matrix · 打分表（tabular · accent 点最优行）— ⚪ 克制
+   ===================================================================== */
+.dm{padding:80px var(--sp-8) 64px; display:flex; flex-direction:column; justify-content:center}
+.dm h2{margin-top:12px; font-weight:var(--w-title); font-size:32px; letter-spacing:var(--ls-title)}
+.dm table{margin-top:32px; width:100%; border-collapse:collapse; font-variant-numeric:var(--num-tabular)}
+.dm th{font-family:var(--font-mono); font-size:11.5px; font-weight:500; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--ink-dim); text-align:right; padding:0 12px 16px; border-bottom:1px solid var(--hairline)}
+.dm th.l{text-align:left; padding-left:0}
+.dm td{font-family:var(--font-mono); font-size:18px; color:var(--ink-mid); text-align:right; padding:20px 12px; border-bottom:1px solid var(--hairline-2); font-variant-numeric:var(--num-tabular)}
+.dm td.l{text-align:left; padding-left:12px; font-family:var(--font-sans); font-weight:var(--w-body); color:var(--ink); font-size:16px}
+.dm tr.best td{color:var(--ink)}
+.dm tr.best td.l{color:var(--accent); font-weight:var(--w-title)}
+.dm tr.best td.score{color:var(--accent); font-weight:600}
+.dm tr.best{background:var(--accent-dim)}
+.dm .note{margin-top:24px; font-family:var(--font-mono); font-size:16px; color:var(--ink-dim); letter-spacing:.02em}
+
+/* =====================================================================
+   ⑨ final-move · 行动收尾（边角锚定 + 大负空间）— 🔴 炸
+   ===================================================================== */
+.fm{padding:0 var(--sp-8); display:flex; flex-direction:column; justify-content:center}
+.fm .anchor{text-align:left; max-width:none}
+.fm .anchor .k{font-family:var(--font-mono); font-size:14px; letter-spacing:.18em; text-transform:uppercase; color:var(--accent)}
+.fm .anchor h1{margin-top:20px; font-weight:var(--w-title); font-size:72px; line-height:1.06; letter-spacing:var(--ls-hero); max-width:17em}
+.fm .moves{margin-top:48px; display:grid; grid-template-columns:repeat(3,1fr); gap:0; border-top:1px solid var(--hairline)}
+.fm .moves .m{display:flex; flex-direction:column; gap:12px; padding:20px 32px 0 24px; border-right:1px solid var(--hairline)}
+.fm .moves .m:first-child{padding-left:0}
+.fm .moves .m:last-child{border-right:none; padding-right:0}
+.fm .moves .m .no{font-family:var(--font-mono); font-size:14px; font-weight:600; color:var(--accent); font-variant-numeric:var(--num-tabular)}
+.fm .moves .m .tx{font-weight:var(--w-body); font-size:17px; line-height:1.5; color:var(--ink)}
+
+/* =====================================================================
+   ⑩ social-card · 全屏金句卡（独立传播物 · social-mark 签名）— 🔴 炸
+   ===================================================================== */
+.sc{padding:var(--sp-8); display:flex; flex-direction:column; justify-content:center;
+  background:
+    radial-gradient(80% 70% at 12% 30%, var(--accent-dim), transparent 58%),
+    var(--bg)}
+.sc .q-mark{font-family:var(--font-mono); font-size:120px; line-height:.5; color:var(--accent); opacity:.5; margin-bottom:16px}
+.sc blockquote{font-weight:var(--w-hero); font-size:72px; line-height:1.12; letter-spacing:var(--ls-hero); max-width:14em; text-indent:-.06em}
+.sc blockquote em{font-style:normal; color:var(--accent)}
+.sc .by{margin-top:32px; font-family:var(--font-mono); font-size:14px; color:var(--ink-dim); letter-spacing:.06em; font-variant-numeric:var(--num-tabular)}
+.social-mark{position:absolute; left:var(--sp-8); bottom:var(--sp-6); z-index:5;
+  font-family:var(--font-mono); font-size:12px; letter-spacing:.08em; color:var(--ink-dim); font-variant-numeric:var(--num-tabular)}
+.social-mark b{color:var(--ink-mid); font-weight:500}
+
+/* ===== 签名母题 · 算力等值场 iso-compute contour（R5 配方 · L2 自包含 SVG，无需 AI 图）=====
+   恒定层：嵌套漂移等值环收敛于发光「峰」· teal 只用于环/峰 · 暗谷(瓦特)→亮峰(智能) · 与 wordmark 共现。
+   降级链：L1=AI 等高线 hero（封面）· L2=本 SVG · L3=CSS repeating-radial-gradient（见 .sig-field--css）。 */
+.sig-field{position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden}
+.sig-field svg{position:absolute; inset:0; width:100%; height:100%; display:block}
+.sc > .q-mark,.sc > blockquote,.sc > .by{position:relative; z-index:1}
+/* 页脚签名微章（co-presentation：母题缩为单环组 + 峰点，与 wordmark 同现）*/
+.sig-mark{display:inline-flex; vertical-align:-2px; margin-right:8px}
+.sig-mark svg{width:18px; height:14px; display:block; overflow:visible}
+
+/* ===================== ⑪ section-divider · 章节分隔（长 deck 13–25 页分幕 · 🔴 能量锚 · 签名复现）
+   用法：section.slide.divider.grain（data-layout=section-divider / data-role=insight / data-energy=blast）内放：
+   .sig-field（等值场 SVG·签名复现）+ .ch-eyebrow（第二幕·ACT 2）+ .ch-no（02）+ h2（章节标题）+ .ch-note（导语）。
+   ===================== */
+.divider{padding:0 var(--sp-8); display:flex; flex-direction:column; justify-content:center}
+.divider .ch-eyebrow{position:relative; z-index:5; font-family:var(--font-mono); font-size:14px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-dim)}
+.divider .ch-no{position:relative; z-index:5; font-family:var(--font-mono); font-size:208px; line-height:.86; font-weight:400; color:var(--accent); text-shadow:0 0 64px var(--accent-glow); font-variant-numeric:var(--num-tabular); margin:8px 0}
+.divider h2{position:relative; z-index:5; font-weight:var(--w-title); font-size:56px; line-height:1.08; letter-spacing:var(--ls-hero); max-width:18em}
+.divider .ch-note{position:relative; z-index:5; margin-top:16px; font-weight:400; font-size:18px; line-height:1.6; color:var(--ink-mid); max-width:30em}
+
+/* ===================== ⑫ agenda · 四幕导览（编号单元列 · ⚪ 克制）===================== */
+.ag{padding:80px var(--sp-8) 64px; display:flex; flex-direction:column; justify-content:center}
+.ag h2.ag-h{margin-top:12px; font-weight:var(--w-title); font-size:36px; line-height:1.14; letter-spacing:var(--ls-title); max-width:22em}
+.ag .ag-grid{margin-top:48px; display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--hairline-2)}
+.ag .ag-item{background:var(--bg); display:grid; grid-template-columns:64px 1fr; gap:24px; padding:24px 32px 24px 0}
+.ag .ag-item .no{font-family:var(--font-mono); font-size:15px; font-weight:500; color:var(--accent); letter-spacing:.04em; font-variant-numeric:var(--num-tabular)}
+.ag .ag-item h3{font-weight:var(--w-title); font-size:20px; letter-spacing:var(--ls-title); margin-bottom:8px}
+.ag .ag-item p{font-weight:400; font-size:16px; line-height:1.55; color:var(--ink-mid); max-width:24em}
+
+/* ===================== 导航控件（HUD）===================== */
+.hud{position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:50;
+  display:flex; align-items:center; gap:12px; padding:8px 12px;
+  background:rgba(7,9,12,.72); border:1px solid var(--hairline);
+  font-family:var(--font-mono); font-size:12px; color:var(--ink-dim);
+  -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+  opacity:0; transition:opacity var(--dur-base) var(--ease);
+}
+html.js .hud{opacity:.5}
+.hud:hover{opacity:1}
+.hud button{font:inherit; color:var(--ink-mid); background:none; border:1px solid var(--hairline);
+  width:28px; height:24px; cursor:pointer; line-height:1}
+.hud button:hover{color:var(--accent); border-color:var(--accent)}
+.hud button:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.hud .cnt{font-variant-numeric:var(--num-tabular); color:var(--ink-mid); min-width:54px; text-align:center}
+
+/* 无 JS 提示条 */
+.nojs-hint{display:none}
+html.no-js .nojs-hint{
+  display:block; position:fixed; top:0; left:0; right:0; z-index:60; padding:4px 12px;
+  font-family:var(--font-mono); font-size:12px; text-align:center; color:var(--ink-dim);
+  background:rgba(7,9,12,.85); border-bottom:1px solid var(--hairline);
+}
+
+/* ===================== no-js 降级：全部页竖向铺开可滚动 ===================== */
+html.no-js body{overflow:auto}
+html.no-js .stage{position:static; display:block; padding:48px 0 80px; height:auto; min-height:100%}
+html.no-js .deck{position:static; width:auto; height:auto; transform:none; display:flex; flex-direction:column; align-items:center; gap:16px}
+html.no-js .slide{position:relative; inset:auto; opacity:1; visibility:visible; pointer-events:auto; flex:none}
+html.no-js .hud{display:none}
+
+/* ===================== @media print：每页一张，导出友好 ===================== */
+@media print{
+  @page{size:1280px 720px; margin:0}
+  html,body{background:var(--print-paper); overflow:visible; height:auto}
+  .stage{position:static; display:block; background:none; padding:0; height:auto}
+  .deck{width:auto; height:auto; transform:none; display:block}
+  .slide{
+    position:relative; inset:auto; opacity:1 !important; visibility:visible !important;
+    page-break-after:always; break-after:page; box-shadow:none;
+    width:1280px; height:720px;
+  }
+  .slide.is-active{z-index:auto}
+  .hud,.nojs-hint{display:none !important}
+  .grain::after{display:none} /* 打印不要 grain（糊 + 费墨） */
+}
+
+/* ===================== reduced-motion：去动效（反向 opt-in 已保证基态稳定）===================== */
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important; transition:none !important}
+}
+</style>
+</head>
+
+<body>
+<div class="nojs-hint">未启用 JavaScript：已降级为竖向滚动模式，逐页查看。启用 JS 可键盘 ← → / 触屏滑动翻页。</div>
+
+<div class="stage">
+  <div class="deck" id="deck">
+
+  <!-- ① signal-cover · 满版数据 hero ─────────────────────────── 🔴 -->
+  <section class="slide cover grain" data-layout="signal-cover" data-energy="blast" data-role="state"
+           data-sec="信号 · SIGNAL" data-cover-paradigm="data-hero">
+    <div class="hero-bg" aria-hidden="true"></div>
+    <div class="sig-field" aria-hidden="true">
+      <svg viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <radialGradient id="sigPeakCover" cx="74%" cy="36%" r="46%">
+            <stop offset="0" stop-color="var(--accent)" stop-opacity=".24"/>
+            <stop offset="50%" stop-color="var(--accent)" stop-opacity=".06"/>
+            <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect width="1280" height="720" fill="url(#sigPeakCover)"/>
+        <g fill="none" stroke="var(--accent)" stroke-width="1.5">
+          <ellipse cx="948" cy="258" rx="74"  ry="56"  stroke-opacity=".60"/>
+          <ellipse cx="924" cy="276" rx="172" ry="128" stroke-opacity=".45"/>
+          <ellipse cx="900" cy="294" rx="272" ry="200" stroke-opacity=".33"/>
+          <ellipse cx="876" cy="312" rx="372" ry="272" stroke-opacity=".23"/>
+          <ellipse cx="852" cy="330" rx="472" ry="344" stroke-opacity=".16"/>
+          <ellipse cx="828" cy="348" rx="572" ry="416" stroke-opacity=".105"/>
+          <ellipse cx="804" cy="366" rx="672" ry="488" stroke-opacity=".07"/>
+          <ellipse cx="780" cy="384" rx="772" ry="560" stroke-opacity=".045"/>
+        </g>
+        <circle cx="948" cy="258" r="3.5" fill="var(--accent)" opacity=".9"/>
+      </svg>
+    </div>
+    <div class="topline">AI 算力现状 · STATE OF COMPUTE 2026</div>
+    <h1 class="anim d1">这一轮 AI 竞赛，<br>拼的不是模型，是<span class="hi">算力的尺度</span></h1>
+    <p class="sub anim d2">十余年每年 4–5 倍、需求仍在加速，而资本、电力与制程正逼近临界——尺度即权力，也即瓶颈。</p>
+
+    <svg class="chart anim d3" data-rendered-by="blcaptain-chart" viewBox="0 0 1280 330" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="fillCover" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" class="stop-accent" stop-opacity=".38"/>
+          <stop offset="1" class="stop-accent" stop-opacity="0"/>
+        </linearGradient>
+        <filter id="glow" color-interpolation-filters="sRGB">
+          <feGaussianBlur stdDeviation="5" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <path d="M0,288 C170,276 250,242 390,222 C530,202 615,174 740,136 C870,96 980,76 1110,44 C1185,26 1245,18 1280,12 L1280,330 L0,330 Z" fill="url(#fillCover)"/>
+      <path class="glow-line draw" pathLength="1" stroke-width="3" d="M0,288 C170,276 250,242 390,222 C530,202 615,174 740,136 C870,96 980,76 1110,44 C1185,26 1245,18 1280,12"/>
+      <circle class="s-fill-accent" cx="1110" cy="44" r="6" filter="url(#glow)"/>
+    </svg>
+
+    <div class="hero-kpi anim d2">
+      <div class="kpi-slot" style="padding-left:0">
+        <span class="kpi-num">4–5<span class="u">×</span></span>
+      </div>
+      <div class="meta">
+        <div class="l">前沿模型 训练算力 年增速</div>
+        <div class="d">十余年稳定 <em>每年 4–5 倍</em> · 来源 Epoch AI</div>
+      </div>
+    </div>
+    <div class="intel-stamp"><span class="sig-mark" aria-hidden="true"><svg viewBox="0 0 36 28"><g fill="none" stroke="var(--accent)" stroke-width="1.4"><ellipse cx="23" cy="11" rx="5" ry="3.6" stroke-opacity=".9"/><ellipse cx="20" cy="13" rx="11" ry="7.6" stroke-opacity=".5"/><ellipse cx="17" cy="15" rx="17" ry="11.6" stroke-opacity=".24"/></g><circle cx="23" cy="11" r="1.6" fill="var(--accent)"/></svg></span><b>COMPUTE-2026</b> · 算力状态报告 · 01 / 20</div>
+  </section>
+
+  <!-- ② agenda · 五幕导览 ───────────────────────────────────── ⚪ NEW -->
+  <section class="slide ag" data-layout="agenda" data-energy="calm" data-role="state" data-sec="导览 · AGENDA">
+    <div class="chrome"><span class="sec">导览 · AGENDA</span>
+      <span class="pg">02 / 20</span></div>
+    <span class="eyebrow dim anim d1">这份战报怎么读 · 02</span>
+    <h2 class="ag-h anim d1">四幕，把「算力竞赛」<span class="hi">拆成可判断的四问</span></h2>
+    <div class="ag-grid">
+      <div class="ag-item anim d1"><span class="no">01</span>
+        <div><h3>态势 · 尺度有多大</h3><p>训练算力每年 4–5×、capex 破 4,000 亿——先认清量级。</p></div></div>
+      <div class="ag-item anim d2"><span class="no">02</span>
+        <div><h3>洞察 · 拼的到底是什么</h3><p>算力 ≠ 买卡：卡 × 电 × 网，外加推理时算力新前沿。</p></div></div>
+      <div class="ag-item anim d3"><span class="no">03</span>
+        <div><h3>立据 · 谁在真烧钱</h3><p>巨型集群、训练成本曲线、能效代际增益的一手证据。</p></div></div>
+      <div class="ag-item anim d4"><span class="no">04</span>
+        <div><h3>收窄 · 瓶颈在哪一道墙</h3><p>电力 / 芯片 / 资本 / 能效四约束，决定先投哪条战线。</p></div></div>
+    </div>
+    <div class="intel-stamp"><b>COMPUTE-2026</b> · 算力状态报告 · 02 / 20</div>
+  </section>
+
+  <!-- ③ section-divider · 幕一 态势 ──────────────────────────── 🔴 NEW -->
+  <section class="slide divider grain" data-layout="section-divider" data-energy="blast" data-role="state" data-sec="第一幕 · 态势">
+    <div class="sig-field" aria-hidden="true">
+      <svg viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <radialGradient id="sigPeakD1" cx="72%" cy="36%" r="46%">
+            <stop offset="0" stop-color="var(--accent)" stop-opacity=".20"/>
+            <stop offset="52%" stop-color="var(--accent)" stop-opacity=".05"/>
+            <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect width="1280" height="720" fill="url(#sigPeakD1)"/>
+        <g fill="none" stroke="var(--accent)" stroke-width="1.5">
+          <ellipse cx="912" cy="252" rx="72"  ry="54"  stroke-opacity=".55"/>
+          <ellipse cx="888" cy="270" rx="168" ry="124" stroke-opacity=".40"/>
+          <ellipse cx="864" cy="288" rx="264" ry="194" stroke-opacity=".28"/>
+          <ellipse cx="840" cy="306" rx="360" ry="264" stroke-opacity=".19"/>
+          <ellipse cx="816" cy="324" rx="456" ry="334" stroke-opacity=".13"/>
+          <ellipse cx="792" cy="342" rx="552" ry="404" stroke-opacity=".085"/>
+          <ellipse cx="768" cy="360" rx="648" ry="474" stroke-opacity=".055"/>
+        </g>
+        <circle cx="912" cy="252" r="3.2" fill="var(--accent)" opacity=".88"/>
+      </svg>
+    </div>
+    <span class="ch-eyebrow anim d1">第一幕 · ACT 1</span>
+    <span class="ch-no anim d1">01</span>
+    <h2 class="anim d2">态势：先认清<span class="hi">尺度的绝对量级</span></h2>
+    <p class="ch-note anim d3">在判断「谁会赢」之前，先校准这场竞赛的物理尺度——算力、资本、电力的绝对数字。</p>
+    <div class="intel-stamp"><b>COMPUTE-2026</b> · 第一幕 态势 · 03 / 20</div>
+  </section>
+
+  <!-- ④ context-map · 非对称 5:7 分栏 ───────────────────────── ⚪ -->
+  <section class="slide ctx" data-layout="context-map" data-energy="calm" data-role="insight" data-sec="语境 · CONTEXT">
+    <div class="chrome"><span class="sec">语境 · CONTEXT</span>
+      <span class="pg">04 / 20</span></div>
+    <div class="rail">
+      <span class="eyebrow dim anim d1">态势坐标 · 02</span>
+      <h2 class="anim d1">读懂这轮算力，<br>先放进<span class="hi">三条坐标</span>里</h2>
+      <p class="note anim d2">先建立判断的背景。需求、供给、成本三条坐标互相牵制——任一翻转，全局结论都需重估。</p>
+    </div>
+    <div class="units">
+      <div class="unit anim d1"><span class="no">№01</span>
+        <div><h3>需求侧已不是变量</h3>
+          <p>训练与推理需求同时爆发，焦点从「要不要算力」转向「谁拿得到、谁用得起」。</p>
+          <div class="v">训练算力需求 <em>年增 4.2×</em> · 推理反超训练</div></div></div>
+      <div class="unit anim d2"><span class="no">№02</span>
+        <div><h3>供给侧出现硬约束</h3>
+          <p>先进封装（HBM/CoWoS）、电力、散热成为真瓶颈——比芯片本身更早卡脖子。</p>
+          <div class="v">单集群功耗 <em>破 100MW</em> · 逼近电网上限</div></div></div>
+      <div class="unit muted anim d3"><span class="no">№03</span>
+        <div><h3>成本曲线是未合上的口子</h3>
+          <p>单位算力成本在降，但总支出仍指数攀升，ROI 拐点未明——最该盯的反向信号。</p>
+          <div class="v">大厂 capex <em>2025 破 $4,000 亿</em> · 2026 再增 ~75%</div></div></div>
+    </div>
+  </section>
+
+  <!-- ⑤ kpi-wall · 训练算力增长读数（calm 变体）──────────────── ⚪ NEW -->
+  <section class="slide hero" data-layout="kpi-wall" data-energy="calm" data-role="ground" data-sec="尺度 · SCALE">
+    <div class="chrome"><span class="sec">尺度 · SCALE OF COMPUTE</span>
+      <span class="pg">05 / 20</span></div>
+    <span class="lead-m anim d1">前沿 AI 训练算力 · 年增速</span>
+    <div class="big anim d1">
+      <div class="kpi-slot">
+        <span class="kpi-num">4.2<span class="pct">×</span></span>
+      </div>
+      <div class="side anim d2">
+        <div class="t">自 2018 起，<em>每年 4.2 倍</em>（更长尺度 2010 起为 5.3×）</div>
+        <div class="d">指数跑了十余年没断档：GPT-4 ≈ 2×10²⁵ FLOP、Gemini Ultra ≈ 5×10²⁵ FLOP。增长来自更大集群 × 更长训练 × 更强硬件三者叠乘。</div>
+        <div class="compare anim d3">
+          <div class="c"><span class="v">2×10²⁵</span><span class="l">GPT-4 FLOP</span></div>
+          <div class="c"><span class="v">5×10²⁵</span><span class="l">Gemini Ultra</span></div>
+          <div class="c now"><span class="v">~10</span><span class="l">≥1e26 模型(2026)</span></div>
+        </div>
+      </div>
+    </div>
+    <span class="src" style="margin-top:24px">来源：Epoch AI《Training compute grows 4–5× / year》（2010–2024.05；近年 4.2×·CI 3.6–4.9×）· GPT-4/Gemini Ultra 为 Epoch 估算</span>
+  </section>
+
+  <!-- ⑥ section-divider · 幕二 洞察 ──────────────────────────── 🔴 NEW -->
+  <section class="slide divider grain" data-layout="section-divider" data-energy="blast" data-role="insight" data-sec="第二幕 · 洞察">
+    <div class="sig-field" aria-hidden="true">
+      <svg viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <radialGradient id="sigPeakD2" cx="72%" cy="36%" r="46%">
+            <stop offset="0" stop-color="var(--accent)" stop-opacity=".20"/>
+            <stop offset="52%" stop-color="var(--accent)" stop-opacity=".05"/>
+            <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect width="1280" height="720" fill="url(#sigPeakD2)"/>
+        <g fill="none" stroke="var(--accent)" stroke-width="1.5">
+          <ellipse cx="896" cy="262" rx="70"  ry="54"  stroke-opacity=".55"/>
+          <ellipse cx="872" cy="280" rx="166" ry="124" stroke-opacity=".40"/>
+          <ellipse cx="848" cy="298" rx="262" ry="194" stroke-opacity=".28"/>
+          <ellipse cx="824" cy="316" rx="358" ry="264" stroke-opacity=".19"/>
+          <ellipse cx="800" cy="334" rx="454" ry="334" stroke-opacity=".13"/>
+          <ellipse cx="776" cy="352" rx="550" ry="404" stroke-opacity=".085"/>
+          <ellipse cx="752" cy="370" rx="646" ry="474" stroke-opacity=".055"/>
+        </g>
+        <circle cx="896" cy="262" r="3.2" fill="var(--accent)" opacity=".88"/>
+      </svg>
+    </div>
+    <span class="ch-eyebrow anim d1">第二幕 · ACT 2</span>
+    <span class="ch-no anim d1">02</span>
+    <h2 class="anim d2">洞察：拼的<span class="hi">不是买了多少卡</span></h2>
+    <p class="ch-note anim d3">把算力还原成卡 × 电 × 网三要素，再看推理时算力这条正在改写规则的新前沿。</p>
+    <div class="intel-stamp"><b>COMPUTE-2026</b> · 第二幕 洞察 · 06 / 20</div>
+  </section>
+
+  <!-- ⑦ paradigm-shift · 旧→新对比 ──────────────────────────── 🟡 -->
+  <section class="slide shift grain" data-layout="paradigm-shift" data-energy="half" data-role="insight" data-sec="洞察 · INSIGHT">
+    <div class="chrome"><span class="sec">洞察 · INSIGHT</span>
+      <span class="pg">07 / 20</span></div>
+    <div class="col old">
+      <span class="tag anim d1">WHAT IS · 旧叙事</span>
+      <h2 class="anim d1">「算力只是<br>买卡的成本」</h2>
+      <p class="anim d2">把算力当采购项，衡量的是买多少卡、跑多少 FLOPS——一场比谁钱多的军备竞赛。</p>
+      <div class="marks">
+        <div class="mk anim d3"><span class="b">×</span><span>指标盯「拥有多少 GPU」</span></div>
+        <div class="mk anim d3"><span class="b">×</span><span>胜负看「谁堆得起卡」</span></div>
+      </div>
+    </div>
+    <div class="col new">
+      <span class="tag anim d1">WHAT COULD BE · 新范式</span>
+      <h2 class="anim d1">算力正在成为<br><span class="hi">新的硬通货</span></h2>
+      <p class="anim d2">当算力决定谁能训练前沿模型，竞争就不再是「买多少卡」，而是「谁掌握能源、制程与调度」——国力级的基建之争。</p>
+      <div class="marks">
+        <div class="mk anim d3"><span class="b">→</span><span>指标盯「有效算力 / 每瓦性能」</span></div>
+        <div class="mk anim d3"><span class="b">→</span><span>胜负看「能源 × 制程 × 调度」</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ⑧ evidence-wall · 四档证据墙 ──────────────────────────── ⚪ -->
+  <section class="slide ev" data-layout="evidence-wall" data-energy="calm" data-role="ground" data-sec="立据 · GROUND">
+    <div class="chrome"><span class="sec">立据 · GROUND</span>
+      <span class="pg">08 / 20</span></div>
+    <div class="hd">
+      <div><span class="eyebrow anim d1">证据 · 四档分级 · 同向</span>
+        <h2 class="anim d1">四类证据，指向同一判断</h2></div>
+      <div class="legend anim d1">
+        <span class="chip">FACT 事实</span>
+        <span class="chip">OBS 观察</span>
+        <span class="chip chip--infer">INFER 推断</span>
+        <span class="chip chip--illus">ILLUS 示意</span>
+      </div>
+    </div>
+    <div class="wall">
+      <div class="card anim d1" data-evidence-type="fact">
+        <span class="chip">FACT 事实</span>
+        <div class="stat">&gt;$400<span class="u">B</span></div>
+        <div class="delta">大厂 2025 capex · <em>2026 +75%</em></div>
+        <svg class="spark" data-rendered-by="blcaptain-chart" viewBox="0 0 220 44" preserveAspectRatio="none" aria-hidden="true">
+          <polyline class="s-stroke-accent draw" pathLength="1" fill="none" stroke-width="2" points="0,36 40,32 80,28 120,22 160,15 220,6"/></svg>
+        <div class="txt">头部科技公司 2025 资本开支已破 4,000 亿美元。</div>
+        <span class="ref src">来源：IEA《Energy &amp; AI》2025</span>
+      </div>
+      <div class="card anim d2" data-evidence-type="fact">
+        <span class="chip">FACT 事实</span>
+        <div class="stat">$18<span class="u">B</span></div>
+        <div class="delta">xAI Colossus 硅投入 · <em>~2 GW</em></div>
+        <svg class="spark" data-rendered-by="blcaptain-chart" viewBox="0 0 220 44" preserveAspectRatio="none" aria-hidden="true">
+          <g class="s-fill-dim bars"><rect x="2" y="32" width="22" height="12"/><rect x="32" y="28" width="22" height="16"/><rect x="62" y="22" width="22" height="22"/><rect x="92" y="16" width="22" height="28"/><rect x="122" y="11" width="22" height="33"/></g>
+          <rect class="s-fill-accent bar-lead" x="182" y="5" width="22" height="39"/></svg>
+        <div class="txt">单站约 55.5 万 GPU、2 GW，全球最大 AI 站点。</div>
+        <span class="ref src">来源：SemiAnalysis / 2026.02</span>
+      </div>
+      <div class="card anim d3" data-evidence-type="inference">
+        <span class="chip chip--infer">INFER 推断</span>
+        <div class="stat">&gt;$1<span class="u">B</span></div>
+        <div class="delta">最大训练 run · <em>≈2027</em></div>
+        <svg class="spark" data-rendered-by="blcaptain-chart" viewBox="0 0 220 44" preserveAspectRatio="none" aria-hidden="true">
+          <polyline class="s-stroke-dim" fill="none" stroke-width="2" points="0,38 70,28 130,20"/>
+          <polyline class="s-stroke-warn" fill="none" stroke-width="2" stroke-dasharray="5 5" points="130,20 180,12 220,4"/>
+          <circle class="s-fill-warn" cx="130" cy="20" r="3"/></svg>
+        <div class="txt">成本年增 2.4×，外推单次训练约 2027 破十亿美元。</div>
+        <span class="ref src">推演 · Epoch AI 成本曲线外推</span>
+      </div>
+      <div class="card anim d4" data-evidence-type="illustrative">
+        <span class="chip chip--illus">ILLUS 示意</span>
+        <div class="stat">30<span class="u">%</span></div>
+        <div class="delta">算力闲置率 · <em>结构示意</em></div>
+        <svg class="spark" data-rendered-by="blcaptain-chart" viewBox="0 0 220 44" preserveAspectRatio="none" aria-hidden="true">
+          <rect x="0" y="15" width="220" height="14" fill="rgba(255,255,255,.06)"/>
+          <rect class="s-fill-illus" x="0" y="15" width="66" height="14"/>
+          <line class="s-stroke-illus" x1="66" y1="7" x2="66" y2="37" stroke-dasharray="3 3"/></svg>
+        <div class="txt">调度碎片化的有效利用缺口（示意），非实测。</div>
+        <span class="ref src">示意数据 · 仅用于演示模板</span>
+      </div>
+    </div>
+    <div class="foot">四档同向：事实接一手源 · 观察可复核 · 推断可证伪 · 示意不当真。</div>
+  </section>
+
+  <!-- ⑨ kpi-wall · 巨数字独占页 Tufte 擦除 ──────────────────── 🔴 -->
+  <section class="slide hero" data-layout="kpi-wall" data-energy="blast" data-role="ground" data-sec="立据 · GROUND">
+    <div class="chrome"><span class="sec">读数 · SINGLE READING</span>
+      <span class="pg">09 / 20</span></div>
+    <span class="lead-m anim d1">整份报告唯一要记住的读数</span>
+    <div class="big anim d1">
+      <div class="kpi-slot">
+        <span class="kpi-num">28<span class="pct">×</span></span>
+      </div>
+      <div class="side anim d2">
+        <div class="t">每一代旗舰，训练投入<em>比上一代贵约 28 倍</em></div>
+        <div class="d">这是「尺度即权力」最硬的注脚：算力成本年增 2.4×，把前沿训练推成只有极少数玩家负担得起的赛道。</div>
+        <div class="compare anim d3">
+          <div class="c"><span class="v">$78M</span><span class="l">GPT-4</span></div>
+          <div class="c"><span class="v">$191M</span><span class="l">Gemini Ultra</span></div>
+          <div class="c now"><span class="v">&gt;$1B</span><span class="l">≈2027 外推</span></div>
+        </div>
+      </div>
+    </div>
+    <span class="src" style="margin-top:24px">来源：Epoch AI / Stanford AI Index 2025（最新旗舰平均比前代贵 28×·成本年增 2.4×）· &gt;$1B 为成本曲线外推</span>
+  </section>
+
+  <!-- ⑩ context-map · 推理时算力新前沿 ───────────────────────── ⚪ NEW -->
+  <section class="slide ctx" data-layout="context-map" data-energy="calm" data-role="insight" data-sec="洞察 · INSIGHT">
+    <div class="chrome"><span class="sec">洞察 · NEW FRONTIER</span>
+      <span class="pg">10 / 20</span></div>
+    <div class="rail">
+      <span class="eyebrow dim anim d1">推理时算力 · 10</span>
+      <h2 class="anim d1">算力的战场，<br>正从训练<span class="hi">移向推理</span></h2>
+      <p class="note anim d2">o1 / o3 开启「test-time compute」范式：让模型在回答时多想——更长的思维链、更多并行采样，换来训练换不来的推理力。算力需求因此第二次起飞。</p>
+    </div>
+    <div class="units">
+      <div class="unit anim d1"><span class="no">№01</span>
+        <div><h3>新范式：思考即算力</h3>
+          <p>推理不再是「跑一遍」，而是按难度动态投喂算力——难题想得越久，答得越对。</p>
+          <div class="v">范式锚 <em>OpenAI o1 / o3</em> · DeepSeek-R1 开源复现</div></div></div>
+      <div class="unit anim d2"><span class="no">№02</span>
+        <div><h3>两条放大轴</h3>
+          <p>顺序放大（拉长思维链）+ 并行放大（多路采样取最优），都直接吃掉更多推理算力。</p>
+          <div class="v">序列 × 并行 <em>双轴叠加</em></div></div></div>
+      <div class="unit muted anim d3"><span class="no">№03</span>
+        <div><h3>重心正在反转</h3>
+          <p>算力账本从「训练一次」转向「服务每一次请求」，单位经济学被彻底改写。</p>
+          <div class="v">推理占 AI 算力 <em>~75%</em> · 2030 外推</div></div></div>
+    </div>
+  </section>
+
+  <!-- ⑪ section-divider · 幕三 立据 ──────────────────────────── 🔴 NEW -->
+  <section class="slide divider grain" data-layout="section-divider" data-energy="blast" data-role="ground" data-sec="第三幕 · 立据">
+    <div class="sig-field" aria-hidden="true">
+      <svg viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <radialGradient id="sigPeakD3" cx="72%" cy="36%" r="46%">
+            <stop offset="0" stop-color="var(--accent)" stop-opacity=".20"/>
+            <stop offset="52%" stop-color="var(--accent)" stop-opacity=".05"/>
+            <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect width="1280" height="720" fill="url(#sigPeakD3)"/>
+        <g fill="none" stroke="var(--accent)" stroke-width="1.5">
+          <ellipse cx="904" cy="256" rx="72"  ry="54"  stroke-opacity=".55"/>
+          <ellipse cx="880" cy="274" rx="168" ry="124" stroke-opacity=".40"/>
+          <ellipse cx="856" cy="292" rx="264" ry="194" stroke-opacity=".28"/>
+          <ellipse cx="832" cy="310" rx="360" ry="264" stroke-opacity=".19"/>
+          <ellipse cx="808" cy="328" rx="456" ry="334" stroke-opacity=".13"/>
+          <ellipse cx="784" cy="346" rx="552" ry="404" stroke-opacity=".085"/>
+          <ellipse cx="760" cy="364" rx="648" ry="474" stroke-opacity=".055"/>
+        </g>
+        <circle cx="904" cy="256" r="3.2" fill="var(--accent)" opacity=".88"/>
+      </svg>
+    </div>
+    <span class="ch-eyebrow anim d1">第三幕 · ACT 3</span>
+    <span class="ch-no anim d1">03</span>
+    <h2 class="anim d2">立据：谁在<span class="hi">真金白银地烧</span></h2>
+    <p class="ch-note anim d3">不靠口号——用巨型集群规模、训练成本曲线、能效代际增益的一手数据，落实「尺度」。</p>
+    <div class="intel-stamp"><b>COMPUTE-2026</b> · 第三幕 立据 · 11 / 20</div>
+  </section>
+
+  <!-- ⑫ kpi-wall · xAI Colossus 集群规模 ─────────────────────── ⚪ NEW -->
+  <section class="slide hero" data-layout="kpi-wall" data-energy="calm" data-role="ground" data-sec="立据 · GROUND">
+    <div class="chrome"><span class="sec">巨型集群 · MEGA-CLUSTER</span>
+      <span class="pg">12 / 20</span></div>
+    <span class="lead-m anim d1">单一站点 · GPU 装机量</span>
+    <div class="big anim d1">
+      <div class="kpi-slot">
+        <span class="kpi-num">555<span class="pct">K</span></span>
+      </div>
+      <div class="side anim d2">
+        <div class="t">xAI Colossus（孟菲斯）<em>约 55.5 万张 GPU</em></div>
+        <div class="d">从 10 万 H100、122 天建成起步，到跨 H100/H200/GB200 三代、~2 GW、180 亿美元硅投入——并已规划冲向百万卡。这就是「尺度」的物理形态。</div>
+        <div class="compare anim d3">
+          <div class="c"><span class="v">100K</span><span class="l">2024 一期</span></div>
+          <div class="c"><span class="v">200K</span><span class="l">2025 初</span></div>
+          <div class="c now"><span class="v">555K</span><span class="l">2026.02</span></div>
+        </div>
+      </div>
+    </div>
+    <span class="src" style="margin-top:24px">来源：SemiAnalysis《xAI Colossus 2》/ DCD（2026.02：~55.5 万 GPU·~2 GW·$18B）· 一期 10 万 H100 / 122 天为官方披露</span>
+  </section>
+
+  <!-- ⑬ timeline-impact · 横向单轴 ──────────────────────────── ⚪ -->
+  <section class="slide tl" data-layout="timeline-impact" data-energy="calm" data-role="ground" data-sec="立据 · GROUND">
+    <div class="chrome"><span class="sec">脉络 · TIMELINE</span>
+      <span class="pg">13 / 20</span></div>
+    <span class="eyebrow dim anim d1">算力脉络 · 13</span>
+    <h2 class="anim d1">这一程，五个真正改变格局的节点</h2>
+    <div class="track">
+      <div class="axis"></div>
+      <!-- 节点按真实时间比例定位（非均分）：事件密度前疏后密 -->
+      <div class="node anim d1" style="left:0%"><span class="day">2022</span><span class="dot"></span>
+        <div class="tk">出口管制落地</div><div class="ds">美对华切断 A100/H100，算力成战略物资。</div></div>
+      <div class="node key anim d1" style="left:20%"><span class="day">2024 ★</span><span class="dot"></span>
+        <div class="tk">十万卡 122 天建成</div><div class="ds">xAI Colossus 一期 10 万 H100 闪电落地。</div><div class="imp">100K GPU</div></div>
+      <div class="node anim d2" style="left:42%"><span class="day">2024–25</span><span class="dot"></span>
+        <div class="tk">CoWoS / HBM 售罄</div><div class="ds">先进封装与 HBM 产能成为交付硬瓶颈。</div></div>
+      <div class="node key anim d2" style="left:62%"><span class="day">2025 ★</span><span class="dot"></span>
+        <div class="tk">推理时算力成前沿</div><div class="ds">o1/o3 范式：算力重心转向「思考」。</div><div class="imp">test-time</div></div>
+      <div class="node anim d3" style="left:80%"><span class="day">2025.12</span><span class="dot"></span>
+        <div class="tk">H200 对华松绑</div><div class="ds">主权算力博弈进入新阶段。</div></div>
+      <div class="node key anim d3" style="left:93%"><span class="day">→2029 ★</span><span class="dot"></span>
+        <div class="tk">$500B Stargate</div><div class="ds">算力被纳入国家级基础设施。</div><div class="imp">~10 GW</div></div>
+    </div>
+    <span class="scaleNote src">来源：CFR / SemiAnalysis / OpenAI / TSMC 公开披露 · 轴距按时间比例铺开</span>
+  </section>
+
+  <!-- ⑭ section-divider · 幕四 收窄 ──────────────────────────── 🔴 NEW -->
+  <section class="slide divider grain" data-layout="section-divider" data-energy="blast" data-role="narrow" data-sec="第四幕 · 收窄">
+    <div class="sig-field" aria-hidden="true">
+      <svg viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <radialGradient id="sigPeakD4" cx="72%" cy="36%" r="46%">
+            <stop offset="0" stop-color="var(--accent)" stop-opacity=".20"/>
+            <stop offset="52%" stop-color="var(--accent)" stop-opacity=".05"/>
+            <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect width="1280" height="720" fill="url(#sigPeakD4)"/>
+        <g fill="none" stroke="var(--accent)" stroke-width="1.5">
+          <ellipse cx="908" cy="254" rx="72"  ry="54"  stroke-opacity=".55"/>
+          <ellipse cx="884" cy="272" rx="168" ry="124" stroke-opacity=".40"/>
+          <ellipse cx="860" cy="290" rx="264" ry="194" stroke-opacity=".28"/>
+          <ellipse cx="836" cy="308" rx="360" ry="264" stroke-opacity=".19"/>
+          <ellipse cx="812" cy="326" rx="456" ry="334" stroke-opacity=".13"/>
+          <ellipse cx="788" cy="344" rx="552" ry="404" stroke-opacity=".085"/>
+          <ellipse cx="764" cy="362" rx="648" ry="474" stroke-opacity=".055"/>
+        </g>
+        <circle cx="908" cy="254" r="3.2" fill="var(--accent)" opacity=".88"/>
+      </svg>
+    </div>
+    <span class="ch-eyebrow anim d1">第四幕 · ACT 4</span>
+    <span class="ch-no anim d1">04</span>
+    <h2 class="anim d2">收窄：瓶颈卡在<span class="hi">哪一道墙</span></h2>
+    <p class="ch-note anim d3">尺度狂奔，但电力、芯片、资本、能效四道墙还没拆开——它们决定了先该投哪条战线。</p>
+    <div class="intel-stamp"><b>COMPUTE-2026</b> · 第四幕 收窄 · 14 / 20</div>
+  </section>
+
+  <!-- ⑮ risk-radar · 雷达 + 2×2 象限 ───────────────────────── ⚪ -->
+  <section class="slide rr" data-layout="risk-radar" data-energy="calm" data-role="narrow" data-sec="收窄 · NARROW">
+    <div class="chrome"><span class="sec">收窄 · NARROW</span>
+      <span class="pg">15 / 20</span></div>
+    <div class="rail">
+      <span class="eyebrow dim anim d1">风险 · 15</span>
+      <h2 class="anim d1">尺度狂奔，<br>但四个约束还没解开</h2>
+      <svg class="radar anim d2" data-rendered-by="blcaptain-chart" viewBox="0 0 280 240" aria-hidden="true">
+        <defs><filter id="glowR" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+        <g class="s-stroke-hair" fill="none">
+          <polygon points="140,30 244,90 244,180 140,210 36,180 36,90"/>
+          <polygon points="140,70 202,105 202,165 140,185 78,165 78,105"/>
+          <line x1="140" y1="120" x2="140" y2="30"/><line x1="140" y1="120" x2="244" y2="90"/>
+          <line x1="140" y1="120" x2="244" y2="180"/><line x1="140" y1="120" x2="140" y2="210"/>
+          <line x1="140" y1="120" x2="36" y2="180"/><line x1="140" y1="120" x2="36" y2="90"/>
+        </g>
+        <polygon class="s-stroke-accent radar-poly" fill="var(--accent-dim)" stroke-width="2" filter="url(#glowR)" points="140,44 226,96 208,172 140,198 70,168 86,102"/>
+        <circle class="s-fill-danger" cx="140" cy="44" r="4" filter="url(#glowR)"/>
+        <text class="svg-label dng" x="140" y="20" text-anchor="middle">电力</text>
+        <text class="svg-label" x="252" y="92">芯片</text>
+        <text class="svg-label" x="252" y="186">资本</text>
+        <text class="svg-label" x="140" y="228" text-anchor="middle">能效</text>
+        <text class="svg-label" x="8" y="186">封装</text>
+        <text class="svg-label" x="8" y="92">调度</text>
+      </svg>
+      <p class="note anim d3">象限为风险研判（inference），非事实；红色为告警级 —— 越靠外圈，离失控越近。</p>
+    </div>
+    <div class="matrix">
+      <div class="q alert anim d1"><span class="qh">象限 · 高影响 / 高概率</span><span class="sev">告警 ⚠</span>
+        <h3>电力墙</h3><p>数据中心电力 2030 将达 ~950 TWh，单站冲 1–2 GW，电网连接成物理瓶颈。</p></div>
+      <div class="q alert anim d2"><span class="qh">象限 · 高影响 / 待观察</span><span class="sev">告警 ⚠</span>
+        <h3>先进封装 / HBM</h3><p>CoWoS 与 HBM 已售罄至 2026，三重约束（2nm+封装+HBM）持续到 2027。</p></div>
+      <div class="q anim d3"><span class="qh">象限 · 高影响 / 中概率</span><span class="sev warn">观察 ◆</span>
+        <h3>资本墙</h3><p>大厂 capex 2025 破 4,000 亿，单次训练外推 2027 破十亿——门槛挡掉多数玩家。</p></div>
+      <div class="q anim d4"><span class="qh">象限 · 杠杆 / 可改善</span><span class="sev ok">机会 ●</span>
+        <h3>能效杠杆</h3><p>GB200 NVL72 每瓦推理效率较 H100 升约 25×（系统级），能效是唯一可主动拉的杠杆。</p></div>
+    </div>
+  </section>
+
+  <!-- ⑯ kpi-wall · 电力墙读数 ───────────────────────────────── 🔴 NEW -->
+  <section class="slide hero" data-layout="kpi-wall" data-energy="blast" data-role="ground" data-sec="电力墙 · POWER">
+    <div class="chrome"><span class="sec">第一道墙 · THE POWER WALL</span>
+      <span class="pg">16 / 20</span></div>
+    <span class="lead-m anim d1">数据中心电力需求 · 2030</span>
+    <div class="big anim d1">
+      <div class="kpi-slot">
+        <span class="kpi-num">950<span class="pct">TWh</span></span>
+      </div>
+      <div class="side anim d2">
+        <div class="t">2030 年数据中心耗电将<em>逼近 950 太瓦时</em></div>
+        <div class="d">较 2025 的 485 TWh 约翻倍、占全球用电 ~3%，其中 AI 数据中心三倍速增长。单站已冲 1–2 GW，电网连接成最硬的物理约束。</div>
+        <div class="compare anim d3">
+          <div class="c"><span class="v">485</span><span class="l">2025 TWh</span></div>
+          <div class="c"><span class="v">1.2GW</span><span class="l">Stargate 单站</span></div>
+          <div class="c now"><span class="v">950</span><span class="l">2030 TWh</span></div>
+        </div>
+      </div>
+    </div>
+    <span class="src" style="margin-top:24px">来源：IEA《Energy &amp; AI》2025（DC 电力 485→950 TWh / 占全球 ~3% / AI-DC 三倍增）· Stargate Abilene 满载 1.2 GW（OpenAI）</span>
+  </section>
+
+  <!-- ⑰ evidence-wall · 四约束证据 ───────────────────────────── ⚪ NEW -->
+  <section class="slide ev" data-layout="evidence-wall" data-energy="calm" data-role="ground" data-sec="四约束 · CONSTRAINTS">
+    <div class="chrome"><span class="sec">四约束 · FOUR WALLS</span>
+      <span class="pg">17 / 20</span></div>
+    <div class="hd">
+      <div><span class="eyebrow anim d1">证据 · 四道墙 · 逐一核实</span>
+        <h2 class="anim d1">电力 · 芯片 · 资本 · 能效</h2></div>
+      <div class="legend anim d1">
+        <span class="chip">FACT 事实</span>
+        <span class="chip chip--infer">INFER 推断</span>
+      </div>
+    </div>
+    <div class="wall">
+      <div class="card anim d1" data-evidence-type="fact">
+        <span class="chip">电力 · FACT</span>
+        <div class="stat">2<span class="u">GW</span></div>
+        <div class="delta">单站功耗 · <em>Meta Hyperion</em></div>
+        <svg class="spark" data-rendered-by="blcaptain-chart" viewBox="0 0 220 44" preserveAspectRatio="none" aria-hidden="true">
+          <polyline class="s-stroke-accent draw" pathLength="1" fill="none" stroke-width="2" points="0,38 50,32 100,24 150,15 220,5"/></svg>
+        <div class="txt">单座 AI 数据中心功耗冲向 2 GW，相当一座中型城市。</div>
+        <span class="ref src">来源：IEA 2025 / Meta</span>
+      </div>
+      <div class="card anim d2" data-evidence-type="fact">
+        <span class="chip">芯片 · FACT</span>
+        <div class="stat">2027</div>
+        <div class="delta">CoWoS/HBM · <em>售罄至</em></div>
+        <svg class="spark" data-rendered-by="blcaptain-chart" viewBox="0 0 220 44" preserveAspectRatio="none" aria-hidden="true">
+          <g class="s-fill-dim bars"><rect x="2" y="30" width="22" height="14"/><rect x="32" y="26" width="22" height="18"/><rect x="62" y="20" width="22" height="24"/><rect x="92" y="16" width="22" height="28"/><rect x="122" y="12" width="22" height="32"/></g>
+          <rect class="s-fill-accent bar-lead" x="182" y="8" width="22" height="36"/></svg>
+        <div class="txt">2nm + 先进封装 + HBM 三重约束，持续到 2027。</div>
+        <span class="ref src">来源：TSMC / SK Hynix 口径</span>
+      </div>
+      <div class="card anim d3" data-evidence-type="inference">
+        <span class="chip chip--infer">资本 · INFER</span>
+        <div class="stat">+75<span class="u">%</span></div>
+        <div class="delta">2026 capex · <em>同比增</em></div>
+        <svg class="spark" data-rendered-by="blcaptain-chart" viewBox="0 0 220 44" preserveAspectRatio="none" aria-hidden="true">
+          <polyline class="s-stroke-dim" fill="none" stroke-width="2" points="0,36 80,26 130,18"/>
+          <polyline class="s-stroke-warn" fill="none" stroke-width="2" stroke-dasharray="5 5" points="130,18 180,10 220,3"/>
+          <circle class="s-fill-warn" cx="130" cy="18" r="3"/></svg>
+        <div class="txt">大厂资本开支 2025 破 4,000 亿，2026 预计再增约 75%。</div>
+        <span class="ref src">来源：IEA 2025 · 增速为预测</span>
+      </div>
+      <div class="card anim d4" data-evidence-type="fact">
+        <span class="chip">能效 · FACT</span>
+        <div class="stat">25<span class="u">×</span></div>
+        <div class="delta">每瓦推理 · <em>GB200 vs H100</em></div>
+        <svg class="spark" data-rendered-by="blcaptain-chart" viewBox="0 0 220 44" preserveAspectRatio="none" aria-hidden="true">
+          <rect x="0" y="26" width="48" height="14" fill="rgba(255,255,255,.10)"/>
+          <rect class="s-fill-accent" x="0" y="8" width="200" height="14"/></svg>
+        <div class="txt">GB200 NVL72 每瓦推理效率约为 H100 的 25 倍（系统级）。</div>
+        <span class="ref src">来源：NVIDIA（rack 级·非单卡）</span>
+      </div>
+    </div>
+    <div class="foot">四道墙逐一核实：电力 / 芯片为硬事实 · 资本含预测 · 能效为唯一可主动拉的杠杆（口径标注）。</div>
+  </section>
+
+  <!-- ⑱ decision-matrix · 打分表 ────────────────────────────── ⚪ -->
+  <section class="slide dm" data-layout="decision-matrix" data-energy="calm" data-role="narrow" data-sec="收窄 · NARROW">
+    <div class="chrome"><span class="sec">取舍 · DECISION</span>
+      <span class="pg">18 / 20</span></div>
+    <span class="eyebrow dim anim d1">优先级排序 · 18</span>
+    <h2 class="anim d1">四条算力战线，先投哪一条</h2>
+    <table class="anim d1">
+      <thead>
+        <tr>
+          <th class="l">战线</th>
+          <th>影响 ×0.5</th>
+          <th>确定性 ×0.3</th>
+          <th>时效 ×0.2</th>
+          <th>加权总分</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="best">
+          <td class="l">锁定能源与电力供给</td>
+          <td>9.0</td><td>8.0</td><td>8.5</td><td class="score">8.60</td>
+        </tr>
+        <tr>
+          <td class="l">提升集群利用率与调度</td>
+          <td>7.0</td><td>8.5</td><td>9.0</td><td class="score">7.85</td>
+        </tr>
+        <tr>
+          <td class="l">多元化芯片供应链</td>
+          <td>8.5</td><td>6.5</td><td>7.0</td><td class="score">7.60</td>
+        </tr>
+        <tr>
+          <td class="l">自建主权算力</td>
+          <td>8.0</td><td>5.0</td><td>4.5</td><td class="score">6.40</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="note">权重为内部判断口径（示意）· 高亮行 = 加权最优 · 评分 1−10，10 为最强 · 截至 06.17</div>
+  </section>
+
+  <!-- ⑲ final-move · 行动收尾 ───────────────────────────────── 🔴 -->
+  <section class="slide fm grain" data-layout="final-move" data-energy="blast" data-role="act" data-sec="行动 · ACT">
+    <div class="chrome"><span class="sec">收束 · FINAL MOVE</span>
+      <span class="pg">19 / 20</span></div>
+    <div class="anchor">
+      <span class="k anim d1">一句话 · FINAL MOVE</span>
+      <h1 class="anim d2">这场竞赛，赢家拼的不是<br>买了多少卡，是<span class="hi">每一瓦的智能</span></h1>
+    </div>
+    <div class="moves">
+      <div class="m anim d1"><span class="no">01</span><span class="tx">锁能源：把电力与电网当第一约束，提前锁定</span></div>
+      <div class="m anim d2"><span class="no">02</span><span class="tx">提效率：每瓦性能优先于总卡数，调度是杠杆</span></div>
+      <div class="m anim d3"><span class="no">03</span><span class="tx">看推理：算力重心转向推理，优化服务成本</span></div>
+    </div>
+  </section>
+
+  <!-- ⑳ social-card · 全屏金句卡 ────────────────────────────── 🔴 -->
+  <section class="slide sc grain" data-layout="social-card" data-energy="blast" data-role="leave" data-sec="余味 · LEAVE">
+    <div class="sig-field" aria-hidden="true">
+      <svg viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <radialGradient id="sigPeak" cx="70%" cy="34%" r="44%">
+            <stop offset="0" stop-color="var(--accent)" stop-opacity=".18"/>
+            <stop offset="52%" stop-color="var(--accent)" stop-opacity=".045"/>
+            <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect width="1280" height="720" fill="url(#sigPeak)"/>
+        <g fill="none" stroke="var(--accent)" stroke-width="1.5">
+          <ellipse cx="900" cy="250" rx="70"  ry="52"  stroke-opacity=".50"/>
+          <ellipse cx="878" cy="266" rx="165" ry="120" stroke-opacity=".36"/>
+          <ellipse cx="856" cy="282" rx="260" ry="188" stroke-opacity=".26"/>
+          <ellipse cx="834" cy="298" rx="355" ry="256" stroke-opacity=".185"/>
+          <ellipse cx="812" cy="314" rx="450" ry="324" stroke-opacity=".13"/>
+          <ellipse cx="790" cy="330" rx="545" ry="392" stroke-opacity=".09"/>
+          <ellipse cx="768" cy="346" rx="640" ry="460" stroke-opacity=".06"/>
+          <ellipse cx="746" cy="362" rx="735" ry="528" stroke-opacity=".04"/>
+        </g>
+        <circle cx="900" cy="250" r="3" fill="var(--accent)" opacity=".85"/>
+      </svg>
+    </div>
+    <div class="q-mark anim d1">“</div>
+    <blockquote class="anim d1">算力的竞争，<br>从来不是<em>谁的卡更多</em>，<br>而是谁能把每一瓦<em>变成智能</em></blockquote>
+    <div class="by anim d2">算力状态报告 · COMPUTE-2026 · 20 / 20</div>
+    <div class="social-mark"><span class="sig-mark" aria-hidden="true"><svg viewBox="0 0 36 28"><g fill="none" stroke="var(--accent)" stroke-width="1.4"><ellipse cx="23" cy="11" rx="5" ry="3.6" stroke-opacity=".9"/><ellipse cx="20" cy="13" rx="11" ry="7.6" stroke-opacity=".5"/><ellipse cx="17" cy="15" rx="17" ry="11.6" stroke-opacity=".24"/></g><circle cx="23" cy="11" r="1.6" fill="var(--accent)"/></svg></span><b>AI 算力现状</b> · 2026</div>
+  </section>
+
+  </div><!-- /.deck -->
+</div><!-- /.stage -->
+
+<nav class="hud" aria-label="翻页控制">
+  <button id="navPrev" aria-label="上一页" title="上一页 ←">‹</button>
+  <span class="cnt" id="navCnt">01 / 20</span>
+  <button id="navNext" aria-label="下一页" title="下一页 →">›</button>
+</nav>
+
+<div class="rotate-hint" aria-hidden="true">
+  <svg class="rh-ico" viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v4h-4"/></svg>
+  <div class="rh-msg"><span class="rh-sq"></span>横屏观看更佳</div>
+  <div class="rh-sub">旋转手机以全屏查看这份演示</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var root = document.documentElement;
+  // 渐进增强：有脚本即切到 js 模式（移除 no-js 的竖向铺开降级）
+  root.classList.remove("no-js");
+  root.classList.add("js");
+
+  // 主题色选择：?accent=night-cyan|deep-blue|safety-amber 整体换主基调；缺省=HTML 上的 night-cyan。
+  try {
+    var _ac = (new URLSearchParams(location.search)).get("accent");
+    if (_ac && /^(night-cyan|deep-blue|safety-amber)$/.test(_ac)) root.setAttribute("data-accent", _ac);
+  } catch (e) {}
+
+  var deck   = document.getElementById("deck");
+  var slides = Array.prototype.slice.call(deck.querySelectorAll(".slide"));
+  var total  = slides.length;
+  var cntEl  = document.getElementById("navCnt");
+  var pad2   = function(n){ return (n < 10 ? "0" : "") + n; };
+  var i = 0;
+
+  /* ---- 16:9 等比缩放：把 1280×720 画板缩到视口（contain）---- */
+  function fit(){
+    var W = window.innerWidth, H = window.innerHeight;
+    var s = Math.min(W / 1280, H / 720);
+    deck.style.transform = "translate(" + ((W - 1280 * s) / 2) + "px," + ((H - 720 * s) / 2) + "px) scale(" + s + ")";
+  }
+
+  /* ---- 数据动效：巨号 count-up（入场播一次；reduced-motion=直接终态）---- */
+  var RM = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion:reduce)").matches);
+  function countUp(el){
+    if (el.dataset.counted) return;            // 每元素只滚一次（重访显终态，不反复轰炸）
+    var node = null, kk;
+    for (kk = 0; kk < el.childNodes.length; kk++){
+      var nd = el.childNodes[kk];
+      if (nd.nodeType === 3 && /\d/.test(nd.textContent)){ node = nd; break; }
+    }
+    if (!node) return;
+    var target = parseFloat(node.textContent);
+    if (isNaN(target)) return;
+    var dec = ((String(node.textContent).split(".")[1] || "").match(/\d/g) || []).length;
+    el.dataset.counted = "1";
+    if (RM){ node.textContent = target.toFixed(dec); return; }
+    var dur = 500, t0 = null;
+    function step(ts){
+      if (t0 === null) t0 = ts;
+      var p = Math.min(1, (ts - t0) / dur), e = 1 - Math.pow(1 - p, 3); // easeOutCubic
+      node.textContent = (target * e).toFixed(dec);
+      if (p < 1) requestAnimationFrame(step); else node.textContent = target.toFixed(dec);
+    }
+    requestAnimationFrame(step);
+  }
+  function animateActive(){
+    var sl = slides[i]; if (!sl) return;
+    var ns = sl.querySelectorAll(".kpi-num"), kk;
+    for (kk = 0; kk < ns.length; kk++) countUp(ns[kk]);
+  }
+
+  /* ---- 翻页 ---- */
+  function clamp(n){ return Math.max(0, Math.min(total - 1, n)); }
+  function render(){
+    slides.forEach(function(sl, idx){ sl.classList.toggle("is-active", idx === i); });
+    cntEl.textContent = pad2(i + 1) + " / " + pad2(total);
+    animateActive();
+    // 深链：写 hash（用页码，稳定且语义清晰）
+    if (("#" + (i + 1)) !== location.hash){
+      history.replaceState(null, "", "#" + (i + 1));
+    }
+  }
+  function go(n){ var c = clamp(n); i = c; render(); }
+  function next(){ go(i + 1); }
+  function prev(){ go(i - 1); }
+
+  /* ---- 深链：从 hash 进入 ---- */
+  function fromHash(){
+    var h = (location.hash || "").replace("#", "");
+    var n = parseInt(h, 10);
+    if (!isNaN(n) && n >= 1 && n <= total){ i = n - 1; }
+  }
+
+  /* ---- 键盘：← → / PgUp PgDn / Space / Home End ---- */
+  document.addEventListener("keydown", function(e){
+    switch(e.key){
+      case "ArrowRight": case "PageDown": case " ": case "Spacebar":
+        e.preventDefault(); next(); break;
+      case "ArrowLeft": case "PageUp":
+        e.preventDefault(); prev(); break;
+      case "Home": e.preventDefault(); go(0); break;
+      case "End":  e.preventDefault(); go(total - 1); break;
+    }
+  });
+
+  /* ---- 触屏 swipe（水平为主，过阈值翻页；手机可翻）---- */
+  var tx = 0, ty = 0, tracking = false;
+  document.addEventListener("touchstart", function(e){
+    if (e.touches.length !== 1) return;
+    tracking = true; tx = e.touches[0].clientX; ty = e.touches[0].clientY;
+  }, {passive:true});
+  document.addEventListener("touchend", function(e){
+    if (!tracking) return; tracking = false;
+    var t = e.changedTouches[0];
+    var dx = t.clientX - tx, dy = t.clientY - ty;
+    if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.4){
+      if (dx < 0) next(); else prev();
+    }
+  }, {passive:true});
+
+  /* ---- 鼠标点击 HUD ---- */
+  document.getElementById("navNext").addEventListener("click", next);
+  document.getElementById("navPrev").addEventListener("click", prev);
+  window.addEventListener("hashchange", function(){ fromHash(); render(); });
+  window.addEventListener("resize", fit);
+
+  fromHash();
+  fit();
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="zh-CN" class="no-js" data-theme="luxury-minimal" data-rendered-by="blcaptain">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>奢侈的下一个十年 — demo</title>
+
+<!-- preload 首屏三族字体（crossorigin 必须·制作规范：本地打包 + preload + font-display:optional
+     ＝磁盘快几乎首屏命中终字体·零跳变零白屏·根治「首次打开文字跳一下」FOUT layout shift） -->
+<link rel="preload" href="./fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="./fonts/GlowSansSC-Regular.luxury.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="./fonts/PlayfairDisplay.luxury.woff2" as="font" type="font/woff2" crossorigin>
+
+<style>
+/* FONTS · 三族 OFL 本地打包（luxury-minimal）
+   拉丁直引全字 woff2（Geist / Playfair Display · 无 mono：工具层用 Geist·mono 技术感属他人格）；
+   Glow Sans SC CJK 子集化（.luxury 后缀 · per-deck）。 */
+@font-face{font-family:"Geist";src:url("./fonts/Geist-Variable.woff2") format("woff2-variations");font-weight:100 900;font-display:optional}
+@font-face{font-family:"Glow Sans SC";src:url("./fonts/GlowSansSC-Regular.luxury.woff2") format("woff2");font-weight:400;font-display:optional}
+@font-face{font-family:"Playfair Display";src:url("./fonts/PlayfairDisplay.luxury.woff2") format("woff2");font-weight:400;font-display:optional}
+</style>
+
+<style>
+/* =========================================================================
+   TOKENS START · luxury-minimal
+   裸色暖调 · 零信号色 · Didone 薄纱锚 
+   对比度均为 WCAG 2.x node 实测，非目测（实现期 已完成，与 00-tokens-locked.md 1:1）。
+   ========================================================================= */
+
+/* ---- 全局基底（与主题无关的结构常量）---- */
+:root{
+  /* 字体族（luxury-minimal 三族  · Geist + Glow + Playfair）
+     拉丁正文静默：Geist（几何无衬线·栈内含 Glow CJK 兜底·置于 system-ui 前→中文走 Glow 不漏给系统字）
+     中文正文静默：Glow Sans SC（复用·守禁思源裸用）
+     Didone 薄纱锚：Playfair Display（高对比衬线·仅 Display：巨数/拉丁主标/薄纱词·绝不做正文）
+     无 mono：工具层（eyebrow/foot/页码/HUD）用 Geist——mono 技术感属 instrument-cool/info-data，非奢侈编辑 */
+  --font-sans:"Geist","Glow Sans SC","Noto Sans SC","PingFang SC",system-ui,sans-serif;
+  --font-cjk:"Glow Sans SC","Noto Sans SC","PingFang SC",sans-serif;
+  --font-veil:"Playfair Display",Georgia,serif;
+
+  /* 间距 8px 刻度（设计决策 · 00-tokens-locked  · 与 validator SPACING_SCALE 1:1）*/
+  --sp-1:8px; --sp-2:16px; --sp-3:24px; --sp-4:32px;
+  --sp-6:48px; --sp-8:64px; --sp-10:80px; --sp-12:96px; --sp-16:160px;
+  /* 设计决策 细档例外轨（仅组件内部/紧凑/图标-文字/≤14px 小字行内）*/
+  --sp-fine-a:4px; --sp-fine-c:12px; --sp-fine-e:20px;
+
+  /* 画板 */
+  --radius:0px;
+  --deck-w:1280px; --deck-h:720px;
+  --dur-base:.28s; --ease:cubic-bezier(.22,1,.36,1);
+
+  /* 舞台 + HUD */
+  --stage-void:#1d1d20;
+  --hud-fg:#C9C2B4; --hud-fg-hi:#fff;
+}
+
+/* ---- luxury-minimal 主题块（时尚奢侈极简  · 与 00-tokens-locked 「时尚奢侈极简 theme」1:1）---- */
+[data-theme="luxury-minimal"]{
+  --bg:#F6F4EE;                     /* 象牙白 · 裸色暖底 · 退后托留白 */
+  --ink:#1A1815;                    /* 炭黑 · 主文字 · on 象牙白 16.11 AAA */
+  --ink-dim:#6E6450;                /* 暖灰次文 · on 象牙白 5.30 AA · 可作次要正文/元数据 */
+  --ink-faint:#A89A82;              /* 更淡暖灰 · on 象牙白 2.51 <AA · 仅装饰/eyebrow/注脚 */
+  --hairline:#B89A6E;               /* 驼色淡线 · felt not seen 隐藏精密 · on 象牙白 2.42（线·非文字） */
+  --veil:#9C7C4A;                   /* 薄纱锚驼 · on 象牙白 3.54·过大字/图形门≥3 · 低透明度覆图层 */
+  --surface:#EFEBE1;                /* 图像区裸色 · 比 bg 略深 · 图占位/周边底 · 非文字区 */
+  /* 无 --accent（唯一无信号色人格  · 零第二信号色 · 强调靠无色强调语法） */
+
+  /* 版式常量 */
+  --pad-x:80px; --pad-top:72px; --pad-bottom:96px;
+}
+/* =========================================================================
+   TOKENS END
+   ========================================================================= */
+
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%; background:var(--stage-void); overflow:hidden; -webkit-text-size-adjust:100%; text-size-adjust:100%}
+/* 混排：拉丁 Geist 在前·中文 Glow 接续（浏览器按字符 glyph 选）*/
+body{font-family:var(--font-sans),var(--font-cjk); color:var(--ink); line-break:strict; word-break:normal; overflow-wrap:anywhere; text-wrap:pretty}
+
+/* ===== 翻页运行时（一次一页 · 横向切换 · 主题无关 · 复用自 info-data 结构） ===== */
+.stage{position:fixed; inset:0; overflow:hidden}
+/* 居中=JS 算 px 平移（非 flex 居中）：手机上 1280px deck 远宽于视口时，flex justify-content:center 会把溢出盒钉到 start、
+   叠加 transform-origin:center 把缩放后画面推到屏幕右侧外（偏右看不全）。改 transform-origin:top-left + fit() 平移
+   (W−1280s)/2 居中→任意视口确定性居中、溢出无关（移动端正解·见制作规范）。 */
+.deck{position:absolute; left:0; top:0; width:var(--deck-w); height:var(--deck-h); transform-origin:top left}
+.slide{position:absolute; inset:0; width:var(--deck-w); height:var(--deck-h); overflow:hidden;
+  background:var(--bg); color:var(--ink); box-shadow:0 0 0 1px rgba(22,18,13,.08), 0 28px 80px rgba(0,0,0,.5);
+  opacity:0; visibility:hidden; pointer-events:none; z-index:0}
+.slide.is-active{opacity:1; visibility:visible; pointer-events:auto; z-index:2}
+@media (prefers-reduced-motion:no-preference){
+  /* luxury-minimal 动效纪律：只极克制 fade——禁滑入/grow/count-up/drawOn 炫技。
+     ① 整页淡入；② 支撑层延迟 .4s 淡入 ＝「先判断后支撑」的内容节奏（呼应 info-data「先数据后判断」
+     之反向·此处判断主导先现、量级支撑后到），**只 opacity 无位移**·与数据动效全区隔。
+     reduced-motion 下整块失效·全部终态可见（自动截图/缩略/PDF 不取空帧）。 */
+  html.js .slide.is-active{animation:fadeIn .36s var(--ease) both}
+  html.js .slide.is-active :is(.cov-anchor,.mag-ref,.con-ref,.ed-support,.clo-tail,.sr-desc,.con2-desc,.rt-label,.tl-desc,.ls-d,.pq-src,.sp-support){
+    animation:fadeIn .6s var(--ease) .4s both;
+  }
+  @keyframes fadeIn{from{opacity:0} to{opacity:1}}
+}
+
+/* HUD 翻页控件 */
+.hud{position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:50; display:flex; align-items:center; gap:12px; padding:8px 12px;
+  background:rgba(28,28,32,.82); border:1px solid rgba(255,255,255,.18); font-family:var(--font-sans); font-size:12px; color:var(--hud-fg);
+  -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); opacity:0; transition:opacity .28s}
+html.js .hud{opacity:.55} .hud:hover{opacity:1}
+.hud button{font:inherit; color:var(--hud-fg); background:none; border:1px solid rgba(255,255,255,.18); width:28px; height:24px; cursor:pointer; line-height:1}
+.hud button:hover{color:var(--hud-fg-hi); border-color:var(--hud-fg-hi)}
+.hud .cnt{font-variant-numeric:tabular-nums; min-width:54px; text-align:center}
+
+/* no-js fallback */
+.nojs-hint{display:none}
+html.no-js .nojs-hint{display:block; position:fixed; top:0; left:0; right:0; z-index:60; padding:4px 12px; font-family:var(--font-sans); font-size:12px; text-align:center; color:var(--hud-fg); background:rgba(28,28,32,.9)}
+html.no-js body{overflow:auto}
+html.no-js .stage{position:static; display:block; padding:32px 0}
+html.no-js .deck{position:static; width:auto; height:auto; transform:none!important; display:flex; flex-direction:column; align-items:center; gap:16px}
+html.no-js .slide{position:relative; inset:auto; opacity:1; visibility:visible; pointer-events:auto; flex:none}
+html.no-js .hud{display:none}
+
+/* 横屏提示（移动端竖屏引导旋转·luxury-minimal：无 accent → 用 --veil 驼色）*/
+.rotate-hint{display:none}
+@media (orientation:portrait) and (max-width:768px){
+  html.js .rotate-hint{display:flex; position:fixed; inset:0; z-index:120; flex-direction:column; align-items:center; justify-content:center; gap:24px; background:var(--stage-void); color:var(--hud-fg-hi); text-align:center; padding:48px}
+  .rotate-hint .rh-ico{color:var(--veil); animation:rhSpin 2.6s var(--ease) infinite; transform-origin:center}
+  .rotate-hint .rh-msg{display:flex; align-items:center; gap:8px; font-family:var(--font-sans); font-weight:600; font-size:21px; letter-spacing:.02em}
+  .rotate-hint .rh-sq{width:12px; height:12px; background:var(--veil)}
+  .rotate-hint .rh-sub{font-family:var(--font-sans); font-size:13px; color:var(--hud-fg); opacity:.75; line-height:1.6}
+  @keyframes rhSpin{0%,55%{transform:rotate(0)} 75%,100%{transform:rotate(-90deg)}}
+}
+
+/* =========================================================================
+   通用版式元件（eyebrow / foot / 页码 · 全版式共享 · 裸色暖调 · 零 accent）
+   绝对定位 top/left/right/bottom = 光学摆位（设计规范 豁免间距刻度）。
+   ========================================================================= */
+.lux-eyebrow{
+  position:absolute; left:var(--pad-x); top:64px;
+  font-family:var(--font-sans); font-size:12px; font-weight:400;
+  letter-spacing:.26em; text-transform:uppercase;
+  color:var(--ink-faint);
+}
+.lux-foot{
+  position:absolute; left:var(--pad-x); right:var(--pad-x); bottom:48px;
+  display:flex; align-items:center; justify-content:space-between;
+  font-family:var(--font-sans); font-size:12px; letter-spacing:.04em;
+  color:var(--ink-faint);
+}
+.lux-foot .pg{font-variant-numeric:tabular-nums; letter-spacing:.14em}
+
+/* ---- P1 封面 lux-cover（判断震慑 · Didone 刊头序词 + 主判断 + 锚数支撑）---- */
+.lux-cover .cov-kicker{
+  position:absolute; left:var(--pad-x); top:176px;
+  font-family:var(--font-veil); font-weight:400; font-style:italic;
+  font-size:40px; line-height:1; letter-spacing:.01em;
+  color:var(--ink-dim);
+}
+.lux-cover .cov-claim{
+  position:absolute; left:var(--pad-x); right:var(--pad-x); top:248px;
+  font-family:var(--font-cjk); font-weight:400;
+  font-size:88px; line-height:1.14; letter-spacing:.02em;
+  color:var(--ink);
+}
+.lux-cover .cov-anchor{
+  position:absolute; left:var(--pad-x); right:50%; bottom:128px;
+  font-family:var(--font-sans),var(--font-cjk); font-weight:400;
+  font-size:19px; line-height:1.7; letter-spacing:.01em;
+  color:var(--ink-dim);
+}
+
+/* ---- P2/P6 量级数字 lux-magnitude（Hermès 式大数 · 巨数 Didone + 判断 + 参照）---- */
+.lux-magnitude .mag-label{
+  position:absolute; left:var(--pad-x); top:64px;
+  font-family:var(--font-sans); font-size:12px; letter-spacing:.26em; text-transform:uppercase;
+  color:var(--ink-faint);
+}
+.lux-magnitude .lux-num{
+  position:absolute; left:var(--pad-x); top:196px;
+  font-family:var(--font-veil); font-weight:400;
+  font-size:288px; line-height:.86; letter-spacing:-.015em;
+  color:var(--ink);
+  font-variant-numeric:tabular-nums;
+}
+.lux-magnitude .mag-claim{
+  position:absolute; right:var(--pad-x); top:236px; width:460px;
+  font-family:var(--font-cjk); font-weight:400;
+  font-size:36px; line-height:1.32; letter-spacing:.02em;
+  color:var(--ink);
+}
+.lux-magnitude .mag-ref{
+  position:absolute; right:var(--pad-x); top:472px; width:460px;
+  font-family:var(--font-sans),var(--font-cjk); font-weight:400;
+  font-size:19px; line-height:1.7;
+  color:var(--ink-dim);
+}
+
+/* ---- P3 信念 lux-conviction（判断 + 稀缺留白 · 被前序量级垫起 · 无大数）---- */
+.lux-conviction .con-claim{
+  position:absolute; left:var(--pad-x); right:160px; top:248px;
+  font-family:var(--font-cjk); font-weight:400;
+  font-size:56px; line-height:1.26; letter-spacing:.02em;
+  color:var(--ink);
+}
+.lux-conviction .con-ref{
+  position:absolute; left:var(--pad-x); right:50%; bottom:128px;
+  font-family:var(--font-sans),var(--font-cjk); font-weight:400;
+  font-size:19px; line-height:1.7;
+  color:var(--ink-dim);
+}
+
+/* ---- P4 对比 lux-contrast（2 列冷淡 · 旧逻辑 vs 新逻辑 · 数字 + 判断 · 克制竖线）---- */
+.lux-contrast .con2-col{position:absolute; top:200px; width:432px}
+.lux-contrast .con2-col.is-left{left:var(--pad-x)}
+.lux-contrast .con2-col.is-right{right:var(--pad-x)}
+.lux-contrast .con2-div{position:absolute; left:640px; top:208px; bottom:152px; width:1px; background:var(--hairline)}
+.lux-contrast .con2-kicker{
+  font-family:var(--font-sans); font-size:13px; letter-spacing:.22em; text-transform:uppercase;
+  color:var(--ink-faint); margin-bottom:24px;
+}
+.lux-contrast .con2-num{
+  font-family:var(--font-veil); font-weight:400; font-size:104px; line-height:.92;
+  letter-spacing:-.01em; color:var(--ink); font-variant-numeric:tabular-nums;
+  margin-bottom:24px;
+}
+.lux-contrast .con2-claim{
+  font-family:var(--font-cjk); font-weight:400; font-size:28px; line-height:1.34; letter-spacing:.02em;
+  color:var(--ink);
+}
+.lux-contrast .con2-desc{
+  font-family:var(--font-sans),var(--font-cjk); font-weight:400; font-size:19px; line-height:1.66;
+  color:var(--ink-dim); margin-top:16px;
+}
+
+/* ---- P5 冷淡图文专题 lux-editorial（大图 + Didone 主标 + 薄纱词 + 判断 + 支撑）---- */
+.lux-editorial{background:var(--surface)}
+.lux-editorial .ed-img{position:absolute; right:0; top:0; width:520px; height:100%; background:var(--surface); overflow:hidden}
+.lux-editorial .ed-img img{width:100%; height:100%; object-fit:cover; object-position:center; display:block}
+/* Didone 薄纱词：覆图（右侧）· 低透明 · 出血裁切 · 与左侧主文字永不交叠（设计规范）*/
+.lux-editorial .ed-veil{
+  /* 薄纱词【强化出血版】：巨大 Didone 明显越界·一眼「刻意溢出」非「没显示完」（Vogue/Harper's bleed crop 氛围层非标题块）*/
+  position:absolute; left:760px; right:auto; top:140px;
+  font-family:var(--font-veil); font-weight:400; font-style:italic;
+  font-size:280px; line-height:.9; letter-spacing:.01em;
+  white-space:nowrap;
+  color:var(--veil); opacity:.18;
+  -webkit-user-select:none; user-select:none; pointer-events:none;
+}
+.lux-editorial .ed-title{
+  position:absolute; left:var(--pad-x); top:188px; width:560px;
+  font-family:var(--font-veil); font-weight:400;
+  font-size:64px; line-height:1.06; letter-spacing:0;
+  color:var(--ink);
+}
+.lux-editorial .ed-claim{
+  position:absolute; left:var(--pad-x); top:332px; width:540px;
+  font-family:var(--font-cjk); font-weight:400;
+  font-size:28px; line-height:1.36; letter-spacing:.02em;
+  color:var(--ink);
+}
+.lux-editorial .ed-support{
+  position:absolute; left:var(--pad-x); width:500px; bottom:128px;
+  font-family:var(--font-sans),var(--font-cjk); font-weight:400;
+  font-size:19px; line-height:1.7;
+  color:var(--ink-dim);
+}
+.lux-editorial .lux-foot{right:560px}  /* foot 限左半文字区·避开右侧图块（图宽 520+出血）·页码落文字区 */
+
+/* ---- P7 引言 lux-quote（中文引言 Glow · 出处 mono · 有出处立场 · 示意不伪造）---- */
+.lux-quote .lux-eyebrow{color:var(--ink-faint)}
+.lux-quote .qt-body{
+  position:absolute; left:var(--pad-x); right:128px; top:50%; transform:translateY(-58%);
+  font-family:var(--font-cjk); font-weight:400;
+  font-size:56px; line-height:1.36; letter-spacing:.02em;
+  color:var(--ink);
+}
+.lux-quote .qt-attr{
+  position:absolute; left:var(--pad-x); bottom:152px;
+  font-family:var(--font-sans); font-size:13px; font-weight:400; letter-spacing:.16em;
+  color:var(--ink-dim);
+}
+
+/* ---- P8 收束 lux-closing（判断落定 · 呼应封面 · 收口判断 + 支撑数）---- */
+.lux-closing .clo-claim{
+  position:absolute; left:var(--pad-x); right:var(--pad-x); top:248px;
+  font-family:var(--font-cjk); font-weight:400;
+  font-size:64px; line-height:1.2; letter-spacing:.02em;
+  color:var(--ink);
+}
+.lux-closing .clo-tail{
+  position:absolute; left:var(--pad-x); right:50%; bottom:128px;
+  font-family:var(--font-sans),var(--font-cjk); font-weight:400;
+  font-size:19px; line-height:1.7;
+  color:var(--ink-dim);
+}
+
+/* ============================================================================
+   扩展版式（20 页交付级 · 8 新版式 · 守裸色暖调/Didone仅Display/零accent/间距刻度）
+   ============================================================================ */
+
+/* ---- lux-index 目录（Didone 大编号 + 章名 + 章判断·三章一览）---- */
+.lux-index .idx-lead{
+  /* 统领句 1 行横切上半部（Brodovitch 黑刃·满宽 right:pad-x·留白落句尾而非句侧·更自然）*/
+  position:absolute; left:var(--pad-x); right:var(--pad-x); top:160px;
+  font-family:var(--font-cjk); font-weight:400; font-size:40px; line-height:1.34; letter-spacing:.02em;
+  color:var(--ink);
+}
+.lux-index .idx-row{ position:absolute; left:var(--pad-x); right:var(--pad-x); display:flex; align-items:baseline; gap:48px; }
+.lux-index .idx-row.r1{ top:300px } .lux-index .idx-row.r2{ top:420px } .lux-index .idx-row.r3{ top:540px }
+.lux-index .idx-no{
+  font-family:var(--font-veil); font-weight:400; font-size:64px; line-height:1; letter-spacing:.01em;
+  color:var(--ink); width:104px; flex:none; font-variant-numeric:tabular-nums;
+}
+.lux-index .idx-name{ font-family:var(--font-cjk); font-weight:400; font-size:28px; color:var(--ink); width:160px; flex:none; }
+.lux-index .idx-claim{ font-family:var(--font-sans),var(--font-cjk); font-weight:400; font-size:19px; line-height:1.6; color:var(--ink-dim); }
+
+/* ---- lux-divider 章节分隔（巨序号淡氛围 + 章名 + 章判断）---- */
+.lux-divider .dv-no{
+  position:absolute; right:var(--pad-x); top:80px;
+  font-family:var(--font-veil); font-weight:400; font-size:280px; line-height:.78; letter-spacing:-.02em;
+  color:var(--ink-faint); opacity:.45; font-variant-numeric:tabular-nums;
+  -webkit-user-select:none; user-select:none;
+}
+.lux-divider .dv-name{
+  position:absolute; left:var(--pad-x); top:288px;
+  font-family:var(--font-cjk); font-weight:400; font-size:88px; line-height:1.1; letter-spacing:.04em;
+  color:var(--ink);
+}
+.lux-divider .dv-claim{
+  position:absolute; left:var(--pad-x); right:45%; bottom:152px;
+  font-family:var(--font-cjk); font-weight:400; font-size:28px; line-height:1.36; letter-spacing:.02em;
+  color:var(--ink);
+}
+
+/* ---- lux-statrow 量级序列（统领判断 + 3 列小数·量级坐标）---- */
+.lux-statrow .sr-lead{
+  position:absolute; left:var(--pad-x); right:var(--pad-x); top:168px;
+  font-family:var(--font-cjk); font-weight:400; font-size:36px; line-height:1.3; letter-spacing:.02em;
+  color:var(--ink);
+}
+.lux-statrow .sr-cell{ position:absolute; top:380px; width:336px; }
+.lux-statrow .sr-cell.c1{ left:var(--pad-x) } .lux-statrow .sr-cell.c2{ left:472px } .lux-statrow .sr-cell.c3{ left:864px }
+.lux-statrow .sr-num{
+  font-family:var(--font-veil); font-weight:400; font-size:104px; line-height:.92; letter-spacing:-.01em;
+  color:var(--ink); font-variant-numeric:tabular-nums;
+}
+.lux-statrow .sr-label{ font-family:var(--font-sans),var(--font-cjk); font-size:13px; letter-spacing:.22em; text-transform:uppercase; color:var(--ink-faint); margin-top:16px; }
+.lux-statrow .sr-desc{ font-family:var(--font-sans),var(--font-cjk); font-size:19px; line-height:1.6; color:var(--ink-dim); margin-top:12px; }
+
+/* ---- lux-pullquote 抽言（Didone 大引号 + 大字判断 + 出处）---- */
+.lux-pullquote .pq-mark{
+  position:absolute; left:64px; top:120px;
+  font-family:var(--font-veil); font-weight:400; font-size:280px; line-height:1; color:var(--ink-faint); opacity:.32;
+  -webkit-user-select:none; user-select:none;
+}
+.lux-pullquote .pq-body{
+  position:absolute; left:var(--pad-x); right:128px; top:50%; transform:translateY(-54%);
+  font-family:var(--font-cjk); font-weight:400; font-size:56px; line-height:1.3; letter-spacing:.02em;
+  color:var(--ink);
+}
+.lux-pullquote .pq-src{
+  position:absolute; left:var(--pad-x); bottom:152px;
+  font-family:var(--font-sans),var(--font-cjk); font-size:19px; line-height:1.6; color:var(--ink-dim);
+}
+
+/* ---- lux-list 编号判断列表（统领 + 3 项·编号 Didone + 判断 + 支撑）---- */
+.lux-list .ls-lead{
+  /* 统领句 1 行横切上半部（满宽·留白落句尾·与列表拉开）*/
+  position:absolute; left:var(--pad-x); right:var(--pad-x); top:152px;
+  font-family:var(--font-cjk); font-weight:400; font-size:40px; line-height:1.34; letter-spacing:.02em;
+  color:var(--ink);
+}
+.lux-list .ls-item{ position:absolute; left:var(--pad-x); right:var(--pad-x); display:flex; gap:48px; align-items:baseline; }
+.lux-list .ls-item.i1{ top:296px } .lux-list .ls-item.i2{ top:432px } .lux-list .ls-item.i3{ top:568px }
+.lux-list .ls-no{ font-family:var(--font-veil); font-weight:400; font-size:52px; line-height:1; color:var(--ink); width:88px; flex:none; font-variant-numeric:tabular-nums; }
+.lux-list .ls-h{ font-family:var(--font-cjk); font-weight:400; font-size:28px; line-height:1.3; color:var(--ink); }
+.lux-list .ls-d{ font-family:var(--font-sans),var(--font-cjk); font-size:19px; line-height:1.6; color:var(--ink-dim); margin-top:8px; }
+
+/* ---- lux-ratio 双量级并置（两个大数对比 + 判断）---- */
+.lux-ratio .rt-lead{
+  position:absolute; left:var(--pad-x); right:var(--pad-x); top:168px;
+  font-family:var(--font-cjk); font-weight:400; font-size:36px; line-height:1.3; letter-spacing:.02em;
+  color:var(--ink);
+}
+.lux-ratio .rt-side{ position:absolute; top:344px; width:432px; }
+.lux-ratio .rt-side.is-a{ left:var(--pad-x) } .lux-ratio .rt-side.is-b{ right:var(--pad-x) }
+.lux-ratio .rt-num{ font-family:var(--font-veil); font-weight:400; font-size:160px; line-height:.9; letter-spacing:-.01em; color:var(--ink); font-variant-numeric:tabular-nums; }
+.lux-ratio .rt-side.is-b .rt-num{ color:var(--ink-dim); }
+.lux-ratio .rt-label{ font-family:var(--font-sans),var(--font-cjk); font-size:19px; line-height:1.6; color:var(--ink-dim); margin-top:16px; }
+.lux-ratio .rt-vs{
+  position:absolute; left:592px; top:392px;
+  font-family:var(--font-veil); font-weight:400; font-style:italic; font-size:56px; color:var(--ink-faint);
+}
+
+/* ---- lux-timeline 时间线（统领 + hairline 线 + 3 节点·年代 Didone）---- */
+.lux-timeline .tl-lead{
+  position:absolute; left:var(--pad-x); right:var(--pad-x); top:160px;
+  font-family:var(--font-cjk); font-weight:400; font-size:36px; line-height:1.3; letter-spacing:.02em;
+  color:var(--ink);
+}
+.lux-timeline .tl-line{ position:absolute; left:var(--pad-x); right:var(--pad-x); top:420px; height:1px; background:var(--hairline); }
+.lux-timeline .tl-node{ position:absolute; top:360px; width:320px; }
+.lux-timeline .tl-node.t1{ left:var(--pad-x) } .lux-timeline .tl-node.t2{ left:480px } .lux-timeline .tl-node.t3{ left:880px }
+.lux-timeline .tl-era{ font-family:var(--font-veil); font-weight:400; font-size:40px; line-height:1; color:var(--ink); font-variant-numeric:tabular-nums; }
+.lux-timeline .tl-name{ font-family:var(--font-cjk); font-weight:400; font-size:24px; line-height:1.3; color:var(--ink); margin-top:48px; }
+.lux-timeline .tl-desc{ font-family:var(--font-sans),var(--font-cjk); font-size:19px; line-height:1.6; color:var(--ink-dim); margin-top:12px; }
+
+/* ---- lux-spotlight 单点聚焦（大图 + 一句重判断 + 支撑·无 Didone 主标）---- */
+.lux-spotlight{ background:var(--surface) }
+.lux-spotlight .sp-img{ position:absolute; right:0; top:0; width:600px; height:100%; background:var(--surface); overflow:hidden }
+.lux-spotlight .sp-img img{ width:100%; height:100%; object-fit:cover; object-position:center; display:block }
+.lux-spotlight .sp-claim{
+  position:absolute; left:var(--pad-x); top:50%; transform:translateY(-58%); width:540px;
+  font-family:var(--font-cjk); font-weight:400; font-size:56px; line-height:1.26; letter-spacing:.02em;
+  color:var(--ink);
+}
+.lux-spotlight .sp-support{
+  position:absolute; left:var(--pad-x); width:500px; bottom:128px;
+  font-family:var(--font-sans),var(--font-cjk); font-weight:400; font-size:19px; line-height:1.7;
+  color:var(--ink-dim);
+}
+.lux-spotlight .lux-foot{ right:640px }
+</style>
+
+</head>
+<body>
+
+<!-- 字体预激活节点：强制浏览器加载所有已声明字族（font-display:optional 延迟加载时 fonts.check 误报 false）
+     aria-hidden + 零尺寸·对可见层零影响·仅用于 document.fonts.check 核验 -->
+<span aria-hidden="true" style="position:absolute;overflow:hidden;width:0;height:0;font-family:'Playfair Display';font-size:0;opacity:0">X</span>
+<span aria-hidden="true" style="position:absolute;overflow:hidden;width:0;height:0;font-family:'Glow Sans SC';font-size:0;opacity:0">字</span>
+
+<div class="nojs-hint">请启用 JavaScript 以获得最佳浏览体验</div>
+
+<div class="stage" id="stage">
+  <div class="deck" id="deck">
+
+    <!-- ===== 封面区 ===== -->
+    <!-- P1 封面 · lux-cover · 判断震慑（state·calm）·判断+锚数 -->
+    <section class="slide lux-cover" data-layout="lux-cover" data-role="state" data-energy="calm">
+      <div class="lux-eyebrow">奢侈品 · 下一个十年</div>
+      <div class="cov-kicker">The next decade.</div>
+      <h1 class="cov-claim">增长来自换人，<br>不是涨价。</h1>
+      <p class="cov-anchor" data-support="number">过去十年，奢侈品价格涨了约六成；<br>而买它的人，正在换成下一代。（数据示意）</p>
+      <footer class="lux-foot"><span>示意 · illustrative</span><span class="pg">01 / 20</span></footer>
+    </section>
+
+    <!-- P2 目录 · lux-index · 三章一览（insight·calm）·章判断条目 -->
+    <section class="slide lux-index" data-layout="lux-index" data-role="insight" data-energy="calm">
+      <div class="lux-eyebrow">目录 · contents</div>
+      <p class="idx-lead">三个正在发生的转变，重写奢侈品的增长逻辑。</p>
+      <div class="idx-row r1"><div class="idx-no">01</div><div class="idx-name">换代</div><div class="idx-claim">买它的人换了一代，旧的客户名单正在失效。</div></div>
+      <div class="idx-row r2"><div class="idx-no">02</div><div class="idx-name">重估</div><div class="idx-claim">新一代重新定义了什么东西配得上「贵」。</div></div>
+      <div class="idx-row r3"><div class="idx-no">03</div><div class="idx-name">重构</div><div class="idx-claim">奢侈品要赢回未来，得先学会说「不」。</div></div>
+      <footer class="lux-foot"><span>示意 · illustrative</span><span class="pg">02 / 20</span></footer>
+    </section>
+
+    <!-- ===== 第一章 换代 WHO ===== -->
+    <!-- P3 章节分隔 · lux-divider 01（insight·half）·章判断 -->
+    <section class="slide lux-divider" data-layout="lux-divider" data-role="insight" data-energy="half">
+      <div class="lux-eyebrow">第一章 · who is buying</div>
+      <div class="dv-no" aria-hidden="true">01</div>
+      <h2 class="dv-name">换代</h2>
+      <p class="dv-claim">奢侈品的客户名单，<br>正在被一整代人重写。</p>
+      <footer class="lux-foot"><span>示意 · illustrative</span><span class="pg">03 / 20</span></footer>
+    </section>
+
+    <!-- P4 量级 · lux-magnitude 50%（ground·half）·量化 -->
+    <section class="slide lux-magnitude" data-layout="lux-magnitude" data-role="ground" data-energy="half">
+      <div class="mag-label">客群 · who buys</div>
+      <div class="lux-num">50%</div>
+      <h2 class="mag-claim">三十五岁以下的买家，<br>首次占到奢侈消费的一半。</h2>
+      <p class="mag-ref">十年前，这个数字还只是 24%。<br>换代不是趋势，是已经发生的事。（示意）</p>
+      <footer class="lux-foot"><span>示意 · illustrative</span><span class="pg">04 / 20</span></footer>
+    </section>
+
+    <!-- P5 信念 · lux-conviction（insight·calm）·被前页 50% 垫起 -->
+    <section class="slide lux-conviction" data-layout="lux-conviction" data-role="insight" data-energy="calm">
+      <div class="lux-eyebrow">判断 · the call</div>
+      <h2 class="con-claim">提价是借来的增长——<br>它透支的，是<br>下一代人的好感。</h2>
+      <p class="con-ref">当一半的买家已经换了人，<br>这笔旧账，迟早要还。（示意）</p>
+      <footer class="lux-foot"><span>示意 · illustrative</span><span class="pg">05 / 20</span></footer>
+    </section>
+
+    <!-- P6 对比 · lux-contrast（narrow·half）·提价 vs 换人 -->
+    <section class="slide lux-contrast" data-layout="lux-contrast" data-role="narrow" data-energy="half">
+      <div class="lux-eyebrow">两种增长 · two engines</div>
+      <div class="con2-div" aria-hidden="true"></div>
+      <div class="con2-col is-left">
+        <div class="con2-kicker">旧逻辑 · 提价</div>
+        <div class="con2-num" data-support="number">+60%</div>
+        <div class="con2-claim">向上挤压老客户的钱包。</div>
+        <p class="con2-desc">十年累计提价约六成——<br>空间已接近天花板。（示意）</p>
+      </div>
+      <div class="con2-col is-right">
+        <div class="con2-kicker">新逻辑 · 换人</div>
+        <div class="con2-num" data-support="number">+1 代</div>
+        <div class="con2-claim">向下赢得新一代的认同。</div>
+        <p class="con2-desc">客群整体换手一代人——<br>这是增长唯一的新水源。（示意）</p>
+      </div>
+      <footer class="lux-foot"><span>示意 · illustrative</span><span class="pg">06 / 20</span></footer>
+    </section>
+
+    <!-- P7 量级序列 · lux-statrow（ground·calm）·新钱三坐标 -->
+    <section class="slide lux-statrow" data-layout="lux-statrow" data-role="ground" data-energy="calm">
+      <div class="lux-eyebrow">新钱 · the new money</div>
+      <p class="sr-lead">新买家的画像，<br>和十年前几乎没有重合。</p>
+      <div class="sr-cell c1"><div class="sr-num" data-support="number">−1 轮</div><div class="sr-label">首购年龄</div><div class="sr-desc">买第一件的人，年轻了整整一轮。（示意）</div></div>
+      <div class="sr-cell c2"><div class="sr-num">60%</div><div class="sr-label">来自亚洲</div><div class="sr-desc">增量的大头，已经不在欧美。（示意）</div></div>
+      <div class="sr-cell c3"><div class="sr-num">1/3</div><div class="sr-label">首次购买</div><div class="sr-desc">三个买家里，就有一个是新客。（示意）</div></div>
+      <footer class="lux-foot"><span>示意 · illustrative</span><span class="pg">07 / 20</span></footer>
+    </section>
+
+    <!-- ===== 第二章 重估 WHAT ===== -->
+    <!-- P8 章节分隔 · lux-divider 02（insight·half）·章判断 -->
+    <section class="slide lux-divider" data-layout="lux-divider" data-role="insight" data-energy="half">
+      <div class="lux-eyebrow">第二章 · what they value</div>
+      <div class="dv-no" aria-hidden="true">02</div>
+      <h2 class="dv-name">重估</h2>
+      <p class="dv-claim">他们重新定义了，<br>什么东西配得上「贵」。</p>
+      <footer class="lux-foot"><span>示意 · illustrative</span><span class="pg">08 / 20</span></footer>
+    </section>
+
+    <!-- P9 图文专题 · lux-editorial（ground·calm）·薄纱 Understood -->
+    <section class="slide lux-editorial" data-layout="lux-editorial" data-role="ground" data-energy="calm">
+      <figure class="ed-img"><img src="./assets/veil-hero.jpg" alt="安静的象牙白柔光墙面（AI 生成示意图）"></figure>
+      <div class="ed-veil" aria-hidden="true">Understood</div>
+      <div class="lux-eyebrow">本质 · what luxury is</div>
+      <h2 class="ed-title">To be<br>understood.</h2>
+      <p class="ed-claim">奢侈的本质，正从「拥有」<br>转向「被理解」。</p>
+      <p class="ed-support" data-support="number">愿意为「懂我」多付钱的买家，<br>三年里翻了一倍。（示意）</p>
+      <footer class="lux-foot"><span>示意 · illustrative</span><span class="pg">09 / 20</span></footer>
+    </section>
+
+    <!-- P10 抽言 · lux-pullquote（insight·half）·Didone 大引号 -->
+    <section class="slide lux-pullquote" data-layout="lux-pullquote" data-role="insight" data-energy="half">
+      <div class="pq-mark" aria-hidden="true">“</div>
+      <div class="lux-eyebrow">抽言 · the shift</div>
+      <blockquote class="pq-body">他们不再为 logo 付钱，<br>而是为「被看懂」付钱。</blockquote>
+      <p class="pq-src">这句话，正在重写奢侈品牌的产品简报。（示意）</p>
+      <footer class="lux-foot"><span>示意 · illustrative</span><span class="pg">10 / 20</span></footer>
+    </section>
+
+    <!-- P11 量级 · lux-magnitude 3×（ground·half）·复购 -->
+    <section class="slide lux-magnitude" data-layout="lux-magnitude" data-role="ground" data-energy="half">
+      <div class="mag-label">留存 · who stays</div>
+      <div class="lux-num">3×</div>
+      <h2 class="mag-claim">真正留下来的客户，<br>复购是行业平均的三倍。</h2>
+      <p class="mag-ref">他们买的不再只是产品，<br>而是一次次被印证的判断。（示意）</p>
+      <footer class="lux-foot"><span>示意 · illustrative</span><span class="pg">11 / 20</span></footer>
+    </section>
+
+    <!-- P12 编号判断列表 · lux-list（ground·calm）·重估三件事 -->
+    <section class="slide lux-list" data-layout="lux-list" data-role="ground" data-energy="calm">
+      <div class="lux-eyebrow">重估清单 · what counts now</div>
+      <p class="ls-lead">新一代愿意为之买单的，是旧 logo 给不了的三件事。</p>
+      <div class="ls-item i1"><div class="ls-no">01</div><div><div class="ls-h">可被追溯的工艺</div><div class="ls-d">谁做的、怎么做的，比标牌更值钱。（示意）</div></div></div>
+      <div class="ls-item i2"><div class="ls-no">02</div><div><div class="ls-h">可被相信的克制</div><div class="ls-d">不滥发、不打折，才撑得起稀缺。（示意）</div></div></div>
+      <div class="ls-item i3"><div class="ls-no">03</div><div><div class="ls-h">可被讲述的故事</div><div class="ls-d">买的是一段叙事，不只是一件物。（示意）</div></div></div>
+      <footer class="lux-foot"><span>示意 · illustrative</span><span class="pg">12 / 20</span></footer>
+    </section>
+
+    <!-- P13 双量级并置 · lux-ratio（insight·half）·二手 vs 一手 -->
+    <section class="slide lux-ratio" data-layout="lux-ratio" data-role="insight" data-energy="half">
+      <div class="lux-eyebrow">二手 · the resale signal</div>
+      <p class="rt-lead">二手市场的增速，<br>正在替奢侈品给出真实定价。</p>
+      <div class="rt-side is-a"><div class="rt-num" data-support="number">4×</div><div class="rt-label">二手奢侈品的增速，<br>是一手的四倍。（示意）</div></div>
+      <div class="rt-vs" aria-hidden="true">vs</div>
+      <div class="rt-side is-b"><div class="rt-num">1×</div><div class="rt-label">一手增长趋于平缓，<br>溢价不再理所当然。（示意）</div></div>
+      <footer class="lux-foot"><span>示意 · illustrative</span><span class="pg">13 / 20</span></footer>
+    </section>
+
+    <!-- ===== 第三章 重构 HOW ===== -->
+    <!-- P14 章节分隔 · lux-divider 03（narrow·half）·章判断 -->
+    <section class="slide lux-divider" data-layout="lux-divider" data-role="narrow" data-energy="half">
+      <div class="lux-eyebrow">第三章 · how luxury responds</div>
+      <div class="dv-no" aria-hidden="true">03</div>
+      <h2 class="dv-name">重构</h2>
+      <p class="dv-claim">奢侈品要赢回未来，<br>得先重新学会说「不」。</p>
+      <footer class="lux-foot"><span>示意 · illustrative</span><span class="pg">14 / 20</span></footer>
+    </section>
+
+    <!-- P15 图文专题 · lux-editorial（ground·calm）·薄纱 Restraint -->
+    <section class="slide lux-editorial" data-layout="lux-editorial" data-role="ground" data-energy="calm">
+      <figure class="ed-img"><img src="./assets/lux-silk.jpg" alt="象牙白丝绸的柔光褶皱（AI 生成示意图）"></figure>
+      <div class="ed-veil" aria-hidden="true">Restraint</div>
+      <div class="lux-eyebrow">稀缺 · what scarcity means</div>
+      <h2 class="ed-title">Scarcity is<br>a judgment.</h2>
+      <p class="ed-claim">稀缺不是产量的上限，<br>而是判断力的下注。</p>
+      <p class="ed-support" data-support="number">敢于停产、限量的品牌，<br>毛利率高出同行十几个点。（示意）</p>
+      <footer class="lux-foot"><span>示意 · illustrative</span><span class="pg">15 / 20</span></footer>
+    </section>
+
+    <!-- P16 信念 · lux-conviction（insight·calm）·克制是定价权 -->
+    <section class="slide lux-conviction" data-layout="lux-conviction" data-role="insight" data-energy="calm">
+      <div class="lux-eyebrow">定价权 · the real moat</div>
+      <h2 class="con-claim">克制，是唯一<br>不能被对手<br>复制的定价权。</h2>
+      <p class="con-ref">产能可以买，渠道可以抄，<br>但「敢不卖」买不到。（示意）</p>
+      <footer class="lux-foot"><span>示意 · illustrative</span><span class="pg">16 / 20</span></footer>
+    </section>
+
+    <!-- P17 时间线 · lux-timeline（ground·half）·定价逻辑百年三变 -->
+    <section class="slide lux-timeline" data-layout="lux-timeline" data-role="ground" data-energy="half">
+      <div class="lux-eyebrow">百年三变 · a century of pricing</div>
+      <p class="tl-lead">奢侈品的定价逻辑，<br>一百年里换过三次根基。</p>
+      <div class="tl-line" aria-hidden="true"></div>
+      <div class="tl-node t1"><div class="tl-era" data-support="number">1900s</div><div class="tl-name">稀缺</div><div class="tl-desc">贵，因为稀少而难得。（示意）</div></div>
+      <div class="tl-node t2"><div class="tl-era">1980s</div><div class="tl-name">身份</div><div class="tl-desc">贵，因为它标记你是谁。（示意）</div></div>
+      <div class="tl-node t3"><div class="tl-era">2020s</div><div class="tl-name">意义</div><div class="tl-desc">贵，因为它说出你信什么。（示意）</div></div>
+      <footer class="lux-foot"><span>示意 · illustrative</span><span class="pg">17 / 20</span></footer>
+    </section>
+
+    <!-- P18 引言 · lux-quote（leave·calm）·有出处立场（示意不伪造）-->
+    <section class="slide lux-quote" data-layout="lux-quote" data-role="leave" data-energy="calm">
+      <div class="lux-eyebrow">一句话 · on scarcity</div>
+      <blockquote class="qt-body">「真正的稀缺，<br>从来不是产量，<br>而是敢不敢对需求说不。」</blockquote>
+      <p class="qt-attr">— 示意 · 行业访谈（illustrative）</p>
+      <footer class="lux-foot"><span>示意 · illustrative</span><span class="pg">18 / 20</span></footer>
+    </section>
+
+    <!-- P19 单点聚焦 · lux-spotlight（insight·calm）·慢是护城河+大图 -->
+    <section class="slide lux-spotlight" data-layout="lux-spotlight" data-role="insight" data-energy="calm">
+      <figure class="sp-img"><img src="./assets/lux-plaster.jpg" alt="象牙白石膏墙面的柔光质感（AI 生成示意图）"></figure>
+      <div class="lux-eyebrow">护城河 · the last moat</div>
+      <h2 class="sp-claim">慢，是这个时代<br>最后的护城河。</h2>
+      <p class="sp-support" data-support="number">把交付周期做长的品牌，<br>反而换来了更高的复购。（示意）</p>
+      <footer class="lux-foot"><span>示意 · illustrative</span><span class="pg">19 / 20</span></footer>
+    </section>
+
+    <!-- ===== 收束 ===== -->
+    <!-- P20 收束 · lux-closing（act·half）·呼应封面·判断落定 -->
+    <section class="slide lux-closing" data-layout="lux-closing" data-role="act" data-energy="half">
+      <div class="lux-eyebrow">下一个十年 · the move</div>
+      <h2 class="clo-claim">把价格交给市场，<br>把判断交给时间。</h2>
+      <p class="clo-tail" data-support="number">换人比涨价慢得多——<br>但它是唯一不透支未来的增长。（示意）</p>
+      <footer class="lux-foot"><span>示意 · illustrative</span><span class="pg">20 / 20</span></footer>
+    </section>
+
+  </div><!-- /deck -->
+</div><!-- /stage -->
+
+<nav class="hud" aria-label="导航">
+  <button id="navPrev" aria-label="上一页">‹</button>
+  <span class="cnt" id="navCnt">01 / 20</span>
+  <button id="navNext" aria-label="下一页">›</button>
+</nav>
+
+<div class="rotate-hint" aria-hidden="true">
+  <svg class="rh-ico" viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v4h-4"/></svg>
+  <div class="rh-msg"><span class="rh-sq"></span>横屏观看更佳</div>
+  <div class="rh-sub">旋转手机以全屏查看这份演示</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var root=document.documentElement; root.classList.remove("no-js"); root.classList.add("js");
+  var deck=document.getElementById("deck");
+  var slides=[].slice.call(deck.querySelectorAll(".slide"));
+  var total=slides.length, cntEl=document.getElementById("navCnt"), i=0;
+  var pad2=function(n){return (n<10?"0":"")+n;};
+  function fit(){var s=Math.min(window.innerWidth/1280, window.innerHeight/720); var x=(window.innerWidth-1280*s)/2, y=(window.innerHeight-720*s)/2; deck.style.transform="translate("+x+"px,"+y+"px) scale("+s+")";}
+  function clamp(n){return Math.max(0,Math.min(total-1,n));}
+  function render(){
+    slides.forEach(function(sl,idx){sl.classList.toggle("is-active",idx===i);});
+    cntEl.textContent=pad2(i+1)+" / "+pad2(total);
+    if(("#"+(i+1))!==location.hash) history.replaceState(null,"","#"+(i+1));
+  }
+  function go(n){i=clamp(n);render();}
+  function next(){go(i+1);} function prev(){go(i-1);}
+  function fromHash(){var n=parseInt((location.hash||"").replace("#",""),10); if(!isNaN(n)&&n>=1&&n<=total)i=n-1;}
+  document.addEventListener("keydown",function(e){
+    switch(e.key){
+      case "ArrowRight": case "PageDown": case " ": e.preventDefault(); next(); break;
+      case "ArrowLeft": case "PageUp": e.preventDefault(); prev(); break;
+      case "Home": e.preventDefault(); go(0); break;
+      case "End": e.preventDefault(); go(total-1); break;
+    }
+  });
+  var tx=0,ty=0,tk=false;
+  document.addEventListener("touchstart",function(e){if(e.touches.length!==1)return;tk=true;tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
+  document.addEventListener("touchend",function(e){if(!tk)return;tk=false;var t=e.changedTouches[0],dx=t.clientX-tx,dy=t.clientY-ty;if(Math.abs(dx)>48&&Math.abs(dx)>Math.abs(dy)*1.4){dx<0?next():prev();}},{passive:true});
+  document.getElementById("navNext").addEventListener("click",next);
+  document.getElementById("navPrev").addEventListener("click",prev);
+  window.addEventListener("hashchange",function(){fromHash();render();});
+  window.addEventListener("resize",fit);
+  fromHash(); fit(); render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="zh-CN" class="no-js" data-theme="constructivist" data-rendered-by="blcaptain">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>演示即行动 — demo</title>
+
+<!-- preload 首屏主力字重（crossorigin 必须·制作规范：preload + font-display:optional 根治 FOUT 跳字） -->
+<link rel="preload" href="./fonts/SmileySans-Oblique.subset.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="./fonts/GlowSansSC-Regular.constr.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="./fonts/GlowSansSC-Compressed-ExtraBold.subset.woff2" as="font" type="font/woff2" crossorigin>
+
+<style>
+/* =========================================================================
+   FONTS · 全 OFL 本地打包（构成主义新增 得意黑 + Glow Compressed；Geist 沿用）
+   ========================================================================= */
+@font-face{font-family:"Geist";src:url("./fonts/Geist-Variable.woff2") format("woff2");font-weight:100 900;font-display:optional}
+@font-face{font-family:"Geist Mono";src:url("./fonts/GeistMono-Variable.woff2") format("woff2");font-weight:100 900;font-display:optional}
+@font-face{font-family:"Glow Sans SC";src:url("./fonts/GlowSansSC-Regular.constr.woff2") format("woff2");font-weight:400;font-display:optional}
+@font-face{font-family:"Glow Sans SC";src:url("./fonts/GlowSansSC-Medium.constr.woff2") format("woff2");font-weight:500;font-display:optional}
+@font-face{font-family:"Glow Sans SC";src:url("./fonts/GlowSansSC-Compressed-ExtraBold.subset.woff2") format("woff2");font-weight:800;font-display:optional}
+@font-face{font-family:"Smiley Sans";src:url("./fonts/SmileySans-Oblique.subset.woff2") format("woff2");font-display:optional}
+</style>
+
+<style>
+/* =========================================================================
+   TOKENS START · 全局结构常量（与主题无关）
+   ========================================================================= */
+:root{
+  --font-sans:"Geist","Geist Sans","Glow Sans SC","Noto Sans SC","PingFang SC","Microsoft YaHei UI",system-ui,-apple-system,sans-serif;
+  --font-mono:"Geist Mono","SFMono-Regular",ui-monospace,"JetBrains Mono","Glow Sans SC",monospace; /* CJK 兜底→Glow，免 mono 标签中文静默回退系统字（铁律⑤） */
+  --font-cjk:"Glow Sans SC","Noto Sans SC","PingFang SC",sans-serif;
+
+  /* 间距 8pt 主刻度 */
+  --sp-1:8px; --sp-2:16px; --sp-3:24px; --sp-4:32px;
+  --sp-6:48px; --sp-8:64px; --sp-10:80px; --sp-12:96px; --sp-16:160px;
+  /* 圆角全系 0（跨主题共性） */
+  --radius:0px;
+  /* 网格（16:9 画板） */
+  --deck-w:1280px; --deck-h:720px;
+  /* 动效 */
+  --dur-base:.28s; --ease:cubic-bezier(.22,1,.36,1);
+  /* 结构性外场色 */
+  --stage-void:#201d18;
+  /* HUD 控件固定色（主题无关·暗色玻璃浮层；TOKENS 区内合法 hex） */
+  --hud-fg:#C9C2B4; --hud-fg-hi:#fff;
+}
+
+/* =========================================================================
+   其他人格 人格 · constructivist（亮底 · 信念方言）
+   令牌一字不差取自 00-tokens-locked.md「构成主义 theme」区块（待 实现期 镜像）。
+   ========================================================================= */
+[data-theme="constructivist"]{   /* 全 deck 统一构成主义：米白底 + 红信号色，一以贯之 */
+  --bg:#F2EDE3; --surface:#ECE6D8; --surface-2:#E4DCCB;
+  --ink:#16120D; --ink-mid:#4A4339; --ink-dim:#6A6052; --ink-faint:#9A9080;
+  --hairline:rgba(22,18,13,.16); --hairline-2:rgba(22,18,13,.08); --hairline-3:rgba(22,18,13,.22);
+  --accent:#C81E2C; --accent-deep:#7A1320; --accent-hot:#E2331A;
+  --accent-dim:rgba(200,30,44,.12); --accent-glow:rgba(200,30,44,.30);
+  --font-display:"Smiley Sans",sans-serif;      /* 得意黑 · hero 专用（压缩斜体·自带动势） */
+  --pad-x:80px; --pad-top:72px; --pad-bottom:104px;  /* 非对称边距（Tschichold 光学中心） */
+}
+
+/* 一份 deck = 一个人格 / 一个底色(米白) / 一个信号色(红)；变化靠疏密与构图，不换主题。
+   （instrument-cool 是"另一种 deck"的人格，用户二选一，不在同一 deck 内混用。） */
+/* TOKENS END */
+
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%; background:var(--stage-void); overflow:hidden; -webkit-text-size-adjust:100%; text-size-adjust:100%}
+body{font-family:var(--font-sans); color:var(--ink);
+  line-break:strict; word-break:normal; overflow-wrap:anywhere; text-wrap:pretty; text-spacing-trim:normal}  /* 旗舰 CJK 排印规则:避头尾/防孤字/标点挤压 */
+
+/* ===== 翻页运行时（搬自旗舰 · 一次一页 · 横向切换）===== */
+.stage{position:fixed; inset:0; overflow:hidden}
+/* 移动端居中正解(同 info-data)：transform-origin:top-left + fit() 算 px 平移居中，避 flex 溢出盒偏右(真机第4缝) */
+.deck{position:absolute; left:0; top:0; width:var(--deck-w); height:var(--deck-h); transform-origin:top left}
+.slide{position:absolute; inset:0; width:var(--deck-w); height:var(--deck-h); overflow:hidden;
+  background:var(--bg); color:var(--ink);
+  box-shadow:0 0 0 1px var(--hairline-2), 0 28px 80px rgba(0,0,0,.5);
+  opacity:0; visibility:hidden; pointer-events:none; z-index:0}
+.slide.is-active{opacity:1; visibility:visible; pointer-events:auto; z-index:2}
+/* 横向锐利滑入（构成主义机械感）· reduced-motion 降级为静态 */
+@media (prefers-reduced-motion:no-preference){
+  html.js .slide.is-active{animation:slideInX .34s cubic-bezier(.2,0,0,1) both}
+  @keyframes slideInX{from{opacity:0; transform:translateX(64px)} to{opacity:1; transform:translateX(0)}}
+}
+/* HUD（chrome 控件·主题无关固定色） */
+.hud{position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:50;
+  display:flex; align-items:center; gap:12px; padding:8px 12px;
+  background:rgba(28,24,20,.82); border:1px solid rgba(255,255,255,.18);
+  font-family:var(--font-mono); font-size:12px; color:var(--hud-fg);
+  -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+  opacity:0; transition:opacity .28s}
+html.js .hud{opacity:.55} .hud:hover{opacity:1}
+.hud button{font:inherit; color:var(--hud-fg); background:none; border:1px solid rgba(255,255,255,.18); width:28px; height:24px; cursor:pointer; line-height:1}
+.hud button:hover{color:var(--hud-fg-hi); border-color:var(--hud-fg-hi)}
+.hud .cnt{font-variant-numeric:tabular-nums; color:var(--hud-fg); min-width:54px; text-align:center}
+.nojs-hint{display:none}
+html.no-js .nojs-hint{display:block; position:fixed; top:0; left:0; right:0; z-index:60; padding:4px 12px;
+  font-family:var(--font-mono); font-size:12px; text-align:center; color:var(--hud-fg); background:rgba(28,24,20,.9)}
+/* 无脚本兜底：竖排可滚 */
+html.no-js body{overflow:auto}
+html.no-js .stage{position:static; display:block; padding:32px 0}
+html.no-js .deck{position:static; width:auto; height:auto; transform:none!important; display:flex; flex-direction:column; align-items:center; gap:16px}
+html.no-js .slide{position:relative; inset:auto; opacity:1; visibility:visible; pointer-events:auto; flex:none}
+html.no-js .hud{display:none}
+
+/* 横屏提示：16:9 deck 在竖屏手机=小条幅，引导旋转到横屏(横屏铺满·移动端正解)；旋转后媒体查询失配→自动隐藏。仅 js 路径(no-js 走滚动 fallback)。搬自 info-data·token 映射 --font-data→--font-sans（构成主义正文字）。 */
+.rotate-hint{display:none}
+@media (orientation:portrait) and (max-width:768px){
+  html.js .rotate-hint{display:flex; position:fixed; inset:0; z-index:120; flex-direction:column; align-items:center; justify-content:center; gap:24px; background:var(--stage-void); color:var(--hud-fg-hi); text-align:center; padding:48px}
+  .rotate-hint .rh-ico{color:var(--accent-hot); animation:rhSpin 2.6s var(--ease) infinite; transform-origin:center}
+  .rotate-hint .rh-msg{display:flex; align-items:center; gap:8px; font-family:var(--font-sans); font-weight:600; font-size:21px; letter-spacing:.02em}
+  .rotate-hint .rh-sq{width:12px; height:12px; background:var(--accent-hot)}
+  .rotate-hint .rh-sub{font-family:var(--font-mono); font-size:13px; color:var(--hud-fg); opacity:.75; line-height:1.6}
+  @keyframes rhSpin{0%,55%{transform:rotate(0)} 75%,100%{transform:rotate(-90deg)}}
+}
+
+/* ---- 共享：editorial 页眉 + folio + 红场签名 ---- */
+.eyebrow{position:absolute; left:var(--pad-x); top:68px; display:flex; align-items:center; gap:12px;
+  font-family:var(--font-sans); font-weight:600; font-size:15px; letter-spacing:.22em; text-transform:uppercase; color:var(--ink)}
+.eyebrow .sq{width:13px; height:13px; background:var(--accent)}
+.folio{position:absolute; right:var(--pad-x); top:66px; text-align:right; font-family:var(--font-mono);
+  font-size:13.5px; letter-spacing:.04em; line-height:1.6; color:var(--ink); white-space:nowrap}  /* nowrap 防 iOS Safari shrink-to-fit 把 folio 逐字竖排 */
+.toprule{position:absolute; left:var(--pad-x); right:var(--pad-x); top:106px; height:2px; background:var(--ink)}
+/* 红场签名（route 乙：收敛裹内容·消 trapped void·配重） */
+.mark{position:absolute; background:var(--accent); color:var(--bg);
+  padding:20px 24px 20px; display:flex; flex-direction:column; align-items:flex-end}
+.mark .w{font-family:var(--font-cjk); font-weight:800; font-size:78px; line-height:.92}  /* 标记=直立 Glow Compressed（非斜体得意黑，居中更稳更高级） */
+.mark .m{font-family:var(--font-mono); font-size:12px; letter-spacing:.22em; margin-top:4px; text-transform:uppercase}
+
+/* ---- cover ---- */
+.cover .h{position:absolute; left:70px; top:150px; font-family:var(--font-display); color:var(--ink); line-height:.92}
+.cover .h .s1{font-size:108px; display:block}
+.cover .h .s2{font-size:190px; display:block; margin-top:32px; letter-spacing:.01em}
+.cover .claim{position:absolute; left:82px; top:548px; display:flex; align-items:center; gap:12px;
+  font-family:var(--font-cjk); font-weight:800; font-size:30px; color:var(--ink); letter-spacing:.01em}
+.cover .claim .sq{width:13px; height:13px; background:var(--accent); flex:none}
+.cover .mark{right:var(--pad-x); top:470px}
+
+/* ---- section-divider（分幕·红场签名复现） ---- */
+.divider .ch-no{position:absolute; left:66px; top:170px; font-family:var(--font-display);
+  font-size:300px; line-height:.86; color:var(--ink)}
+.divider .ch-name{position:absolute; left:80px; top:548px; font-family:var(--font-cjk);
+  font-weight:800; font-size:64px; color:var(--ink); letter-spacing:.02em}
+.divider .mark{right:var(--pad-x); top:200px}
+
+/* ---- social-card（金句·单卡） ---- */
+.social{display:flex; flex-direction:column; justify-content:center; padding:0 96px}
+.social .quote{font-family:var(--font-display); font-size:128px; line-height:1.0; color:var(--ink); max-width:980px}
+.social .quote em{font-style:normal; color:var(--accent)}
+.social .by{position:absolute; left:110px; bottom:96px; font-family:var(--font-mono);
+  font-size:14px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-dim)}
+.social .mark{right:var(--pad-x); bottom:88px}
+
+/* ---- content（密内容页 · 内容优先 · 同一米白人格，仅靠密度与其它页区分疏密）---- */
+.content{padding:160px var(--pad-x) 80px; display:flex; flex-direction:column}  /* padding-top 清开 toprule(106)→不压线 */
+.content .h3{font-family:var(--font-sans); font-weight:500; font-size:44px; line-height:1.2; letter-spacing:-.01em; color:var(--ink); max-width:940px}  /* 标题字重 500=投屏更实 */
+.content .lead{font-family:var(--font-cjk); font-size:21px; line-height:1.7; color:var(--ink-mid); margin-top:20px; max-width:820px}
+.content .grid{margin-top:48px; display:grid; grid-template-columns:repeat(4,1fr); gap:24px}  /* in-flow=填中段·去顶重 */
+.content .card{background:var(--surface-2); border:1.5px solid var(--hairline-3); padding:24px; min-height:192px; display:flex; flex-direction:column}  /* 填充+1.5px 提亮边=投屏看得见框 */
+.content .card .stat{font-family:var(--font-mono); font-weight:500; font-size:44px; color:var(--ink); letter-spacing:-.02em; font-variant-numeric:tabular-nums}
+.content .card .lbl{font-family:var(--font-cjk); font-size:18px; line-height:1.55; color:var(--ink); margin-top:12px}  /* 关键标签=主墨色+18px,投屏清晰 */
+.content .card .src{font-family:var(--font-mono); font-size:14px; color:var(--ink-mid); margin-top:auto; padding-top:12px; letter-spacing:.02em}
+.content .card.focus{background:var(--accent); border-color:var(--accent)}  /* 首卡红场焦点：红场下沉内容页 + 打破 4 卡均质（独特性·焦点=最重判断·承载内涵非装饰） */
+.content .card.focus .stat, .content .card.focus .lbl{color:var(--bg)}
+.content .card.focus .src{color:rgba(242,237,227,.72)}
+
+@media print{
+  @page{size:1280px 720px; margin:0}
+  html,body{background:var(--bg); overflow:visible; height:auto}
+  .stage{position:static; display:block; padding:0}
+  .deck{width:auto; height:auto; transform:none!important; display:block}
+  .slide{position:relative; inset:auto; opacity:1!important; visibility:visible!important;
+    page-break-after:always; break-after:page; box-shadow:none; width:1280px; height:720px}
+}
+
+/* ===== 版式：statement / compare / kpi / process / final（均米白构成主义·红信号色）===== */
+.statement{display:flex; flex-direction:column; justify-content:center; padding:0 var(--pad-x)}
+.statement .lead{font-family:var(--font-mono); font-size:14px; letter-spacing:.2em; text-transform:uppercase; color:var(--ink-dim); margin-bottom:24px}
+.statement .big{font-family:var(--font-display); font-size:96px; line-height:1.04; color:var(--ink)}
+.statement .big em{font-style:normal; color:var(--accent)}
+.statement .sub{font-family:var(--font-cjk); font-weight:500; font-size:24px; line-height:1.6; color:var(--ink-mid); margin-top:32px; max-width:800px}
+
+.compare2{padding:160px var(--pad-x) 80px}
+.compare2 .h3{font-family:var(--font-sans); font-weight:500; font-size:40px; color:var(--ink)}
+.compare2 .cols{display:grid; grid-template-columns:1fr 1fr; margin-top:48px; border:1.5px solid var(--hairline-3)}
+.compare2 .col{padding:32px 32px 48px}
+.compare2 .col + .col{border-left:1.5px solid var(--hairline-3)}
+.compare2 .col .tag{font-family:var(--font-mono); font-size:14px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-dim)}
+.compare2 .col.good .tag{color:var(--accent)}
+.compare2 .col .big{font-family:var(--font-display); font-size:62px; line-height:1; color:var(--ink); margin-top:12px}
+.compare2 .col.good .big{color:var(--accent)}
+.compare2 .col ul{list-style:none; margin-top:20px}
+.compare2 .col li{font-family:var(--font-cjk); font-size:18px; line-height:1.5; color:var(--ink-mid); padding:8px 0 8px 20px; position:relative}
+.compare2 .col li::before{content:"—"; position:absolute; left:0; color:var(--ink-dim)}
+.compare2 .col.good li{color:var(--ink)}
+.compare2 .col.good li::before{content:"+"; color:var(--accent)}
+
+.kpi{display:flex; flex-direction:column; justify-content:center; padding:0 var(--pad-x)}
+.kpi .num{font-family:var(--font-display); font-size:288px; line-height:.84; color:var(--accent); letter-spacing:-.01em}
+.kpi .cap{font-family:var(--font-cjk); font-weight:800; font-size:34px; line-height:1.32; color:var(--ink); max-width:860px; margin-top:16px}
+.kpi .src{font-family:var(--font-mono); font-size:14px; letter-spacing:.04em; color:var(--ink-dim); margin-top:20px}
+
+.process{padding:160px var(--pad-x) 80px}
+.process .h3{font-family:var(--font-sans); font-weight:500; font-size:40px; color:var(--ink)}
+.process .steps{display:grid; grid-template-columns:repeat(3,1fr); gap:32px; margin-top:64px}
+.process .step{border-top:3px solid var(--accent); padding-top:24px}
+.process .step .no{font-family:var(--font-display); font-size:60px; line-height:.9; color:var(--ink)}
+.process .step .t{font-family:var(--font-cjk); font-weight:800; font-size:24px; color:var(--ink); margin-top:12px}
+.process .step .d{font-family:var(--font-cjk); font-size:18px; line-height:1.6; color:var(--ink-mid); margin-top:16px}  /* CJK 正文达 ≥18 投影建议(制作规范字号) */
+
+.final{display:flex; flex-direction:column; justify-content:center; padding:0 var(--pad-x)}
+.final .lead{font-family:var(--font-mono); font-size:14px; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); margin-bottom:20px}
+.final .big{font-family:var(--font-display); font-size:132px; line-height:1.06; color:var(--ink)}
+.final .big em{font-style:normal; color:var(--accent)}
+.final .row{display:flex; gap:48px; margin-top:48px}
+.final .row .m{font-family:var(--font-cjk); font-weight:800; font-size:22px; color:var(--ink)}
+.final .row .m .n{font-family:var(--font-mono); color:var(--accent); margin-right:8px; font-size:18px}
+</style>
+</head>
+<body>
+<div class="nojs-hint">本演示用 ← → 翻页；当前为无脚本竖排兜底。</div>
+<div class="stage"><div class="deck" id="deck">
+
+  <!-- 01 COVER -->
+  <section class="slide cover" data-layout="cover" data-role="state" data-energy="blast">
+    <div class="eyebrow"><span class="sq"></span>演示即行动 · PRESENTATION AS ACTION</div>
+    <div class="folio">N<span style="font-size:9px">o</span> 01 — 2026<br>MANIFESTO · 01 / 20</div>
+    <div class="toprule"></div>
+    <div class="h"><span class="s1">演示即</span><span class="s2">武器</span></div>
+    <div class="claim"><span class="sq"></span>每一页，只为一个判断服务</div>
+    <div class="mark"><span class="w">宣言</span><span class="m">Manifesto</span></div>
+  </section>
+
+  <!-- 02 STATEMENT 立论 -->
+  <section class="slide statement" data-layout="statement" data-role="insight" data-energy="half">
+    <div class="eyebrow"><span class="sq"></span>演示即行动 · PRESENTATION AS ACTION</div>
+    <div class="folio">02 / 20</div>
+    <div class="toprule"></div>
+    <div class="lead">The Thesis</div>
+    <div class="big">不替你做幻灯片，<br>替你<em>赢下这场会</em>。</div>
+    <div class="sub">AI 不缺会排版的手，缺的是会判断的导演——判断，先于美化。</div>
+  </section>
+
+  <!-- 03 DIVIDER 第一幕 -->
+  <section class="slide divider" data-layout="section-divider" data-role="ground" data-energy="half">
+    <div class="eyebrow"><span class="sq"></span>演示即行动 · PRESENTATION AS ACTION</div>
+    <div class="folio">第 01 幕<br>03 / 20</div>
+    <div class="toprule"></div>
+    <div class="ch-no">01</div>
+    <div class="ch-name">病灶</div>
+    <div class="mark"><span class="w">幕</span><span class="m">Act</span></div>
+  </section>
+
+  <!-- 04 CONTENT 证据·密 -->
+  <section class="slide content" data-layout="evidence" data-role="insight" data-energy="calm">
+    <div class="eyebrow"><span class="sq"></span>演示即行动 · PRESENTATION AS ACTION</div>
+    <div class="folio">04 / 20<br>EVIDENCE</div>
+    <div class="toprule"></div>
+    <div class="h3">多数演示死在"念稿"，<br>不是设计，是判断缺席</div>
+    <div class="lead">同一份内容，导演过与否的差距，集中在三处：受众判断、证据分级、答案先行。</div>
+    <div class="grid">
+      <div class="card focus"><div class="stat">1 判断</div><div class="lbl">一页只服务一个判断（answer-first）</div><div class="src">原则 · 演示导演</div></div>
+      <div class="card"><div class="stat">3 态</div><div class="lbl">数据标实测 / 推断 / 示意，不伪造</div><div class="src">原则 · 数据诚信</div></div>
+      <div class="card"><div class="stat">≤10%</div><div class="lbl">单一信号色面积上限（示意）</div><div class="src">FT / Economist 共识</div></div>
+      <div class="card"><div class="stat">66 字</div><div class="lbl">正文行长上限区（示意）</div><div class="src">Bringhurst / Baymard</div></div>
+    </div>
+  </section>
+
+  <!-- 05 KPI 哥伦比亚号·判断被格式淹没（CAIB / Tufte 一手核实）-->
+  <section class="slide kpi" data-layout="kpi" data-role="insight" data-energy="blast">
+    <div class="eyebrow"><span class="sq"></span>演示即行动 · PRESENTATION AS ACTION</div>
+    <div class="folio">05 / 20</div>
+    <div class="toprule"></div>
+    <div class="num">640<span style="font-size:.42em;font-family:var(--font-cjk);font-weight:800;letter-spacing:0">倍</span></div>
+    <div class="cap">哥伦比亚号失事——撞它的泡沫体积是模型校准样本的最多 640 倍。这句决定生死的话，被埋在一张幻灯六层子弹点的最底层。</div>
+    <div class="src">CAIB 报告 Vol.1 p.145/191 · E. Tufte《The Cognitive Style of PowerPoint》· 2003</div>
+  </section>
+
+  <!-- 06 COMPARE 排版 vs 导演 -->
+  <section class="slide compare2" data-layout="compare" data-role="narrow" data-energy="half">
+    <div class="eyebrow"><span class="sq"></span>演示即行动 · PRESENTATION AS ACTION</div>
+    <div class="folio">06 / 20</div>
+    <div class="toprule"></div>
+    <div class="h3">同一份内容，两种活法</div>
+    <div class="cols">
+      <div class="col bad"><div class="tag">排版思维</div><div class="big">摆好看</div>
+        <ul><li>先开模板，再塞内容</li><li>标题写"市场概览"</li><li>每页堆满，怕留白</li><li>数字越多越显专业</li></ul></div>
+      <div class="col good"><div class="tag">导演思维</div><div class="big">赢下来</div>
+        <ul><li>先定受众与决策点</li><li>标题写"该砍掉 B 线"</li><li>一页一主张，敢留白</li><li>一处判断，一处证据</li></ul></div>
+    </div>
+  </section>
+
+  <!-- 07 STATEMENT 亚马逊禁 PPT·叙述逼出思考（Bezos 一手核实）-->
+  <section class="slide statement" data-layout="statement" data-role="insight" data-energy="half">
+    <div class="eyebrow"><span class="sq"></span>演示即行动 · PRESENTATION AS ACTION</div>
+    <div class="folio">07 / 20</div>
+    <div class="toprule"></div>
+    <div class="lead">The Memo</div>
+    <div class="big">亚马逊开会，<br>先<em>读六页备忘录</em>。</div>
+    <div class="sub">贝佐斯用叙述式备忘录取代 PPT，会议开场全场静读——"好备忘录的叙述结构，逼出更好的思考、更分得清孰轻孰重"。</div>
+  </section>
+
+  <!-- 08 KPI 10秒·glance test -->
+  <section class="slide kpi" data-layout="kpi" data-role="insight" data-energy="blast">
+    <div class="eyebrow"><span class="sq"></span>演示即行动 · PRESENTATION AS ACTION</div>
+    <div class="folio">08 / 20</div>
+    <div class="toprule"></div>
+    <div class="num">10秒</div>
+    <div class="cap">受众判断"这页值不值得听"，只要 10 秒——你得在他开口前就说清。</div>
+    <div class="src">参照 · Duarte 一瞥测试 glance test</div>
+  </section>
+
+  <!-- 09 DIVIDER 第二幕 -->
+  <section class="slide divider" data-layout="section-divider" data-role="ground" data-energy="half">
+    <div class="eyebrow"><span class="sq"></span>演示即行动 · PRESENTATION AS ACTION</div>
+    <div class="folio">第 02 幕<br>09 / 20</div>
+    <div class="toprule"></div>
+    <div class="ch-no">02</div>
+    <div class="ch-name">解法</div>
+    <div class="mark"><span class="w">幕</span><span class="m">Act</span></div>
+  </section>
+
+  <!-- 10 PROCESS 三步 -->
+  <section class="slide process" data-layout="process" data-role="narrow" data-energy="calm">
+    <div class="eyebrow"><span class="sq"></span>演示即行动 · PRESENTATION AS ACTION</div>
+    <div class="folio">10 / 20</div>
+    <div class="toprule"></div>
+    <div class="h3">导演一份演示，三道工序</div>
+    <div class="steps">
+      <div class="step"><div class="no">01</div><div class="t">判断</div><div class="d">先定受众是谁、要他做什么决策；没有决策点，就没有这一页。</div></div>
+      <div class="step"><div class="no">02</div><div class="t">证据</div><div class="d">每个主张配一处证据，标实测 / 推断 / 示意三态，绝不伪造。</div></div>
+      <div class="step"><div class="no">03</div><div class="t">呈现</div><div class="d">answer-first：结论先行，一页一主张，把留白让给重点。</div></div>
+    </div>
+  </section>
+
+  <!-- 11 STATEMENT 答案先行·BLUF 倒金字塔（军事/新闻一手核实）-->
+  <section class="slide statement" data-layout="statement" data-role="insight" data-energy="half">
+    <div class="eyebrow"><span class="sq"></span>演示即行动 · PRESENTATION AS ACTION</div>
+    <div class="folio">11 / 20</div>
+    <div class="toprule"></div>
+    <div class="lead">Bottom Line Up Front</div>
+    <div class="big">答案，<br>放进<em>第一行</em>。</div>
+    <div class="sub">军队叫 BLUF、新闻叫倒金字塔、麦肯锡叫金字塔原理——三套体系一致拒绝把结论埋到最后。别让人翻到末页才懂你要说什么。</div>
+  </section>
+
+  <!-- 12 CONTENT 证据分级三态·密（通用化解法）-->
+  <section class="slide content" data-layout="evidence" data-role="ground" data-energy="calm">
+    <div class="eyebrow"><span class="sq"></span>演示即行动 · PRESENTATION AS ACTION</div>
+    <div class="folio">12 / 20<br>EVIDENCE</div>
+    <div class="toprule"></div>
+    <div class="h3">每一个主张，<br>都配一处可核实的证据</div>
+    <div class="lead">数字不是越多越可信，而是越分得清来源越可信——给每处证据一个诚实的标签。</div>
+    <div class="grid">
+      <div class="card focus"><div class="stat">实测</div><div class="lbl">可复核的硬数据，标清来源</div><div class="src">FACT · 最高等级</div></div>
+      <div class="card"><div class="stat">推断</div><div class="lbl">由已知合理外推，讲清推理链</div><div class="src">INFERENCE</div></div>
+      <div class="card"><div class="stat">示意</div><div class="lbl">仅作图形说明，不当真数用</div><div class="src">ILLUSTRATIVE</div></div>
+      <div class="card"><div class="stat">伪造</div><div class="lbl">编出来的数字——唯一的死线</div><div class="src">绝不触碰</div></div>
+    </div>
+  </section>
+
+  <!-- 13 FINAL 行动（第二幕收束）-->
+  <section class="slide final" data-layout="final" data-role="act" data-energy="half">
+    <div class="eyebrow"><span class="sq"></span>演示即行动 · PRESENTATION AS ACTION</div>
+    <div class="folio">13 / 20</div>
+    <div class="toprule"></div>
+    <div class="lead">Act · 行动</div>
+    <div class="big">把判断，<br><em>交付出去</em>。</div>
+    <div class="row"><span class="m"><span class="n">01</span>少一页</span><span class="m"><span class="n">02</span>重一击</span><span class="m"><span class="n">03</span>敢留白</span></div>
+  </section>
+
+  <!-- 14 DIVIDER 第三幕·传承 -->
+  <section class="slide divider" data-layout="section-divider" data-role="ground" data-energy="half">
+    <div class="eyebrow"><span class="sq"></span>演示即行动 · PRESENTATION AS ACTION</div>
+    <div class="folio">第 03 幕<br>14 / 20</div>
+    <div class="toprule"></div>
+    <div class="ch-no">03</div>
+    <div class="ch-name">传承</div>
+    <div class="mark"><span class="w">幕</span><span class="m">Act</span></div>
+  </section>
+
+  <!-- 15 STATEMENT 构成主义本源·设计即行动（艺术史一手核实）-->
+  <section class="slide statement" data-layout="statement" data-role="state" data-energy="half">
+    <div class="eyebrow"><span class="sq"></span>演示即行动 · PRESENTATION AS ACTION</div>
+    <div class="folio">15 / 20</div>
+    <div class="toprule"></div>
+    <div class="lead">Engineer · Agitator · Constructor</div>
+    <div class="big">设计从不是装饰，<br>是<em>行动</em>。</div>
+    <div class="sub">一百年前的俄国先锋派把艺术家改称"工程师·鼓动者·构造者"——设计是建造新社会的武器，而非把画印上去。这套美学，本就为行动而生。</div>
+  </section>
+
+  <!-- 16 CONTENT 构成主义证据墙·密（Lissitzky/Rodchenko 一手核实）-->
+  <section class="slide content" data-layout="evidence" data-role="ground" data-energy="calm">
+    <div class="eyebrow"><span class="sq"></span>演示即行动 · PRESENTATION AS ACTION</div>
+    <div class="folio">16 / 20<br>EVIDENCE</div>
+    <div class="toprule"></div>
+    <div class="h3">几何不是好看，<br>几何就是那句论证</div>
+    <div class="lead">当抽象形状本身承载主张，海报就是一次行动——这正是"判断先于美化"的源头。</div>
+    <div class="grid">
+      <div class="card focus"><div class="stat">1919</div><div class="lbl">红楔刺入白圈——几何即政治主张</div><div class="src">El Lissitzky《红楔击白》</div></div>
+      <div class="card"><div class="stat">1924</div><div class="lbl">大字几何排版的扫盲海报《书籍》</div><div class="src">Rodchenko · Lengiz</div></div>
+      <div class="card"><div class="stat">1922</div><div class="lbl">"向艺术宣战"——把设计交给行动</div><div class="src">A. Gan 生产主义宣言</div></div>
+      <div class="card"><div class="stat">MoMA</div><div class="lbl">策展定名：工程师·鼓动者·构造者</div><div class="src">展览 2020–21</div></div>
+    </div>
+  </section>
+
+  <!-- 17 COMPARE 葛底斯堡反例·最好的演说做成幻灯就死（Norvig 一手核实）-->
+  <section class="slide compare2" data-layout="compare" data-role="narrow" data-energy="half">
+    <div class="eyebrow"><span class="sq"></span>演示即行动 · PRESENTATION AS ACTION</div>
+    <div class="folio">17 / 20</div>
+    <div class="toprule"></div>
+    <div class="h3">同一篇演说，两种命运</div>
+    <div class="cols">
+      <div class="col bad"><div class="tag">做成幻灯</div><div class="big">就死了</div>
+        <ul><li>AutoContent 向导自动生成</li><li>拆成整齐的子弹点</li><li>套用现成模板与剪贴画</li><li>留住每个词，丢光所有力量</li></ul></div>
+      <div class="col good"><div class="tag">原本的样子</div><div class="big">不朽</div>
+        <ul><li>1863 年林肯·葛底斯堡演说</li><li>约 270 字，仅两分钟</li><li>十句话，无一个子弹点</li><li>最好的演说，根本不需要它</li></ul></div>
+    </div>
+  </section>
+
+  <!-- 18 KPI 留白·敢留白是纪律 -->
+  <section class="slide kpi" data-layout="kpi" data-role="insight" data-energy="blast">
+    <div class="eyebrow"><span class="sq"></span>演示即行动 · PRESENTATION AS ACTION</div>
+    <div class="folio">18 / 20</div>
+    <div class="toprule"></div>
+    <div class="num">留白</div>
+    <div class="cap">敢空出大半页，不是没东西可说，而是你知道哪一句最重——留白，是判断力的外形。</div>
+    <div class="src">原则 · 形式服务内涵</div>
+  </section>
+
+  <!-- 19 STATEMENT 收束·纪律（第三幕落点）-->
+  <section class="slide statement" data-layout="statement" data-role="insight" data-energy="half">
+    <div class="eyebrow"><span class="sq"></span>演示即行动 · PRESENTATION AS ACTION</div>
+    <div class="folio">19 / 20</div>
+    <div class="toprule"></div>
+    <div class="lead">Discipline</div>
+    <div class="big">知道哪一句最重，<br>才<em>敢留空</em>。</div>
+    <div class="sub">从哥伦比亚号到葛底斯堡，从先锋派到这一页——纪律不是少说，而是只说那句最重的。</div>
+  </section>
+
+  <!-- 20 SOCIAL 金句 -->
+  <section class="slide social" data-layout="social-card" data-role="leave" data-energy="blast">
+    <div class="eyebrow"><span class="sq"></span>演示即行动 · PRESENTATION AS ACTION</div>
+    <div class="folio">20 / 20</div>
+    <div class="quote">演示是一次<em>行动</em>，<br>不是一次朗读。</div>
+    <div class="by">— 第 01 号宣言</div>
+    <div class="mark"><span class="w">终</span><span class="m">Leave</span></div>
+  </section>
+
+</div></div>
+
+<nav class="hud" aria-label="翻页控制">
+  <button id="navPrev" aria-label="上一页" title="上一页 ←">‹</button>
+  <span class="cnt" id="navCnt">01 / 04</span>
+  <button id="navNext" aria-label="下一页" title="下一页 →">›</button>
+</nav>
+
+<div class="rotate-hint" aria-hidden="true">
+  <svg class="rh-ico" viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v4h-4"/></svg>
+  <div class="rh-msg"><span class="rh-sq"></span>横屏观看更佳</div>
+  <div class="rh-sub">旋转手机以全屏查看这份演示</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var root=document.documentElement;
+  root.classList.remove("no-js"); root.classList.add("js");
+  var deck=document.getElementById("deck");
+  var slides=[].slice.call(deck.querySelectorAll(".slide"));
+  var total=slides.length, cntEl=document.getElementById("navCnt"), i=0;
+  var pad2=function(n){return (n<10?"0":"")+n;};
+  function fit(){var s=Math.min(window.innerWidth/1280, window.innerHeight/720); var x=(window.innerWidth-1280*s)/2, y=(window.innerHeight-720*s)/2; deck.style.transform="translate("+x+"px,"+y+"px) scale("+s+")";}
+  function clamp(n){return Math.max(0,Math.min(total-1,n));}
+  function render(){
+    slides.forEach(function(sl,idx){sl.classList.toggle("is-active",idx===i);});
+    cntEl.textContent=pad2(i+1)+" / "+pad2(total);
+    if(("#"+(i+1))!==location.hash) history.replaceState(null,"","#"+(i+1));
+  }
+  function go(n){i=clamp(n);render();}
+  function next(){go(i+1);} function prev(){go(i-1);}
+  function fromHash(){var n=parseInt((location.hash||"").replace("#",""),10); if(!isNaN(n)&&n>=1&&n<=total)i=n-1;}
+  document.addEventListener("keydown",function(e){
+    switch(e.key){
+      case "ArrowRight": case "PageDown": case " ": e.preventDefault(); next(); break;
+      case "ArrowLeft": case "PageUp": e.preventDefault(); prev(); break;
+      case "Home": e.preventDefault(); go(0); break;
+      case "End": e.preventDefault(); go(total-1); break;
+    }
+  });
+  var tx=0,ty=0,tk=false;
+  document.addEventListener("touchstart",function(e){if(e.touches.length!==1)return;tk=true;tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
+  document.addEventListener("touchend",function(e){if(!tk)return;tk=false;var t=e.changedTouches[0],dx=t.clientX-tx,dy=t.clientY-ty;if(Math.abs(dx)>48&&Math.abs(dx)>Math.abs(dy)*1.4){dx<0?next():prev();}},{passive:true});
+  document.getElementById("navNext").addEventListener("click",next);
+  document.getElementById("navPrev").addEventListener("click",prev);
+  window.addEventListener("hashchange",function(){fromHash();render();});
+  window.addEventListener("resize",fit);
+  fromHash(); fit(); render();
+})();
+</script>
+</body>
+</html>

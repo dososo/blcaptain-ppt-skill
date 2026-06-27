@@ -1,0 +1,1249 @@
+<!doctype html>
+<html lang="zh-CN" class="no-js" data-theme="editorial" data-rendered-by="blcaptain">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>深度行业观察 — demo</title>
+
+<!-- preload 首屏字体（crossorigin 必须·制作规范：本地打包 + preload + font-display:optional
+     ＝磁盘快几乎首屏命中终字体·零跳变零白屏·根治「首次打开文字跳一下」FOUT layout shift）
+     命根衬线 Source Serif（拉丁正文/标题身份字·Regular+Semibold）+ 思源宋体（中文 Regular 400 + Medium 500 两真面）首屏即 preload。
+     ⚠ 思源宋体 Medium(500) 必须一并 preload：font-synthesis:none 下 weight 500/600 的中文落 Medium 真面，
+       若不 preload 则在 optional 首屏竞速中常输给系统 → 大量 w500 中文静默落 PingFang/Songti（CDP getPlatformFontsForNode 实测·像素墨量法旁证），衬线身份泄漏。 -->
+<link rel="preload" href="./fonts/SourceSerif4SmText-Regular.editorial.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="./fonts/SourceSerif4SmText-Semibold.editorial.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="./fonts/SourceHanSerifSC-Regular.editorial.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="./fonts/SourceHanSerifSC-Medium.editorial.woff2" as="font" type="font/woff2" crossorigin>
+
+<style>
+/* FONTS · 编辑主义三族 OFL 本地打包（editorial  · 实现期/3）
+   拉丁衬线/无衬线全字直引（不进 CJK 子集表·subset-fonts 注释坐实「进表 CJK-only 子集会产零字形 woff2」）：
+     Source Serif 4 SmText（拉丁正文/叙事/大标题·命根身份字·Regular 400 + Semibold 600·光学 SmText 视觉尺寸为屏幕/投影密度优化）；
+     Libre Franklin（数据/标签/页码/图注·无衬线·与衬线正文角色二分·可变轴 wght）。
+   中文宋体走思源宋体 SC（CJK 子集化·.editorial 后缀·per-deck）：
+     Regular 400 + Medium 500 两面（正文宋体叙事·中文标题用 Medium 真面·绝不上 700 防 faux-bold）。
+   ⚠ Medium/Semibold 各自独立 @font-face 声明（真面映射真 weight）→ 配合全局 font-synthesis:none，
+     杜绝「写无对应真面的 weight 触发浏览器合成假粗」（De Stijl ds-cjk-no-faux-bold 教训）。 */
+@font-face{font-family:"Source Serif 4 SmText";src:url("./fonts/SourceSerif4SmText-Regular.editorial.woff2") format("woff2");font-weight:400;font-style:normal;font-display:optional}
+@font-face{font-family:"Source Serif 4 SmText";src:url("./fonts/SourceSerif4SmText-Semibold.editorial.woff2") format("woff2");font-weight:600;font-style:normal;font-display:optional}
+@font-face{font-family:"Libre Franklin";src:url("./fonts/LibreFranklin.editorial.woff2") format("woff2-variations");font-weight:100 900;font-style:normal;font-display:optional}
+@font-face{font-family:"Source Han Serif SC";src:url("./fonts/SourceHanSerifSC-Regular.editorial.woff2") format("woff2");font-weight:400;font-style:normal;font-display:optional}
+@font-face{font-family:"Source Han Serif SC";src:url("./fonts/SourceHanSerifSC-Medium.editorial.woff2") format("woff2");font-weight:500;font-style:normal;font-display:optional}
+</style>
+
+<style>
+/* =========================================================================
+   TOKENS START · editorial（编辑主义 · 暖纸黑衬线 + 单编辑红方言）
+   暖纸白底主导 60–90% · 暖黑衬线富密度正文 · 单一编辑红 accent ≤10% · 细分栏线杂志网格。
+   对比度均为 WCAG 2.x node 实测，非目测（实现期 已完成·commit 3253bfe·与 00-tokens-locked.md 1:1）。
+   ========================================================================= */
+
+/* ---- 全局基底（与主题无关的结构常量）---- */
+:root{
+  /* 字体族（editorial 三族  · Source Serif + 思源宋体 + Libre Franklin）
+     拉丁衬线身份（正文/叙事/大标题）：Source Serif 4 SmText（命根·光学 Text 刻字）
+     中文正文暖宋：Source Han Serif SC（思源宋体·栈尾补系统宋体 fallback 但首选打包字·防 De Stijl 字体泄漏）
+       ⚠ --font-cjk 把打包的 "Source Han Serif SC" 放第一·系统宋体 Songti SC/SimSun 仅离线兜底·
+         绝不让中文漏到无衬线系统字（破衬线身份命根）。
+     数据/标签/页码/图注/页眉页脚/HUD 无衬线：Libre Franklin（与衬线正文角色二分·标"这是数据/元信息"比加色更克制）
+     ⚠ 无 mono：editorial 是衬线人格·工具层（页码/eyebrow/HUD/页脚）一律走 Libre Franklin（--font-data）·
+       绝不引第四字体族（too-many-fonts 门上限 3·守三族 Source Serif / 思源宋体 / Libre Franklin·实现期 治理）。 */
+  --font-serif:"Source Serif 4 SmText","Source Han Serif SC","Songti SC","SimSun",Georgia,serif;
+  --font-cjk:"Source Han Serif SC","Songti SC","SimSun",serif;
+  --font-data:"Libre Franklin","Helvetica Neue","Arial",system-ui,sans-serif;
+  --font-display:var(--font-serif);  /* 大标题 = Source Serif Semibold·真 Display 光学待 follow-up·先指回 SmText 不另引债 */
+
+  /* 间距 8px 刻度（设计决策 · 00-tokens-locked  · 与 validator SPACING_SCALE 1:1）*/
+  --sp-1:8px; --sp-2:16px; --sp-3:24px; --sp-4:32px;
+  --sp-6:48px; --sp-8:64px; --sp-10:80px; --sp-12:96px; --sp-16:160px;
+  /* 设计决策 细档例外轨（仅组件内部/紧凑/图标-文字/≤14px 小字行内）*/
+  --sp-fine-a:4px; --sp-fine-c:12px; --sp-fine-e:20px;
+
+  /* 画板 */
+  --radius:0px;
+  --deck-w:1280px; --deck-h:720px;
+  --dur-base:.28s; --ease:cubic-bezier(.22,1,.36,1);
+
+  /* 线宽（复用全局·editorial 细分栏线由布局以 --rule 实色描边承载）*/
+  --line-w:1px; --line-w-hair:.5px;
+
+  /* 舞台 + HUD */
+  --stage-void:#211d17;
+  --hud-fg:#C9C2B4; --hud-fg-hi:#fff;
+}
+
+/* ---- editorial 主题块（编辑主义  · 与 00-tokens-locked 「编辑主义 theme」1:1）---- */
+[data-theme="editorial"]{
+  --bg:#ECE5D6;                     /* 暖砂 · 杂志暖纸底 · 底面主导 60–90% · ΔE-vs-DeStijl=5.33（≥5 机检承诺·护城河区隔）· a*≈0 守不蹭 FT */
+  --ink:#1A1612;                    /* 暖黑 · 衬线正文 + 主墨 · on 暖砂 14.34 AAA */
+  --ink-mid:#5C5048;                /* 暖灰中文 · 副文/导语/图注次级 · on 暖砂 6.21 AAA */
+  --ink-dim:#6E5F54;                /* 暖灰次文 · 元数据/eyebrow/页眉页脚 · on 暖砂 4.89 AA */
+
+  /* 单编辑红（magazine accent · 杂志权威点睛 · 单信号色 · 总面积 ≤10% · 无第二信号色）
+     红 on 暖砂 5.93（≥3 大字门·accent 可见·≥4.5 AA）· 暖砂反白 var(--bg) on 红 5.93 AA（红块/红条强制反白）
+     ⚠ 黑字 on 红仅 2.63（<大字门 3·禁正文·红块须反白）· 反白用 var(--bg) #ECE5D6 暖砂非纯白 #fff（守实事求是·暖纸调一致） */
+  --ed-red:#9E2B22;                 /* 单编辑红 · 偏深稳暗暖砖 · L=0.38 全谱最深稳权威红 · 与三红明度区隔 */
+
+  /* 细分栏线（杂志正交网格暖驼灰 · felt 杂志骨架 · 比全局 hairline 实色·承载「杂志栏分隔」语义）*/
+  --rule:#D8D0C2;                   /* on 纸白 1.27（非文字·线）· --ink on rule 12.6（线上压字仍可读） */
+
+  /* 图像区裸色（feature spread 主图区暖纸同族底·比 --bg 略深暖裸·示意「图像版面」非伪造图库·守禁随手图库）
+     暖驼裸调·与 luxury --surface #EFEBE1 同族暖裸思路（编辑主义偏暖纸不偏象牙）·实色非文字区·记录不强制对比 */
+  --fig-surface:#E5DDCC;            /* 图区底·浅暖裸（drop-cap/衬题落其上·暖黑墨 --ink on it 13.32 通过·比新底 #ECE5D6 略深守「图区比底略深」关系） */
+  --fig-surface-2:#DDD4C0;          /* 图区底渐变深端·略深暖裸（160deg 线性渐变·示意纸张光影·非信号色·ink on it 12.21） */
+
+  /* 字号地板令牌（设计决策 命根工程 · 守投影可读 · 实现期 投影实测锁定 · 非 WCAG 法定阈值）
+     换算口径：deck 1280×720 画布 · shot viewport 1280×720 deviceScaleFactor=1 → deck px ≡ 屏幕 CSS px；
+     pt→px = ×4/3。拉丁 24pt=32px · 中文 19pt≈25.33px。正文须 ≥ 此地板，封面正文已留实测余量（见 Step4 实测）。 */
+  --body-floor-latin:32px;          /* 拉丁正文字号地板 = 24pt 等效（设计决策·实现期 实测锁） */
+  --body-floor-cjk:25.33px;         /* 中文正文字号地板 = 19pt 等效（设计决策·实现期 实测锁） */
+
+  /* 版式常量（杂志对开 feature spread·非对称栏·光学摆位）*/
+  --pad-x:72px; --pad-top:64px; --pad-bottom:64px;
+}
+/* =========================================================================
+   TOKENS END
+   ========================================================================= */
+
+*{margin:0;padding:0;box-sizing:border-box}
+/* 全局禁字体合成（faux-bold/faux-italic） 字体命根铁律：
+   中文落 Source Han Serif SC 仅 Regular 400 + Medium 500 两真面，任何 font-weight:700 的中文都会被浏览器合成假粗（墨量+25~35%·笔画发糊·糊化衬线命根）。
+   font-synthesis:none 强制"无真面就用最近真面"（思源宋体 400/500），杜绝合成；拉丁 Source Serif 有真 600 Semibold·Libre Franklin 可变轴·不受影响（合成只压"假面"）。
+   编辑主义衬线正文须同等严格禁 faux-bold/faux-italic（类比 ds-cjk-no-faux-bold）。 */
+*{font-synthesis:none}
+html,body{height:100%; background:var(--stage-void); overflow:hidden; -webkit-text-size-adjust:100%; text-size-adjust:100%}
+/* 混排：拉丁 Source Serif 在前·中文思源宋体接续（浏览器按字符 glyph 选·均衬线→身份一致） */
+body{font-family:var(--font-serif),var(--font-cjk); color:var(--ink); line-break:strict; word-break:normal; overflow-wrap:anywhere; text-wrap:pretty;
+  font-feature-settings:"kern" 1,"liga" 1; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility}
+
+/* ===== 翻页运行时（一次一页 · 横向切换 · 主题无关 · 复用自 de-stijl/luxury 结构） ===== */
+.stage{position:fixed; inset:0; overflow:hidden}
+/* 居中=JS 算 px 平移（非 flex 居中）：手机上 1280px deck 远宽于视口时·transform-origin:top-left + fit() 平移
+   (W−1280s)/2 居中→任意视口确定性居中（移动端正解·见制作规范）。 */
+.deck{position:absolute; left:0; top:0; width:var(--deck-w); height:var(--deck-h); transform-origin:top left}
+.slide{position:absolute; inset:0; width:var(--deck-w); height:var(--deck-h); overflow:hidden;
+  background:var(--bg); color:var(--ink); box-shadow:0 0 0 1px rgba(26,22,18,.08), 0 28px 80px rgba(0,0,0,.5);
+  opacity:0; visibility:hidden; pointer-events:none; z-index:0}
+.slide.is-active{opacity:1; visibility:visible; pointer-events:auto; z-index:2}
+@media (prefers-reduced-motion:no-preference){
+  /* editorial 动效纪律（设计决策·杂志静态权威感）：只极克制 fade——禁滑入/grow/count-up 炫技、
+     禁位移（杂志是印刷物·静态权威）。① 整页淡入；② 支撑层（拉引文/数据/图注/页脚）延迟 .4s 淡入
+     ＝「先标题判断·后支撑细节」的编辑阅读节奏·只 opacity 无位移。
+     reduced-motion 下整块失效·全部终态可见（自动截图/缩略/PDF 不取空帧）。 */
+  html.js .slide.is-active{animation:fadeIn .36s var(--ease) both}
+  html.js .slide.is-active :is(
+    .efs-pull, .efs-data, .efs-foot, .efs-figcap, .efs-deck-lead
+  ){ animation:fadeIn .6s var(--ease) .4s both; }
+  @keyframes fadeIn{from{opacity:0} to{opacity:1}}
+}
+
+/* HUD 翻页控件 */
+.hud{position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:50; display:flex; align-items:center; gap:12px; padding:8px 12px;
+  background:rgba(33,29,23,.82); border:1px solid rgba(255,255,255,.18); font-family:var(--font-data); font-size:12px; color:var(--hud-fg);
+  -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); opacity:0; transition:opacity .28s}
+html.js .hud{opacity:.55} .hud:hover{opacity:1}
+.hud button{font:inherit; color:var(--hud-fg); background:none; border:1px solid rgba(255,255,255,.18); width:28px; height:24px; cursor:pointer; line-height:1}
+.hud button:hover{color:var(--hud-fg-hi); border-color:var(--hud-fg-hi)}
+.hud .cnt{font-variant-numeric:tabular-nums; min-width:54px; text-align:center}
+
+/* no-js fallback */
+.nojs-hint{display:none}
+html.no-js .nojs-hint{display:block; position:fixed; top:0; left:0; right:0; z-index:60; padding:4px 12px; font-family:var(--font-data); font-size:12px; text-align:center; color:var(--hud-fg); background:rgba(33,29,23,.9)}
+html.no-js body{overflow:auto}
+html.no-js .stage{position:static; display:block; padding:32px 0}
+html.no-js .deck{position:static; width:auto; height:auto; transform:none!important; display:flex; flex-direction:column; align-items:center; gap:16px}
+html.no-js .slide{position:relative; inset:auto; opacity:1; visibility:visible; pointer-events:auto; flex:none}
+html.no-js .hud{display:none}
+
+/* 横屏提示（移动端竖屏引导旋转·editorial：单编辑红方块·杂志报头红·守禁装饰·红即「编辑锚」语义）*/
+.rotate-hint{display:none}
+@media (orientation:portrait) and (max-width:768px){
+  html.js .rotate-hint{display:flex; position:fixed; inset:0; z-index:120; flex-direction:column; align-items:center; justify-content:center; gap:24px; background:var(--stage-void); color:var(--hud-fg-hi); text-align:center; padding:48px}
+  .rotate-hint .rh-ico{color:var(--ed-red); animation:rhSpin 2.6s var(--ease) infinite; transform-origin:center}
+  /* 中文「横屏观看更佳」须落思源宋体（CJK·衬线身份），故 --font-cjk 字体须排在通用 serif 终止符之前。
+     weight 500：思源宋体 Medium 真面·防系统字体回退 faux-bold。 */
+  .rotate-hint .rh-msg{display:flex; align-items:center; gap:8px; font-family:"Source Han Serif SC","Songti SC","SimSun",serif; font-weight:500; font-size:22px; letter-spacing:.04em}
+  .rotate-hint .rh-sq{width:12px; height:12px; background:var(--ed-red)}
+  .rotate-hint .rh-sub{font-family:var(--font-data); font-size:14px; color:var(--hud-fg); opacity:.75; line-height:1.6}
+  @keyframes rhSpin{0%,55%{transform:rotate(0)} 75%,100%{transform:rotate(-90deg)}}
+}
+
+/* ============================================================================
+   P1 封面 · ed-feature-spread（签名第一页 · 杂志对开 feature spread · 编辑的判断）
+   ----------------------------------------------------------------------------
+   构图（杂志对开 feature·严格双栏非对称·暖纸白主导·单编辑红 ≤10% 点睛·细分栏线杂志骨架）：
+     · 报头线（top rule @ y=120·细分栏线横贯全宽）：左 kicker（编辑红·内容名）/ 右期号日期（Libre Franklin 数据）。
+     · 主竖分栏线 @ x=768（左编辑文字区 58% / 右主图区 42%·非对称 push·杂志 feature 左文右图经典构图）。
+     · 左编辑区（上标题带 + 下「摘要｜数据」左右双栏·多栏 baseline 驾驭富密度·零重叠是命门）：
+         ① 标题带 @ 168–392：衬线大标题（Source Serif Semibold·示意编辑判断·撑权威·字号 66）；
+         ② 下半区 @ 406–底栏线，左右分两栏（真多栏·非上下堆叠）：
+             · 摘要栏（左·72–456 窄栏）：衬线摘要正文（≥字号地板·投影可读）；
+             · 数据栏（右·480–720 贴主竖线前）：1–2 数据点竖排（Libre Franklin 巨数 + 标签·杂志关键数字）。
+       ⚠ 修复历史重叠 bug（命门「富密度靠栏位驾驭·绝不堆叠重叠」）：原版摘要向下流 + 数据带向上占 → 纵向硬重叠；
+         根治＝下半区改「摘要｜数据」左右双栏（各占独立横向栏位·gutter 24·纵向同带不再上下挤），机检逐元素 bbox 零相交。
+     · 右主图区（严格栏内·上引文带 + 下图区·纵向不重叠）：
+         · 拉引文带 @ 172–300（右栏上部·编辑红·杂志 pull-quote 权威点睛）；
+         · 主图区 @ 332–底栏线（暖纸同族底·非伪造图库·CSS 构造：巨衬线 drop-cap 字母居上 + 单编辑红细节条 + 衬题/图注居下·drop-cap 与衬题分层不压）。
+   编辑红面积核算（守 ≤10% 单 accent 门语义）：
+     pull-quote 文字描红（非块·墨水非块）+ kicker 小字 + drop-cap 红字母 + 图区细红条（4px×高）+ 数据点单位红。
+     仅一处实色红块＝图区细红条 4×270≈1,080px²；其余皆红"墨水文字"非块。总实色红 <2% ≪10%（红作墨水非块·守 Economist「红作墨水不作块」）。 */
+.ed-feature-spread{ background:var(--bg); }
+
+/* —— 细分栏线（杂志正交网格·--rule 实色·felt 杂志骨架）—— */
+.ed-feature-spread .efs-rule-top{ position:absolute; left:var(--pad-x); right:var(--pad-x); top:120px; height:var(--line-w); background:var(--rule); }
+.ed-feature-spread .efs-rule-bot{ position:absolute; left:var(--pad-x); right:var(--pad-x); bottom:118px; height:var(--line-w); background:var(--rule); }
+/* 主竖分栏线（左文右图分界·只下探到数据脚带上沿·上端贴报头线下·杂志栏线不贯穿报头）*/
+.ed-feature-spread .efs-rule-col{ position:absolute; left:768px; top:121px; bottom:118px; width:var(--line-w); background:var(--rule); }
+
+/* —— 报头：kicker（左·编辑红·中性内容名·无代号）+ 期号日期（右·Libre Franklin 数据）—— */
+.ed-feature-spread .efs-kicker{
+  position:absolute; left:var(--pad-x); top:84px;
+  font-family:var(--font-data); font-weight:600; font-size:13px;
+  letter-spacing:.24em; text-transform:uppercase; color:var(--ed-red);
+}
+.ed-feature-spread .efs-issue{
+  position:absolute; right:var(--pad-x); top:84px;
+  font-family:var(--font-data); font-weight:500; font-size:13px; font-variant-numeric:tabular-nums;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--ink-dim);
+}
+
+/* —— ① 标题带 @ 168–392（左编辑区·Source Serif Semibold·示意编辑判断·杂志权威感·撑结构）
+   字号 66px（自 76 降·让出纵向空间给数据独立栏·杜绝与数据带重叠）：远超字号地板·大标题级·
+   低对比 SmText 在大号下衬线清晰（守命根投影可读）。bottom:328 封顶＝标题区不下探侵占摘要带。 —— */
+.ed-feature-spread .efs-headline{
+  position:absolute; left:var(--pad-x); top:168px; right:560px; bottom:328px;
+  font-family:var(--font-display); font-weight:600;
+  font-size:66px; line-height:1.04; letter-spacing:-.012em;
+  color:var(--ink);
+}
+.ed-feature-spread .efs-headline em{ font-style:italic; color:var(--ed-red); }  /* 标题内单词描红·编辑红墨水点睛·非块 */
+
+/* —— ② 摘要栏 @ 下半区左窄栏 72–456（独立横向栏位·≥字号地板·投影可读命脉·中文思源宋体 Regular）
+   font-size:26px = 19.5pt 等效 ≥ 中文地板 25.33px（19pt）→ 守 --body-floor-cjk。
+   ⚠ 本段含中文为主→按中文地板 25.33px 守；26px 略高于地板·留实测余量。
+   left:72 / right:824（→ 栏宽 384·左窄栏）·top:406 / bottom:152·与右数据栏左右分栏（gutter 24）→ 横向不相交。
+   overflow 隐藏兜底：变长内容竖向溢出也由 overflow 裁掉、不破栏（守命门·做系统不做玩具例）。 —— */
+.ed-feature-spread .efs-deck-lead{
+  position:absolute; left:var(--pad-x); top:406px; right:824px; bottom:152px;
+  font-family:var(--font-serif); font-weight:400;
+  font-size:26px; line-height:1.5; letter-spacing:.005em;
+  color:var(--ink); overflow:hidden;
+}
+.ed-feature-spread .efs-deck-lead b{ font-weight:500; color:var(--ink); }  /* 强调=思源宋体 Medium 真面（500·非 700·防 faux-bold） */
+
+/* —— 拉引文（编辑红·杂志 pull-quote·权威点睛·红作墨水非块·衬线大号）
+   右栏上引文带 @ 172–300·与下方图区分带不压·杂志 feature 标志性拉引。 —— */
+.ed-feature-spread .efs-pull{
+  position:absolute; left:808px; right:var(--pad-x); top:172px;
+  font-family:var(--font-serif); font-weight:400; font-style:italic;
+  font-size:30px; line-height:1.34; letter-spacing:.004em;
+  color:var(--ed-red);
+}
+
+/* —— ③ 数据栏 @ 下半区右栏 480–720（独立横向栏位·竖排两数据点·杂志 feature 关键数字·Libre Franklin 数据无衬线）
+   left:480 / right:560（→ 栏 240·贴主竖线 768 前留 48 呼吸）·top:406 与摘要栏左右并置（gutter 480-456=24）→ 横向不相交。
+   竖排（flex column·gap 24）：两数据点上下叠在右栏内·各自独立·不与左摘要栏纵向冲突。 —— */
+.ed-feature-spread .efs-data{
+  position:absolute; left:480px; right:560px; top:406px; bottom:152px;
+  display:flex; flex-direction:column; justify-content:flex-start; gap:24px;
+}
+.ed-feature-spread .efs-data .d-item{ display:flex; flex-direction:column; }
+.ed-feature-spread .efs-data .d-num{
+  font-family:var(--font-data); font-weight:700; font-variant-numeric:tabular-nums lining-nums;
+  font-size:54px; line-height:.92; letter-spacing:-.02em; color:var(--ink);
+}
+.ed-feature-spread .efs-data .d-num .u{ font-size:23px; font-weight:600; color:var(--ed-red); letter-spacing:0; }  /* 单位描红·编辑红墨水·非块 */
+.ed-feature-spread .efs-data .d-k{
+  font-family:var(--font-data); font-weight:500; font-size:12px;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--ink-dim); margin-top:8px;
+}
+
+/* —— 右主图区 @ 308–底栏线（暖纸同族·非伪造图库·CSS 构造编辑感封面图形·与上引文带分带不压）
+   衬线 drop-cap 红字母（杂志开篇大写首字·编辑传统·居上）+ 单编辑红细条 + 衬题/图注（居下）。
+   ⚠ 修复 drop-cap 压衬题（命门零重叠）：drop-cap 字号 208→110、限定居上独立区（top:18 / 高 110·底约 y=128 区内）；
+     衬题用 top:158 锚定（drop-cap 底之下 ≥30 gutter）、图注 bottom 锚底 → 三者纵向分层、机检 bbox 零相交。
+   暖纸同族底块（比 bg 略深暖裸·示意「图像版面」·守禁随手图库·纯排印构造）。 —— */
+.ed-feature-spread .efs-fig{
+  position:absolute; left:809px; right:var(--pad-x); top:308px; bottom:152px;
+  background:linear-gradient(160deg, var(--fig-surface) 0%, var(--fig-surface-2) 100%);
+  overflow:hidden;
+}
+/* 图区单编辑红细条（左缘·唯一实色红块·杂志版式红 rule·≤10% 守门·4×260≈1,040px²<2%）*/
+.ed-feature-spread .efs-fig-bar{ position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--ed-red); }
+/* 衬线 drop-cap（杂志开篇大写首字·Source Serif·编辑传统·红字母·墨水非块·居上独立区·字号 110 不压衬题）*/
+.ed-feature-spread .efs-fig-cap-letter{
+  position:absolute; left:32px; top:18px;
+  font-family:var(--font-display); font-weight:600; font-style:italic;
+  font-size:110px; line-height:1; letter-spacing:-.03em; color:var(--ed-red);
+}
+/* 图区暖墨衬题（drop-cap 之下独立区·top:158 锚定·衬线·示意图像主题·暖黑·与 drop-cap 纵向分层不压）*/
+.ed-feature-spread .efs-fig-word{
+  position:absolute; left:36px; right:30px; top:158px;
+  font-family:var(--font-serif); font-weight:600;
+  font-size:29px; line-height:1.14; letter-spacing:-.005em; color:var(--ink);
+}
+/* 图注（图区下·Libre Franklin 无衬线·标"这是图注/元信息"）*/
+.ed-feature-spread .efs-figcap{
+  position:absolute; left:40px; right:32px; bottom:20px;
+  font-family:var(--font-data); font-weight:500; font-size:11px;
+  letter-spacing:.1em; text-transform:uppercase; color:var(--ink-dim);
+}
+
+/* —— 页脚（底栏线之下·Libre Franklin·中性·示意标记·页码 tabular）—— */
+.ed-feature-spread .efs-foot{
+  position:absolute; left:var(--pad-x); right:var(--pad-x); bottom:74px;
+  display:flex; align-items:center; justify-content:space-between;
+  font-family:var(--font-data); font-weight:500; font-size:12px;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--ink-dim);
+}
+.ed-feature-spread .efs-foot .pg{ font-variant-numeric:tabular-nums; letter-spacing:.18em; }
+
+/* ============================================================================
+   跨版式共用编辑构件（页眉 kicker/期号 · 报头线/底栏线 · 页脚 · baseline 节奏常量）
+   ----------------------------------------------------------------------------
+   编辑主义所有内容版式共享同一套「杂志骨架」：顶部 furniture 带（kicker 红 + 期号·上移顶部
+   显 considered·借 Bichler）+ 报头细分栏线 + 底栏线 + 页脚（来源 + 页码 tabular）。
+   抽公共类 .ed-kicker/.ed-issue/.ed-rule-top/.ed-rule-bot/.ed-foot 复用·不每版式重写（守 DRY·守三族字体）。 */
+.ed-kicker{ position:absolute; left:var(--pad-x); top:84px; font-family:var(--font-data); font-weight:600; font-size:13px; letter-spacing:.24em; text-transform:uppercase; color:var(--ed-red); }
+.ed-issue{ position:absolute; right:var(--pad-x); top:84px; font-family:var(--font-data); font-weight:500; font-size:13px; font-variant-numeric:tabular-nums; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-dim); }
+.ed-rule-top{ position:absolute; left:var(--pad-x); right:var(--pad-x); top:120px; height:var(--line-w); background:var(--rule); }
+.ed-rule-bot{ position:absolute; left:var(--pad-x); right:var(--pad-x); bottom:118px; height:var(--line-w); background:var(--rule); }
+.ed-foot{ position:absolute; left:var(--pad-x); right:var(--pad-x); bottom:74px; display:flex; align-items:center; justify-content:space-between; font-family:var(--font-data); font-weight:500; font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-dim); }
+.ed-foot .pg{ font-variant-numeric:tabular-nums; letter-spacing:.18em; }
+/* 大标题（衬线 Source Serif Semibold·内容版式横跨页宽·红墨水点睛单词）*/
+.ed-h2{ font-family:var(--font-display); font-weight:600; letter-spacing:-.01em; color:var(--ink); }
+.ed-h2 em{ font-style:italic; color:var(--ed-red); }
+
+/* ============================================================================
+   P2 双栏深度内容 · ed-two-col（B 模块化标准长文 · 主栏衬线长文 + 副栏数据/引文/来源）
+   ----------------------------------------------------------------------------
+   构图（杂志标准双栏 feature·主栏宽承载判断展开·副栏窄承载支撑层·零重叠）：
+     · 报头带（kicker 红 + 期号）+ 报头线 @120；底栏线 @602 + 页脚。
+     · 衬线大标题 @ 156–240（横跨主栏宽·编辑判断句·红点睛）。
+     · 主竖分栏线 @ x=824（主栏 72–800 宽栏 / 副栏 856–1208 窄栏·非对称 60/40）。
+     · 主栏（左·宽·严格栏内·≥字号地板）：衬线导语（略大）+ 衬线正文 2 段（baseline 行距 1.6·摘要级非全文）。
+     · 副栏（右·窄·支撑层·上数据 + 中拉引文 + 下来源·纵向分区不重叠）：
+         巨数据点（Libre Franklin·关键数字）→ 编辑红拉引文（衬线斜体·权威点睛）→ 来源（无衬线小字）。
+   编辑红面积（守 ≤10%）：kicker + 标题点睛词 + 数据单位 + 副栏拉引文红墨水 + 副栏顶红细条（3px）≪10%·红作墨水非块。 */
+.ed-two-col{ background:var(--bg); }
+.ed-two-col .etc-rule-col{ position:absolute; left:824px; top:121px; bottom:118px; width:var(--line-w); background:var(--rule); }
+.ed-two-col .etc-title{ position:absolute; left:var(--pad-x); top:156px; right:480px; font-size:50px; line-height:1.06; }
+/* 主栏导语（衬线略大·定调·≥地板）*/
+.ed-two-col .etc-lead{
+  position:absolute; left:var(--pad-x); top:288px; right:496px;
+  font-family:var(--font-serif); font-weight:400; font-size:28px; line-height:1.42; letter-spacing:.004em; color:var(--ink);
+}
+.ed-two-col .etc-lead b{ font-weight:500; }  /* 思源宋体 Medium 真面强调（防 faux-bold）*/
+/* 主栏正文段（衬线·≥字号地板·baseline 行距 1.58·摘要级密度·overflow 兜底变长内容不破栏）*/
+.ed-two-col .etc-body{
+  position:absolute; left:var(--pad-x); top:404px; right:496px; bottom:114px;
+  font-family:var(--font-serif); font-weight:400; font-size:26px; line-height:1.58; letter-spacing:.004em; color:var(--ink-mid);
+  overflow:hidden;
+}
+.ed-two-col .etc-body p + p{ margin-top:24px; }
+.ed-two-col .etc-body b{ font-weight:500; color:var(--ink); }
+/* 副栏（窄·支撑层）顶红细条（唯一实色红·杂志版式红 rule）*/
+.ed-two-col .etc-aside-bar{ position:absolute; left:856px; top:156px; width:40px; height:3px; background:var(--ed-red); }
+/* 副栏数据点（巨数·Libre Franklin·关键数字）*/
+.ed-two-col .etc-stat{ position:absolute; left:856px; right:var(--pad-x); top:178px; }
+.ed-two-col .etc-stat .s-num{ font-family:var(--font-data); font-weight:700; font-variant-numeric:tabular-nums lining-nums; font-size:62px; line-height:.94; letter-spacing:-.02em; color:var(--ink); }
+.ed-two-col .etc-stat .s-num .u{ font-size:26px; font-weight:600; color:var(--ed-red); }
+.ed-two-col .etc-stat .s-k{ font-family:var(--font-data); font-weight:500; font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-dim); margin-top:8px; }
+/* 副栏拉引文（衬线斜体·编辑红·权威点睛·墨水非块）*/
+.ed-two-col .etc-pull{
+  position:absolute; left:856px; right:var(--pad-x); top:336px;
+  font-family:var(--font-serif); font-weight:400; font-style:italic; font-size:27px; line-height:1.36; letter-spacing:.004em; color:var(--ed-red);
+}
+/* 副栏来源（无衬线小字·元信息）*/
+.ed-two-col .etc-src{ position:absolute; left:856px; right:var(--pad-x); bottom:152px; font-family:var(--font-data); font-weight:500; font-size:12px; letter-spacing:.06em; color:var(--ink-dim); line-height:1.5; }
+
+/* ============================================================================
+   P3 三栏密集信息 · ed-three-col（富密度 · Monocle 式三栏驾驭 · 栏位拼装编辑视角）
+   ----------------------------------------------------------------------------
+   构图（杂志三等宽栏 + 两分栏线·每栏一个论点·编辑序号红·严格 baseline）：
+     · 报头带 + 报头线 @120；底栏线 @602 + 页脚。
+     · 衬线大标题 @ 156–236（横跨全宽·编辑判断·红点睛）。
+     · 三等宽栏（栏宽各 352·gutter 40·pad72+3×352+2×40=1208 守右界）+ 两条竖分栏线居 gutter 正中（x=444 / x=836）。
+     · 每栏（纵向分区·严格不重叠）：编辑序号（红·Libre Franklin 巨号）→ 衬线小标题（Semibold）→ 衬线短文（≥地板·摘要级）。
+   编辑红面积（守 ≤10%）：kicker + 标题点睛 + 三栏编辑序号红数字（小面积墨水）≪10%·红作墨水非块。 */
+.ed-three-col{ background:var(--bg); }
+.ed-three-col .e3c-rule-1{ position:absolute; left:444px; top:268px; bottom:118px; width:var(--line-w); background:var(--rule); }
+.ed-three-col .e3c-rule-2{ position:absolute; left:836px; top:268px; bottom:118px; width:var(--line-w); background:var(--rule); }
+.ed-three-col .e3c-title{ position:absolute; left:var(--pad-x); top:156px; right:var(--pad-x); font-size:46px; line-height:1.08; }
+/* 三栏容器（绝对定位三列·各自独立栏位）*/
+.ed-three-col .e3c-col{ position:absolute; top:284px; bottom:152px; }
+.ed-three-col .e3c-col.c1{ left:var(--pad-x); width:352px; }
+.ed-three-col .e3c-col.c2{ left:464px; width:352px; }
+.ed-three-col .e3c-col.c3{ left:856px; width:352px; }
+.ed-three-col .e3c-num{ font-family:var(--font-data); font-weight:700; font-size:30px; font-variant-numeric:tabular-nums; letter-spacing:.02em; color:var(--ed-red); line-height:1; }
+.ed-three-col .e3c-h{ font-family:var(--font-display); font-weight:600; font-size:27px; line-height:1.18; letter-spacing:-.005em; color:var(--ink); margin-top:16px; }
+.ed-three-col .e3c-p{ font-family:var(--font-serif); font-weight:400; font-size:25.5px; line-height:1.46; letter-spacing:.004em; color:var(--ink-mid); margin-top:16px; }
+.ed-three-col .e3c-p b{ font-weight:500; color:var(--ink); }
+
+/* ============================================================================
+   P4 大图章节页 · ed-chapter（C 大图冲击 · 大图块 + 衬线章节标题 + 编辑红章节号）
+   ----------------------------------------------------------------------------
+   构图（杂志特稿分章·大图块占主导冲击 + 右编辑标注区·借 Gentlewoman「Part One」分章）：
+     · 报头带（kicker 红 + 期号·章节定位）+ 报头线 @120；底栏线 @602 + 页脚。
+     · 左大图块 @ x=72–680（暖纸渐变·非伪造图库·CSS 构造：巨衬线 drop-cap + 编辑红章节号 + 红细条·大图冲击）。
+     · 右编辑标注区 @ x=736–1208（章节 eyebrow + 巨衬线章节标题 + 衬线导语·与大图块分栏不压）。
+   编辑红面积（守 ≤10%）：kicker + 章节号红巨数（图块内·小面积）+ 标题点睛词 + 图块红细条 ≪10%·红作墨水非块（仅细条实色块）。 */
+.ed-chapter{ background:var(--bg); }
+/* 左大图块（暖纸渐变·示意「章节大图版面」·守禁随手图库·纯排印构造）*/
+.ed-chapter .ech-fig{
+  position:absolute; left:var(--pad-x); top:156px; width:608px; bottom:152px;
+  background:linear-gradient(155deg, var(--fig-surface) 0%, var(--fig-surface-2) 100%); overflow:hidden;
+}
+.ed-chapter .ech-fig-bar{ position:absolute; left:0; top:0; bottom:0; width:5px; background:var(--ed-red); }
+/* 图块内编辑红章节号（巨数·Libre Franklin·章节标记·红墨水）*/
+.ed-chapter .ech-fig-no{ position:absolute; left:44px; top:36px; font-family:var(--font-data); font-weight:700; font-size:34px; font-variant-numeric:tabular-nums; letter-spacing:.04em; color:var(--ed-red); line-height:1; }
+.ed-chapter .ech-fig-no .lbl{ display:block; font-size:12px; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--ink-dim); margin-top:8px; }
+/* 图块内巨衬线 drop-cap（章节大写首字·编辑传统·暖墨·居中下）*/
+.ed-chapter .ech-fig-letter{ position:absolute; left:40px; bottom:64px; font-family:var(--font-display); font-weight:600; font-style:italic; font-size:200px; line-height:.84; letter-spacing:-.03em; color:var(--ink); }
+.ed-chapter .ech-fig-cap{ position:absolute; left:44px; right:32px; bottom:24px; font-family:var(--font-data); font-weight:500; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-dim); }
+/* 右编辑标注区·章节 eyebrow */
+.ed-chapter .ech-eyebrow{ position:absolute; left:736px; top:188px; font-family:var(--font-data); font-weight:600; font-size:13px; letter-spacing:.22em; text-transform:uppercase; color:var(--ink-dim); }
+/* 右巨衬线章节标题（Source Serif Semibold·章节判断·红点睛）*/
+.ed-chapter .ech-title{ position:absolute; left:736px; right:var(--pad-x); top:236px; font-family:var(--font-display); font-weight:600; font-size:68px; line-height:1.04; letter-spacing:-.012em; color:var(--ink); }
+.ed-chapter .ech-title em{ font-style:italic; color:var(--ed-red); }
+/* 右衬线章节导语（≥字号地板·定调）*/
+.ed-chapter .ech-sub{
+  position:absolute; left:736px; right:var(--pad-x); top:472px;
+  font-family:var(--font-serif); font-weight:400; font-size:27px; line-height:1.5; letter-spacing:.004em; color:var(--ink-mid);
+}
+.ed-chapter .ech-sub b{ font-weight:500; color:var(--ink); }
+
+/* ============================================================================
+   P · ed-index 目录/编辑导览（编辑导览 · 借 「ed-index 编辑导览」）
+   ----------------------------------------------------------------------------
+   构图（杂志目录页·左大刊名块 + 右条目栏·编号 rule line 杂志骨架·零重叠）：
+     · 报头带（kicker 红 + 期号）+ 报头线 @120；底栏线 @602 + 页脚。
+     · 左刊名块 @ 72–516（衬线巨刊名 + 副题·宽栏·定调）；主竖分栏线 @ x=560。
+     · 右条目栏 @ 600–1208（窄栏·条目列表·每行：编号红 + 衬线条目题 + rule line 分隔·NYT/Monocle「end marks + rule lines」骨架）。
+   编辑红面积（守 ≤10%）：kicker + 条目编号红数字（小面积墨水）≪10%·红作墨水非块。 */
+.ed-index{ background:var(--bg); }
+.ed-index .eix-rule-col{ position:absolute; left:560px; top:121px; bottom:118px; width:var(--line-w); background:var(--rule); }
+.ed-index .eix-eyebrow{ position:absolute; left:var(--pad-x); top:188px; font-family:var(--font-data); font-weight:600; font-size:13px; letter-spacing:.22em; text-transform:uppercase; color:var(--ink-dim); }
+/* 左刊名块（衬线巨刊名·身份字·红点睛）*/
+.ed-index .eix-masthead{ position:absolute; left:var(--pad-x); right:824px; top:232px; font-family:var(--font-display); font-weight:600; font-size:58px; line-height:1.02; letter-spacing:-.014em; color:var(--ink); }
+.ed-index .eix-masthead em{ font-style:italic; color:var(--ed-red); }
+/* 左副题（衬线·定调·≥地板）*/
+.ed-index .eix-sub{ position:absolute; left:var(--pad-x); right:824px; top:430px; font-family:var(--font-serif); font-weight:400; font-size:25.33px; line-height:1.5; letter-spacing:.004em; color:var(--ink-mid); }
+.ed-index .eix-sub b{ font-weight:500; color:var(--ink); }
+/* 右条目列表（绝对栏内·条目行 flex·rule line 分隔·零重叠）*/
+.ed-index .eix-list{ position:absolute; left:600px; right:var(--pad-x); top:178px; bottom:152px; display:flex; flex-direction:column; }
+.ed-index .eix-item{ display:flex; align-items:baseline; gap:24px; padding:20px 0; border-top:var(--line-w) solid var(--rule); }
+.ed-index .eix-item:last-child{ border-bottom:var(--line-w) solid var(--rule); }
+.ed-index .eix-no{ font-family:var(--font-data); font-weight:700; font-size:18px; font-variant-numeric:tabular-nums; letter-spacing:.04em; color:var(--ed-red); flex:none; width:36px; }
+.ed-index .eix-it-title{ font-family:var(--font-display); font-weight:600; font-size:24px; line-height:1.16; letter-spacing:-.006em; color:var(--ink); flex:1; }
+.ed-index .eix-it-meta{ font-family:var(--font-data); font-weight:500; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-dim); flex:none; }
+
+/* ============================================================================
+   P · ed-statement 判断页（标题即结论 · 主编 take 横切 · 借 「ed-statement」+ Turley type-as-image）
+   ----------------------------------------------------------------------------
+   构图（满版编辑判断·标题=最锋利那句放大·克制留白·单数据点+来源垫底·零重叠）：
+     · 报头带 + 报头线 @120；底栏线 @602 + 页脚。
+     · 左上红细条（version rule·杂志版式红）+ 巨衬线判断句 @ 192–500（横切大半版·type-as-image·红墨水点睛词）。
+     · 底部支撑带 @ 506–底栏线：左衬线导语（≥地板）/ 右单数据点（Libre Franklin·量级垫信念）·左右分栏不压。 */
+.ed-statement{ background:var(--bg); }
+.ed-statement .est-bar{ position:absolute; left:var(--pad-x); top:166px; width:64px; height:4px; background:var(--ed-red); }
+/* 巨衬线判断句（type-as-image·主编 take·红点睛）*/
+.ed-statement .est-claim{ position:absolute; left:var(--pad-x); right:200px; top:192px; font-family:var(--font-display); font-weight:600; font-size:72px; line-height:1.04; letter-spacing:-.014em; color:var(--ink); }
+.ed-statement .est-claim em{ font-style:italic; color:var(--ed-red); }
+/* 底支撑带·左导语（衬线·≥地板·主栏宽）*/
+.ed-statement .est-lead{ position:absolute; left:var(--pad-x); right:496px; bottom:152px; font-family:var(--font-serif); font-weight:400; font-size:26px; line-height:1.46; letter-spacing:.004em; color:var(--ink-mid); }
+.ed-statement .est-lead b{ font-weight:500; color:var(--ink); }
+/* 底支撑带·右单数据点（Libre Franklin·量级·与左导语分栏不压）*/
+.ed-statement .est-stat{ position:absolute; right:var(--pad-x); width:392px; bottom:150px; text-align:right; }
+.ed-statement .est-stat .s-num{ font-family:var(--font-data); font-weight:700; font-variant-numeric:tabular-nums lining-nums; font-size:64px; line-height:.94; letter-spacing:-.02em; color:var(--ink); }
+.ed-statement .est-stat .s-num .u{ font-size:27px; font-weight:600; color:var(--ed-red); }
+.ed-statement .est-stat .s-k{ font-family:var(--font-data); font-weight:500; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-dim); margin-top:8px; }
+
+/* ============================================================================
+   P · ed-quote-pull 整页拉引文（大号衬线引语 + 编辑红 + 克制留白 · 借 「ed-pullquote」+ Gentlewoman「almost nothing」）
+   ----------------------------------------------------------------------------
+   构图（满版拉引文·编辑判断转折·留白局部奢侈·零重叠）：
+     · 报头带 + 报头线 @120；底栏线 @602 + 页脚。
+     · 巨红引号字（衬线·装饰起手·墨水非块）+ 整页编辑红斜体大引文 @ 220–500（横切·权威点睛·红作墨水）。
+     · 底署名带 @ 底栏线上：衬线小字「— 出处/立场」（有立场·克制）。 */
+.ed-quote-pull{ background:var(--bg); }
+.ed-quote-pull .eqp-mark{ position:absolute; left:64px; top:150px; font-family:var(--font-display); font-weight:600; font-style:italic; font-size:160px; line-height:1; color:var(--ed-red); opacity:.9; }
+/* 整页拉引文（衬线斜体·编辑红·大号·墨水非块）*/
+.ed-quote-pull .eqp-quote{ position:absolute; left:140px; right:140px; top:248px; font-family:var(--font-serif); font-weight:400; font-style:italic; font-size:46px; line-height:1.28; letter-spacing:.002em; color:var(--ed-red); }
+/* 署名（衬线·暖黑·有立场·克制·≥地板量级用稍小但 ≥24px）*/
+.ed-quote-pull .eqp-cite{ position:absolute; left:140px; right:140px; bottom:150px; font-family:var(--font-serif); font-weight:400; font-size:25.33px; line-height:1.4; letter-spacing:.004em; color:var(--ink); }
+.ed-quote-pull .eqp-cite b{ font-weight:500; }
+.ed-quote-pull .eqp-cite .src{ display:block; margin-top:8px; font-family:var(--font-data); font-weight:500; font-size:12px; letter-spacing:.08em; color:var(--ink-dim); }
+
+/* ============================================================================
+   P · ed-stat-feature 数据特写（巨数 + 编辑标注 · 数据当配角服务判断 · 借 「ed-data-feature」+ Turley「scale charts by merit」）
+   ----------------------------------------------------------------------------
+   构图（量级页·巨数主导冲击 + 右编辑解读·数据按论证权重放大·零重叠）：
+     · 报头带 + 报头线 @120；底栏线 @602 + 页脚。
+     · 左巨数块 @ 72–680（Libre Franklin 超大数字·单位红墨水 + 标签 + 红细条·量级冲击）；主竖分栏线 @ x=712。
+     · 右编辑解读区 @ 752–1208（衬线小标题 + 衬线解读正文 ≥地板 + 来源·数据服务编辑判断·与巨数块分栏不压）。
+   编辑红面积（守 ≤10%）：kicker + 巨数单位红 + 红细条（小实色块）+ 解读点睛 ≪10%·红作墨水非块。 */
+.ed-stat-feature{ background:var(--bg); }
+.ed-stat-feature .esf-rule-col{ position:absolute; left:712px; top:121px; bottom:118px; width:var(--line-w); background:var(--rule); }
+.ed-stat-feature .esf-bar{ position:absolute; left:var(--pad-x); top:230px; width:56px; height:4px; background:var(--ed-red); }
+.ed-stat-feature .esf-eyebrow{ position:absolute; left:var(--pad-x); top:188px; font-family:var(--font-data); font-weight:600; font-size:13px; letter-spacing:.22em; text-transform:uppercase; color:var(--ink-dim); }
+/* 左巨数（Libre Franklin 超大·量级冲击·单位描红墨水）*/
+.ed-stat-feature .esf-num{ position:absolute; left:64px; right:600px; top:258px; font-family:var(--font-data); font-weight:700; font-variant-numeric:tabular-nums lining-nums; font-size:200px; line-height:.86; letter-spacing:-.03em; color:var(--ink); }
+.ed-stat-feature .esf-num .u{ font-size:80px; font-weight:600; color:var(--ed-red); letter-spacing:-.01em; }
+/* 左巨数标签（无衬线·标"这是数据"·暖灰）*/
+.ed-stat-feature .esf-num-k{ position:absolute; left:var(--pad-x); right:600px; top:472px; font-family:var(--font-data); font-weight:500; font-size:14px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-dim); line-height:1.5; }  /* 归位 pad（对齐巨数字光学墨水 ~72·非几何 box 64）*/
+/* 右编辑解读·小标题（衬线 Semibold·编辑判断·红点睛）*/
+.ed-stat-feature .esf-h{ position:absolute; left:752px; right:var(--pad-x); top:236px; font-family:var(--font-display); font-weight:600; font-size:38px; line-height:1.1; letter-spacing:-.01em; color:var(--ink); }
+.ed-stat-feature .esf-h em{ font-style:italic; color:var(--ed-red); }
+/* 右编辑解读·正文（衬线·≥字号地板·解读巨数·服务判断）*/
+.ed-stat-feature .esf-read{ position:absolute; left:752px; right:var(--pad-x); top:372px; bottom:182px; font-family:var(--font-serif); font-weight:400; font-size:26px; line-height:1.5; letter-spacing:.004em; color:var(--ink-mid); overflow:hidden; }
+.ed-stat-feature .esf-read b{ font-weight:500; color:var(--ink); }
+/* 右来源（无衬线小字·元信息·数据诚信命根）*/
+.ed-stat-feature .esf-src{ position:absolute; left:752px; right:var(--pad-x); bottom:150px; font-family:var(--font-data); font-weight:500; font-size:12px; letter-spacing:.06em; color:var(--ink-dim); line-height:1.5; }
+
+/* ============================================================================
+   P · ed-data-grid 数据墙（多栏数据 · 四组量级一版 · 借 「ed-data-col」+ Guardian Agate「数据当一等公民」）
+   ----------------------------------------------------------------------------
+   构图（杂志数据墙·2×2 数据格·每格 巨数 + 标签 + 来源·rule line 分格·零重叠）：
+     · 报头带 + 报头线 @120；底栏线 @602 + 页脚。
+     · 衬线大标题 @ 156–236（横跨全宽·编辑判断·红点睛）。
+     · 2×2 数据格 @ 268–底栏线（十字 rule line 分隔·四组一手量级·数据按论证权重并置）：
+         每格：巨数（Libre Franklin·单位红墨水）+ 标签（无衬线暖灰）+ 来源（无衬线极小·数据诚信）。
+   编辑红面积（守 ≤10%）：kicker + 标题点睛 + 四格单位红（小面积墨水）≪10%·红作墨水非块。 */
+.ed-data-grid{ background:var(--bg); }
+.ed-data-grid .edg-title{ position:absolute; left:var(--pad-x); top:156px; right:var(--pad-x); font-size:46px; line-height:1.08; }
+/* 十字分格 rule line（杂志正交骨架）*/
+.ed-data-grid .edg-rule-v{ position:absolute; left:640px; top:228px; bottom:118px; width:var(--line-w); background:var(--rule); }  /* 与 ed-rule-bot 同末端 y602·交于底线·罩住源注(bottom588) */
+.ed-data-grid .edg-rule-h{ position:absolute; left:var(--pad-x); right:var(--pad-x); top:408px; height:var(--line-w); background:var(--rule); }  /* 居两排正中（上排底398·下排顶418）*/
+/* 四数据格（绝对定位·各自独立栏位·零重叠）*/
+.ed-data-grid .edg-cell{ position:absolute; height:170px; }  /* 固定格高·源注 bottom 锚定→四格源注同基线（不随描述行数浮动）·全格收在 ed-rule-bot(y602)底线之上 */
+.ed-data-grid .edg-cell.g1{ left:var(--pad-x); top:228px; width:520px; }
+.ed-data-grid .edg-cell.g2{ left:688px; top:228px; width:520px; }
+.ed-data-grid .edg-cell.g3{ left:var(--pad-x); top:418px; width:520px; }
+.ed-data-grid .edg-cell.g4{ left:688px; top:418px; width:520px; }
+.ed-data-grid .edg-num{ font-family:var(--font-data); font-weight:700; font-variant-numeric:tabular-nums lining-nums; font-size:72px; line-height:.9; letter-spacing:-.02em; color:var(--ink); }
+.ed-data-grid .edg-num .u{ font-size:30px; font-weight:600; color:var(--ed-red); letter-spacing:0; }
+.ed-data-grid .edg-k{ font-family:var(--font-serif); font-weight:400; font-size:25.33px; line-height:1.32; letter-spacing:.004em; color:var(--ink-mid); margin-top:12px; }
+.ed-data-grid .edg-k b{ font-weight:500; color:var(--ink); }
+.ed-data-grid .edg-src{ position:absolute; left:0; bottom:0; font-family:var(--font-data); font-weight:500; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-dim); }  /* bottom 锚定·四格源注同基线 */
+
+/* ============================================================================
+   P · ed-timeline 编辑时间线（一笔技术债的生命周期 · 借编辑 sequence/pacing · NYT/Bichler furniture 节奏）
+   ----------------------------------------------------------------------------
+   构图（横向时间线·四节点沿一条横 rule line·每节点 上编号红 + 中衬线题 + 下衬线说明·零重叠）：
+     · 报头带 + 报头线 @120；底栏线 @602 + 页脚。
+     · 衬线大标题 @ 156–236（横跨全宽·编辑判断·红点睛）。
+     · 横时间轴线 @ y=360（贯穿四节点·--rule 实色）+ 四节点 tick（红小方·杂志锚）。
+     · 四节点列（绝对定位等距·节点内纵向：编号→题→说明·严格不重叠）。
+   编辑红面积（守 ≤10%）：kicker + 标题点睛 + 四节点 tick 红小方（小面积）+ 编号红 ≪10%·红作墨水非块。 */
+.ed-timeline{ background:var(--bg); }
+.ed-timeline .etl-title{ position:absolute; left:var(--pad-x); top:156px; right:var(--pad-x); font-size:44px; line-height:1.08; }
+/* 横时间轴线（贯穿·--rule）*/
+.ed-timeline .etl-axis{ position:absolute; left:var(--pad-x); right:var(--pad-x); top:360px; height:var(--line-w); background:var(--rule); }
+/* 四节点列（绝对定位等距·gutter 32·零重叠）*/
+.ed-timeline .etl-node{ position:absolute; top:284px; bottom:152px; width:254px; }  /* pad72+4×254+3×40gutter=1208 守右界 */
+.ed-timeline .etl-node.n1{ left:var(--pad-x); }
+.ed-timeline .etl-node.n2{ left:366px; }
+.ed-timeline .etl-node.n3{ left:660px; }
+.ed-timeline .etl-node.n4{ left:954px; }
+/* 节点 tick（红小方·落轴线上·杂志锚·y=360 对齐轴）*/
+.ed-timeline .etl-tick{ position:absolute; left:0; top:69px; width:11px; height:11px; background:var(--ed-red); }
+/* 节点编号（红·轴上方·Libre Franklin）*/
+.ed-timeline .etl-no{ position:absolute; left:0; top:0; font-family:var(--font-data); font-weight:700; font-size:15px; font-variant-numeric:tabular-nums; letter-spacing:.14em; text-transform:uppercase; color:var(--ed-red); }
+.ed-timeline .etl-stage{ position:absolute; left:0; top:24px; font-family:var(--font-data); font-weight:500; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-dim); }
+/* 节点题（衬线 Semibold·轴下方·编辑判断）*/
+.ed-timeline .etl-h{ position:absolute; left:0; right:0; top:108px; font-family:var(--font-display); font-weight:600; font-size:25px; line-height:1.16; letter-spacing:-.006em; color:var(--ink); }
+/* 节点说明（衬线·≥地板·摘要级）*/
+.ed-timeline .etl-p{ position:absolute; left:0; right:0; top:168px; bottom:0; font-family:var(--font-serif); font-weight:400; font-size:25.33px; line-height:1.42; letter-spacing:.004em; color:var(--ink-mid); overflow:hidden; }
+.ed-timeline .etl-p b{ font-weight:500; color:var(--ink); }
+
+/* ============================================================================
+   P · ed-closing 主编结论收束（主编结论 · 克制不炸尾 · 借 「ed-closing」+ Gentlewoman 克制收束）
+   ----------------------------------------------------------------------------
+   构图（满版收束·左结论判断块 + 右单句留白·克制不炸尾·零重叠）：
+     · 报头带 + 报头线 @120；底栏线 @602 + 页脚（含结束标记）。
+     · 左红细条 + 收束 eyebrow + 巨衬线主编结论 @ 200–500（横切·红点睛·克制）。
+     · 底部收束句 @ 506–底栏线（衬线·≥地板·横跨·余韵不发力）。
+   编辑红面积（守 ≤10%）：kicker + 红细条 + 结论点睛词 ≪10%·收束克制（END_NOT_PEAK·不炸尾）。 */
+.ed-closing{ background:var(--bg); }
+.ed-closing .ecl-bar{ position:absolute; left:var(--pad-x); top:182px; width:64px; height:4px; background:var(--ed-red); }
+.ed-closing .ecl-eyebrow{ position:absolute; left:var(--pad-x); top:206px; font-family:var(--font-data); font-weight:600; font-size:13px; letter-spacing:.22em; text-transform:uppercase; color:var(--ink-dim); }
+/* 巨衬线主编结论（收束判断·红点睛·克制不炸尾）*/
+.ed-closing .ecl-claim{ position:absolute; left:var(--pad-x); right:240px; top:250px; font-family:var(--font-display); font-weight:600; font-size:60px; line-height:1.06; letter-spacing:-.012em; color:var(--ink); }
+.ed-closing .ecl-claim em{ font-style:italic; color:var(--ed-red); }
+/* 底收束句（衬线·≥地板·余韵·横跨主栏宽）*/
+.ed-closing .ecl-coda{ position:absolute; left:var(--pad-x); right:360px; bottom:152px; font-family:var(--font-serif); font-weight:400; font-size:26px; line-height:1.46; letter-spacing:.004em; color:var(--ink-mid); }
+.ed-closing .ecl-coda b{ font-weight:500; color:var(--ink); }
+/* 右下结束标记（无衬线·杂志 end mark·克制）*/
+.ed-closing .ecl-end{ position:absolute; right:var(--pad-x); bottom:152px; width:280px; text-align:right; font-family:var(--font-data); font-weight:500; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-dim); line-height:1.7; }
+.ed-closing .ecl-end .mk{ display:inline-block; width:10px; height:10px; background:var(--ed-red); margin-left:8px; vertical-align:baseline; }
+
+</style>
+</head>
+<body>
+
+<div class="nojs-hint">请启用 JavaScript 以获得最佳浏览体验</div>
+
+<div class="stage" id="stage">
+  <div class="deck" id="deck">
+
+    <!-- P1 封面 · ed-feature-spread · 杂志对开 feature spread（签名第一页·编辑的判断）
+         白标：eyebrow 中性内容名「深度行业观察」·绝无内部代号·数据示意标「示意」。 -->
+    <section class="slide ed-feature-spread" data-layout="ed-feature-spread" data-role="state" data-energy="blast">
+      <!-- 细分栏线杂志骨架（报头 / 底栏 / 主竖分栏） -->
+      <div class="efs-rule-top" aria-hidden="true"></div>
+      <div class="efs-rule-bot" aria-hidden="true"></div>
+      <div class="efs-rule-col" aria-hidden="true"></div>
+
+      <!-- 报头：kicker（编辑红·中性内容名）+ 期号日期（数据无衬线） -->
+      <div class="efs-kicker">深度行业观察 · FIELD NOTES</div>
+      <div class="efs-issue">Vol.01 · No.07 · 2026</div>
+
+      <!-- 衬线大标题（Source Serif Semibold·示意编辑判断·红墨水点睛单词） -->
+      <h1 class="efs-headline">谁在为<br>这场<em>静默</em>的<br>迁移买单</h1>
+
+      <!-- 拉引文（编辑红·杂志 pull-quote·权威点睛·红作墨水非块·斜体衬线） -->
+      <p class="efs-pull">“账面上没人为它付费——但每一份延迟、每一次妥协，都在悄悄记账。”</p>
+
+      <!-- 衬线摘要正文（≥字号地板·投影可读·中文思源宋体 Regular·Medium 真面强调） -->
+      <p class="efs-deck-lead">一场代际更替，往往不在财报里留名。<b>真正的成本被摊进了时间</b>——藏在每一次返工、每一段等待里。</p>
+
+      <!-- 数据脚带（杂志 feature 关键数字·Libre Franklin·单位描红墨水） -->
+      <div class="efs-data">
+        <div class="d-item">
+          <div class="d-num">68<span class="u">%</span></div>
+          <div class="d-k">受访者低估迁移成本 · 示意</div>
+        </div>
+        <div class="d-item">
+          <div class="d-num">3.2<span class="u">×</span></div>
+          <div class="d-k">实际工时 vs 预估 · 示意</div>
+        </div>
+      </div>
+
+      <!-- 右主图区（CSS 构造编辑感封面图形·非伪造图库·drop-cap + 红细条 + 图注） -->
+      <div class="efs-fig" aria-hidden="true">
+        <div class="efs-fig-bar"></div>
+        <div class="efs-fig-cap-letter">迁</div>
+        <div class="efs-fig-word">看不见的账，<br>正在结清。</div>
+        <div class="efs-figcap">封面构成 · 示意图形 · 非实拍</div>
+      </div>
+
+      <!-- 页脚（中性·示意标记·页码） -->
+      <footer class="efs-foot">
+        <span>深度行业观察 · 封面</span>
+        <span class="pg">01 / 20</span>
+      </footer>
+    </section>
+
+    <!-- P2 目录/编辑导览 · ed-index（编辑导览·左刊名 + 右条目栏） -->
+    <section class="slide ed-index" data-layout="ed-index" data-role="insight" data-energy="calm">
+      <div class="ed-rule-top" aria-hidden="true"></div>
+      <div class="ed-rule-bot" aria-hidden="true"></div>
+      <div class="eix-rule-col" aria-hidden="true"></div>
+
+      <div class="ed-kicker">深度行业观察 · 导览</div>
+      <div class="ed-issue">Vol.01 · No.07 · 2026</div>
+
+      <div class="eix-eyebrow">本期目录</div>
+      <h2 class="eix-masthead">这场迁移，<br><em>分四幕</em>读完</h2>
+      <p class="eix-sub">先承认账存在，再把它算清楚——<b>最后看清谁在结账</b>。一份关于隐性技术成本的编辑式拆解。</p>
+
+      <div class="eix-list">
+        <div class="eix-item">
+          <span class="eix-no">01</span>
+          <span class="eix-it-title">看不见的账</span>
+          <span class="eix-it-meta">立论 · 第 03–07 页</span>
+        </div>
+        <div class="eix-item">
+          <span class="eix-no">02</span>
+          <span class="eix-it-title">这本账，怎么算</span>
+          <span class="eix-it-meta">证据 · 第 08–15 页</span>
+        </div>
+        <div class="eix-item">
+          <span class="eix-no">03</span>
+          <span class="eix-it-title">谁在结账</span>
+          <span class="eix-it-meta">归因 · 第 16–17 页</span>
+        </div>
+        <div class="eix-item">
+          <span class="eix-no">04</span>
+          <span class="eix-it-title">把暗账显性化</span>
+          <span class="eix-it-meta">收束 · 第 18–20 页</span>
+        </div>
+      </div>
+
+      <footer class="ed-foot">
+        <span>深度行业观察 · 目录</span>
+        <span class="pg">02 / 20</span>
+      </footer>
+    </section>
+
+    <!-- P3 开题立论 · ed-statement（标题即结论·主编 take 横切·账面没有这笔账） -->
+    <section class="slide ed-statement" data-layout="ed-statement" data-role="state" data-energy="half">
+      <div class="ed-rule-top" aria-hidden="true"></div>
+      <div class="ed-rule-bot" aria-hidden="true"></div>
+
+      <div class="ed-kicker">第一章 · 看不见的账</div>
+      <div class="ed-issue">深度行业观察 · 03</div>
+
+      <div class="est-bar" aria-hidden="true"></div>
+      <h2 class="est-claim">技术债不在<br>财报里，<br>它在<em>日历</em>里。</h2>
+
+      <p class="est-lead">没有哪一行预算写着「迁移的代价」。<b>它被拆散成无数个工作日</b>，藏进每一次返工、每一段等待。</p>
+      <div class="est-stat">
+        <div class="s-num">20–40<span class="u">%</span></div>
+        <div class="s-k">技术债占技术资产估值（折旧前）· McKinsey 2020</div>
+      </div>
+
+      <footer class="ed-foot">
+        <span>深度行业观察 · 第一章 · 立论</span>
+        <span class="pg">03 / 20</span>
+      </footer>
+    </section>
+
+    <!-- P4 双栏深度内容 · ed-two-col · 迁移之后的适应期（标准长文·一个编辑判断） -->
+    <section class="slide ed-two-col" data-layout="ed-two-col" data-role="ground" data-energy="half">
+      <div class="ed-rule-top" aria-hidden="true"></div>
+      <div class="ed-rule-bot" aria-hidden="true"></div>
+      <div class="etc-rule-col" aria-hidden="true"></div>
+
+      <div class="ed-kicker">第一章 · 看不见的账</div>
+      <div class="ed-issue">深度行业观察 · 04</div>
+
+      <h2 class="ed-h2 etc-title">真正的账单，<br>在迁移<em>之后</em>才到</h2>
+
+      <p class="etc-lead">把系统搬上新平台，只是开了个头。<b>真正昂贵的是适应期</b>——团队重新学会工作的那几个月。</p>
+
+      <div class="etc-body">
+        <p>计划书里，迁移是一条有头有尾的甘特图。但旧习惯、旧脚本、旧的「一直这么做」，不会随数据一起搬走。</p>
+        <p>它们变成返工、等待、被迫的取舍——<b>不在预算表上，却被时间记了账</b>。一个项目接一个项目，利息照付。</p>
+      </div>
+
+      <div class="etc-aside-bar" aria-hidden="true"></div>
+      <div class="etc-stat">
+        <div class="s-num">10–20<span class="u">%</span></div>
+        <div class="s-k">每个项目为消化技术债额外付出 · McKinsey 2020</div>
+      </div>
+
+      <p class="etc-pull">“迁移的终点不是上线，是团队不再想念旧系统的那一天。”</p>
+
+      <div class="etc-src">来源 · McKinsey《Tech debt: Reclaiming tech equity》2020 · CIO 调研</div>
+
+      <footer class="ed-foot">
+        <span>深度行业观察 · 第一章</span>
+        <span class="pg">04 / 20</span>
+      </footer>
+    </section>
+
+    <!-- P5 三栏密集信息 · ed-three-col · 成本的三种形状（富密度·栏位拼装） -->
+    <section class="slide ed-three-col" data-layout="ed-three-col" data-role="insight" data-energy="half">
+      <div class="ed-rule-top" aria-hidden="true"></div>
+      <div class="ed-rule-bot" aria-hidden="true"></div>
+      <div class="e3c-rule-1" aria-hidden="true"></div>
+      <div class="e3c-rule-2" aria-hidden="true"></div>
+
+      <div class="ed-kicker">第一章 · 成本的三种形状</div>
+      <div class="ed-issue">深度行业观察 · 05</div>
+
+      <h2 class="ed-h2 e3c-title">看不见的账，<em>记在三处</em></h2>
+
+      <div class="e3c-col c1">
+        <div class="e3c-num">01</div>
+        <div class="e3c-h">返工</div>
+        <p class="e3c-p">新工具的第一版产出，往往要推倒重来。<b>不是因为做错</b>，而是「原来该这样用」是用错一次才学会的。</p>
+      </div>
+      <div class="e3c-col c2">
+        <div class="e3c-num">02</div>
+        <div class="e3c-h">等待</div>
+        <p class="e3c-p">迁移期里，每个决定都要多问一句「现在还能这么做吗」。<b>等待答复的时间</b>，常比执行本身更长。</p>
+      </div>
+      <div class="e3c-col c3">
+        <div class="e3c-num">03</div>
+        <div class="e3c-h">取舍</div>
+        <p class="e3c-p">新平台逼着团队放弃一些旧的便利。<b>每一次妥协</b>都很小，累积起来却改变了做事的方式。</p>
+      </div>
+
+      <footer class="ed-foot">
+        <span>深度行业观察 · 第一章</span>
+        <span class="pg">05 / 20</span>
+      </footer>
+    </section>
+
+    <!-- P6 数据特写 · ed-stat-feature · 42% 开发者时间（Stripe·量级页） -->
+    <section class="slide ed-stat-feature" data-layout="ed-stat-feature" data-role="ground" data-energy="half">
+      <div class="ed-rule-top" aria-hidden="true"></div>
+      <div class="ed-rule-bot" aria-hidden="true"></div>
+      <div class="esf-rule-col" aria-hidden="true"></div>
+
+      <div class="ed-kicker">第一章 · 量级</div>
+      <div class="ed-issue">深度行业观察 · 06</div>
+
+      <div class="esf-bar" aria-hidden="true"></div>
+      <div class="esf-eyebrow">一周里被偿还的债</div>
+      <div class="esf-num">42<span class="u">%</span></div>
+      <div class="esf-num-k">开发者工时花在技术债与劣质代码上</div>
+
+      <h2 class="esf-h">每周 <em>17.3 小时</em>，<br>用来修过去</h2>
+      <p class="esf-read">Stripe 的测算把这件事摊开了：在一周 41.1 小时里，<b>13.5 小时</b>偿还技术债、3.8 小时修补劣质代码。剩下的时间，才用来建造未来。</p>
+      <div class="esf-src">来源 · Stripe《The Developer Coefficient》2018 · 逾千名开发者调研</div>
+
+      <footer class="ed-foot">
+        <span>深度行业观察 · 第一章 · 数据特写</span>
+        <span class="pg">06 / 20</span>
+      </footer>
+    </section>
+
+    <!-- P7 整页拉引文 · ed-quote-pull · 编辑判断转折（第一章收口） -->
+    <section class="slide ed-quote-pull" data-layout="ed-quote-pull" data-role="insight" data-energy="calm">
+      <div class="ed-rule-top" aria-hidden="true"></div>
+      <div class="ed-rule-bot" aria-hidden="true"></div>
+
+      <div class="ed-kicker">第一章 · 转折</div>
+      <div class="ed-issue">深度行业观察 · 07</div>
+
+      <div class="eqp-mark" aria-hidden="true">“</div>
+      <p class="eqp-quote">如果一笔支出从不出现在账本上，<br>它不会消失——<br>它只是换了个地方，<br>等人用时间去偿还。</p>
+
+      <p class="eqp-cite"><b>编辑视角</b> · 承认它存在，是算清它的第一步。
+        <span class="src">深度行业观察 · 本刊判断</span>
+      </p>
+
+      <footer class="ed-foot">
+        <span>深度行业观察 · 第一章 · 拉引文</span>
+        <span class="pg">07 / 20</span>
+      </footer>
+    </section>
+
+    <!-- P8 大图章节页 · ed-chapter · 第二章：怎么算这笔账 -->
+    <section class="slide ed-chapter" data-layout="ed-chapter" data-role="insight" data-energy="calm">
+      <div class="ed-rule-top" aria-hidden="true"></div>
+      <div class="ed-rule-bot" aria-hidden="true"></div>
+
+      <div class="ed-kicker">深度行业观察 · 第二章</div>
+      <div class="ed-issue">Vol.01 · No.07 · 2026</div>
+
+      <div class="ech-fig" aria-hidden="true">
+        <div class="ech-fig-bar"></div>
+        <div class="ech-fig-no">02<span class="lbl">Part Two</span></div>
+        <div class="ech-fig-letter">算</div>
+        <div class="ech-fig-cap">章节构成 · 示意图形 · 非实拍</div>
+      </div>
+
+      <div class="ech-eyebrow">从「有多贵」到「怎么算」</div>
+      <h2 class="ech-title">把这本账，<br><em>摊开来</em>算</h2>
+      <p class="ech-sub">承认成本只是第一步。<b>这一章</b>，我们把行业里反复出现的量级，拆成一张能照着核对的清单。</p>
+
+      <footer class="ed-foot">
+        <span>深度行业观察 · 第二章 · 章节页</span>
+        <span class="pg">08 / 20</span>
+      </footer>
+    </section>
+
+    <!-- P9 数据墙 · ed-data-grid · 四组一手量级一版（2×2·数据当一等公民） -->
+    <section class="slide ed-data-grid" data-layout="ed-data-grid" data-role="ground" data-energy="half">
+      <div class="ed-rule-top" aria-hidden="true"></div>
+      <div class="ed-rule-bot" aria-hidden="true"></div>
+      <div class="edg-rule-v" aria-hidden="true"></div>
+      <div class="edg-rule-h" aria-hidden="true"></div>
+
+      <div class="ed-kicker">第二章 · 量级清单</div>
+      <div class="ed-issue">深度行业观察 · 09</div>
+
+      <h2 class="ed-h2 edg-title">反复出现的<em>四个数字</em></h2>
+
+      <div class="edg-cell g1">
+        <div class="edg-num">45<span class="u">%</span></div>
+        <div class="edg-k">大型 IT 项目<b>平均超预算</b>，并少交付 56% 的预期价值</div>
+        <div class="edg-src">McKinsey–Oxford · 5,400+ 项目</div>
+      </div>
+      <div class="edg-cell g2">
+        <div class="edg-num">20–40<span class="u">%</span></div>
+        <div class="edg-k">技术债占<b>技术资产估值</b>的比例（折旧前）</div>
+        <div class="edg-src">McKinsey · CIO 调研 2020</div>
+      </div>
+      <div class="edg-cell g3">
+        <div class="edg-num">80<span class="u">%</span></div>
+        <div class="edg-k">联邦政府 IT 预算用于<b>运维既有系统</b>，而非新建</div>
+        <div class="edg-src">U.S. GAO · GAO-23-106821</div>
+      </div>
+      <div class="edg-cell g4">
+        <div class="edg-num">31<span class="u">%</span></div>
+        <div class="edg-k">软件项目<b>完全达标</b>（时间·预算·质量）的比例</div>
+        <div class="edg-src">Standish · CHAOS 2020</div>
+      </div>
+
+      <footer class="ed-foot">
+        <span>深度行业观察 · 第二章 · 数据墙</span>
+        <span class="pg">09 / 20</span>
+      </footer>
+    </section>
+
+    <!-- P10 数据特写 · ed-stat-feature · Knight Capital 一次要命的灾难（第二章·前段案例·一图一念=技术债能一次要命）
+         数据一手核实：2012-08-01·部署复用退役 Power Peg 标志位·重新激活 8 台服务器里 1 台上的僵尸旧代码·
+         45 分钟亏约 $440M（SEC 行政令 34-70694·税前损失）·公司几近破产。损失额以 SEC 文件 $440M 为准
+         （Wikipedia 导语 $460M 与正文 $440M 冲突·取 SEC 一手）。 -->
+    <section class="slide ed-stat-feature" data-layout="ed-stat-feature" data-role="ground" data-energy="half">
+      <div class="ed-rule-top" aria-hidden="true"></div>
+      <div class="ed-rule-bot" aria-hidden="true"></div>
+      <div class="esf-rule-col" aria-hidden="true"></div>
+
+      <div class="ed-kicker">第二章 · 一次要命的灾难</div>
+      <div class="ed-issue">深度行业观察 · 10</div>
+
+      <div class="esf-bar" aria-hidden="true"></div>
+      <div class="esf-eyebrow">45 分钟·一家公司</div>
+      <div class="esf-num"><span class="u">$</span>440<span class="u">M</span></div>
+      <div class="esf-num-k">Knight Capital 在 45 分钟里亏掉的钱</div>
+
+      <h2 class="esf-h">一段没删的<br>旧代码，<em>苏醒</em>了</h2>
+      <p class="esf-read">2012 年 8 月 1 日，一次部署复用了退役标志位，<b>唤醒了八台里那一台的僵尸旧代码</b>。45 分钟后公司濒临破产——技术债不是慢性病，能一次要命。</p>
+      <div class="esf-src">来源 · U.S. SEC 行政令 34-70694（2013）· 税前损失 $440M</div>
+
+      <footer class="ed-foot">
+        <span>深度行业观察 · 第二章 · 数据特写</span>
+        <span class="pg">10 / 20</span>
+      </footer>
+    </section>
+
+    <!-- P11 双栏深度内容 · ed-two-col · 45% 超支不是意外（第二章展开） -->
+    <section class="slide ed-two-col" data-layout="ed-two-col" data-role="ground" data-energy="half">
+      <div class="ed-rule-top" aria-hidden="true"></div>
+      <div class="ed-rule-bot" aria-hidden="true"></div>
+      <div class="etc-rule-col" aria-hidden="true"></div>
+
+      <div class="ed-kicker">第二章 · 这本账怎么算</div>
+      <div class="ed-issue">深度行业观察 · 11</div>
+
+      <h2 class="ed-h2 etc-title">45% 的超支，<br>不是<em>意外</em></h2>
+
+      <p class="etc-lead">当一类项目「平均」超预算近半，它就不再是风险，<b>而是结构</b>——是被反复低估的那部分，终于到了账上。</p>
+
+      <div class="etc-body">
+        <p>麦肯锡与牛津对逾五千个大型 IT 项目的研究发现：每多花一年，超支再涨 <b>15%</b>。时间本身就是利息。</p>
+        <p>最糟的六分之一，平均超支 <b>200%</b>、工期拖近 70%。它们不是被某个事故击垮，是被无数个「再等等」拖垮的。</p>
+      </div>
+
+      <div class="etc-aside-bar" aria-hidden="true"></div>
+      <div class="etc-stat">
+        <div class="s-num">+15<span class="u">%</span></div>
+        <div class="s-k">每多花一年·超支增幅 · McKinsey–Oxford</div>
+      </div>
+
+      <p class="etc-pull">“没有哪个项目是一天垮掉的——它是被许多个『再等等』拖垮的。”</p>
+
+      <div class="etc-src">来源 · McKinsey & Univ. of Oxford《Delivering large-scale IT projects》</div>
+
+      <footer class="ed-foot">
+        <span>深度行业观察 · 第二章</span>
+        <span class="pg">11 / 20</span>
+      </footer>
+    </section>
+
+    <!-- P11 数据特写 · ed-stat-feature · 80% 维护占比（GAO·基础设施代际成本·量级页） -->
+    <section class="slide ed-stat-feature" data-layout="ed-stat-feature" data-role="ground" data-energy="half">
+      <div class="ed-rule-top" aria-hidden="true"></div>
+      <div class="ed-rule-bot" aria-hidden="true"></div>
+      <div class="esf-rule-col" aria-hidden="true"></div>
+
+      <div class="ed-kicker">第二章 · 代际成本</div>
+      <div class="ed-issue">深度行业观察 · 12</div>
+
+      <div class="esf-bar" aria-hidden="true"></div>
+      <div class="esf-eyebrow">为维持现状而支付</div>
+      <div class="esf-num">80<span class="u">%</span></div>
+      <div class="esf-num-k">联邦 IT 预算用于运维既有系统</div>
+
+      <h2 class="esf-h">五分之四的钱，<br>用来<em>不让它倒</em></h2>
+      <p class="esf-read">美国审计署（GAO）的统计里，每年逾千亿美元的政府 IT 投入，约 <b>八成</b>花在运维上。最老的系统仍跑在 COBOL 上——<b>会修的人正在退休</b>。</p>
+      <div class="esf-src">来源 · U.S. GAO《Agencies Need to Continue Addressing Critical Legacy Systems》GAO-23-106821</div>
+
+      <footer class="ed-foot">
+        <span>深度行业观察 · 第二章 · 数据特写</span>
+        <span class="pg">12 / 20</span>
+      </footer>
+    </section>
+
+    <!-- P13 双栏深度内容 · ed-two-col · 债会生息·Ward Cunningham 1992 债务隐喻本源（机制层·一图一念=技术债会生息）
+         数据一手核实：「债务隐喻」由 Ward Cunningham 1992 年在 OOPSLA'92（Vancouver）的经验报告
+         《The WyCash Portfolio Management System》首次提出——「首次上线的代码像借债，一点债能加速开发，
+         只要及时用重写还掉」；每一次绕过没还的债再开发，就是在付利息，利息从开发速度里扣（复利）。
+         Cunningham 后澄清：隐喻指「理解在演进」，非「故意写烂代码」（诚实接·留待 P15 反命题）。 -->
+    <section class="slide ed-two-col" data-layout="ed-two-col" data-role="ground" data-energy="half">
+      <div class="ed-rule-top" aria-hidden="true"></div>
+      <div class="ed-rule-bot" aria-hidden="true"></div>
+      <div class="etc-rule-col" aria-hidden="true"></div>
+
+      <div class="ed-kicker">第二章 · 债会生息</div>
+      <div class="ed-issue">深度行业观察 · 13</div>
+
+      <h2 class="ed-h2 etc-title">这个词，<br>本就是一笔<em>债</em></h2>
+
+      <p class="etc-lead">1992 年，Ward Cunningham 借「债」向老板解释为何先上线：<b>一点债能换来速度</b>——只要及时用重写还掉。</p>
+
+      <div class="etc-body">
+        <p>他真正的警告在后半句：每一次绕过那处没还的债继续开发，<b>都是在付利息</b>。</p>
+        <p>利息不从账上扣，从你每周的开发速度里扣。不还本金，光付息——迟早把团队拖停。</p>
+      </div>
+
+      <div class="etc-aside-bar" aria-hidden="true"></div>
+      <div class="etc-stat">
+        <div class="s-num">1992<span class="u">·</span></div>
+        <div class="s-k">债务隐喻提出 · OOPSLA · Cunningham</div>
+      </div>
+
+      <p class="etc-pull">“一点债能加速开发——只要它被及时还清。”</p>
+
+      <div class="etc-src">来源 · Ward Cunningham《The WyCash Portfolio Management System》OOPSLA'92</div>
+
+      <footer class="ed-foot">
+        <span>深度行业观察 · 第二章</span>
+        <span class="pg">13 / 20</span>
+      </footer>
+    </section>
+
+    <!-- P14 编辑时间线 · ed-timeline · 一笔技术债的生命周期（横向四节点） -->
+    <section class="slide ed-timeline" data-layout="ed-timeline" data-role="ground" data-energy="half">
+      <div class="ed-rule-top" aria-hidden="true"></div>
+      <div class="ed-rule-bot" aria-hidden="true"></div>
+      <div class="etl-axis" aria-hidden="true"></div>
+
+      <div class="ed-kicker">第二章 · 一笔债的一生</div>
+      <div class="ed-issue">深度行业观察 · 14</div>
+
+      <h2 class="ed-h2 etl-title">债是<em>怎么</em>欠下的</h2>
+
+      <div class="etl-node n1">
+        <div class="etl-tick" aria-hidden="true"></div>
+        <div class="etl-no">01</div>
+        <div class="etl-stage">借入</div>
+        <div class="etl-h">一个合理的妥协</div>
+        <p class="etl-p">为了赶上线，先「这样凑合」。<b>当时是对的</b>决定。</p>
+      </div>
+      <div class="etl-node n2">
+        <div class="etl-tick" aria-hidden="true"></div>
+        <div class="etl-no">02</div>
+        <div class="etl-stage">计息</div>
+        <div class="etl-h">每次改动都更慢</div>
+        <p class="etl-p">绕过那处妥协的代码越堆越厚，<b>利息开始累积</b>。</p>
+      </div>
+      <div class="etl-node n3">
+        <div class="etl-tick" aria-hidden="true"></div>
+        <div class="etl-no">03</div>
+        <div class="etl-stage">逾期</div>
+        <div class="etl-h">没人敢动那块</div>
+        <p class="etl-p">知道怎么改的人走了，剩下的人<b>只敢绕开</b>。</p>
+      </div>
+      <div class="etl-node n4">
+        <div class="etl-tick" aria-hidden="true"></div>
+        <div class="etl-no">04</div>
+        <div class="etl-stage">结清</div>
+        <div class="etl-h">一次昂贵的迁移</div>
+        <p class="etl-p">最终连本带息一起还——<b>就是这场迁移</b>。</p>
+      </div>
+
+      <footer class="ed-foot">
+        <span>深度行业观察 · 第二章 · 时间线</span>
+        <span class="pg">14 / 20</span>
+      </footer>
+    </section>
+
+    <!-- P15 整页拉引文 · ed-quote-pull · 反命题·好债坏债（Martin Fowler 技术债四象限·深化判断·诚实的 turn）
+         数据一手核实：Martin Fowler《Technical Debt Quadrant》（martinfowler.com·2009-10-14）——
+         两轴：故意/无意 × 谨慎/鲁莽。最可取=「故意+谨慎」（知道在走捷径、算过账、计划还）；
+         最要命=「无意+鲁莽」（What's Layering?·糊里糊涂欠下还装没欠）。Fowler 原话：谨慎的债可管理、鲁莽的债有害。
+         一图一念=不是所有债都该还——算过的债是赌，装没欠才要命。 -->
+    <section class="slide ed-quote-pull" data-layout="ed-quote-pull" data-role="insight" data-energy="calm">
+      <div class="ed-rule-top" aria-hidden="true"></div>
+      <div class="ed-rule-bot" aria-hidden="true"></div>
+
+      <div class="ed-kicker">第二章 · 一个诚实的反命题</div>
+      <div class="ed-issue">深度行业观察 · 15</div>
+
+      <div class="eqp-mark" aria-hidden="true">“</div>
+      <p class="eqp-quote">不是每一笔债都该被指责。<br>故意又谨慎地欠下、<br>算过账、打算还的债，<br>是一次划算的赌。</p>
+
+      <p class="eqp-cite"><b>Martin Fowler · 技术债四象限</b> · 要命的从来不是欠债，是「无意又鲁莽」——糊里糊涂欠下，还装作没欠。
+        <span class="src">来源 · martinfowler.com《Technical Debt Quadrant》2009</span>
+      </p>
+
+      <footer class="ed-foot">
+        <span>深度行业观察 · 第二章 · 反命题</span>
+        <span class="pg">15 / 20</span>
+      </footer>
+    </section>
+
+    <!-- P16 三栏密集信息 · ed-three-col · 第三章：谁在结账（归因·富密度） -->
+    <section class="slide ed-three-col" data-layout="ed-three-col" data-role="insight" data-energy="half">
+      <div class="ed-rule-top" aria-hidden="true"></div>
+      <div class="ed-rule-bot" aria-hidden="true"></div>
+      <div class="e3c-rule-1" aria-hidden="true"></div>
+      <div class="e3c-rule-2" aria-hidden="true"></div>
+
+      <div class="ed-kicker">第三章 · 谁在结账</div>
+      <div class="ed-issue">深度行业观察 · 16</div>
+
+      <h2 class="ed-h2 e3c-title">账单<em>分给了三个人</em></h2>
+
+      <div class="e3c-col c1">
+        <div class="e3c-num">01</div>
+        <div class="e3c-h">工程师</div>
+        <p class="e3c-p">用四成工时偿还过去，而非建造未来。<b>消耗的是热情</b>——这不是他们入行时想做的事。</p>
+      </div>
+      <div class="e3c-col c2">
+        <div class="e3c-num">02</div>
+        <div class="e3c-h">组织</div>
+        <p class="e3c-p">技术债最重的那 20% 企业，<b>现代化失败率高出 40%</b>。旧债拖垮新计划，滚成雪球。</p>
+      </div>
+      <div class="e3c-col c3">
+        <div class="e3c-num">03</div>
+        <div class="e3c-h">继任者</div>
+        <p class="e3c-p">今天的便宜，记在明天的人头上。<b>接手的人</b>，要替一个他没参与的决定买单。</p>
+      </div>
+
+      <footer class="ed-foot">
+        <span>深度行业观察 · 第三章 · 数据据 McKinsey 2020</span>
+        <span class="pg">16 / 20</span>
+      </footer>
+    </section>
+
+    <!-- P14 整页拉引文 · ed-quote-pull · 主编 take 收口前 -->
+    <section class="slide ed-quote-pull" data-layout="ed-quote-pull" data-role="leave" data-energy="calm">
+      <div class="ed-rule-top" aria-hidden="true"></div>
+      <div class="ed-rule-bot" aria-hidden="true"></div>
+
+      <div class="ed-kicker">第三章 · 转折</div>
+      <div class="ed-issue">深度行业观察 · 17</div>
+
+      <div class="eqp-mark" aria-hidden="true">“</div>
+      <p class="eqp-quote">最贵的债，<br>不是写进代码里的那种，<br>是写进一个团队<br>不再相信「能做好」的那种。</p>
+
+      <p class="eqp-cite"><b>编辑视角</b> · 技术债先消耗时间，再消耗信心。
+        <span class="src">深度行业观察 · 本刊判断</span>
+      </p>
+
+      <footer class="ed-foot">
+        <span>深度行业观察 · 第三章 · 拉引文</span>
+        <span class="pg">17 / 20</span>
+      </footer>
+    </section>
+
+    <!-- P15 判断页 · ed-statement · 第四章：把暗账显性化（收束起手·主编 take） -->
+    <section class="slide ed-statement" data-layout="ed-statement" data-role="act" data-energy="half">
+      <div class="ed-rule-top" aria-hidden="true"></div>
+      <div class="ed-rule-bot" aria-hidden="true"></div>
+
+      <div class="ed-kicker">第四章 · 把暗账显性化</div>
+      <div class="ed-issue">深度行业观察 · 18</div>
+
+      <div class="est-bar" aria-hidden="true"></div>
+      <h2 class="est-claim">看不见，<br>不等于<em>不存在</em>。<br>只是没人记。</h2>
+
+      <p class="est-lead">解决的第一步不是消灭这笔债，<b>是把它写到账上</b>——让每一次妥协，都有一个能被看见的名字。</p>
+      <div class="est-stat">
+        <div class="s-num">50<span class="u">%</span></div>
+        <div class="s-k">偿还技术债后·工程师可多投入的价值工时 · McKinsey</div>
+      </div>
+
+      <footer class="ed-foot">
+        <span>深度行业观察 · 第四章 · 收束</span>
+        <span class="pg">18 / 20</span>
+      </footer>
+    </section>
+
+    <!-- P16 数据特写 · ed-stat-feature · 50% 时间可赎回（McKinsey 正向·量级页·量级↔判断交替） -->
+    <section class="slide ed-stat-feature" data-layout="ed-stat-feature" data-role="ground" data-energy="half">
+      <div class="ed-rule-top" aria-hidden="true"></div>
+      <div class="ed-rule-bot" aria-hidden="true"></div>
+      <div class="esf-rule-col" aria-hidden="true"></div>
+
+      <div class="ed-kicker">第四章 · 可赎回的部分</div>
+      <div class="ed-issue">深度行业观察 · 19</div>
+
+      <div class="esf-bar" aria-hidden="true"></div>
+      <div class="esf-eyebrow">还清之后拿回的</div>
+      <div class="esf-num">50<span class="u">%</span></div>
+      <div class="esf-num-k">可多投入价值创造的工程师时间</div>
+
+      <h2 class="esf-h">这笔账，<br><em>能还</em></h2>
+      <p class="esf-read">麦肯锡的另一面数据是希望：主动偿还技术债的组织，能让工程师<b>多出五成时间</b>用于真正创造价值的工作。账单沉重，但不是无解。</p>
+      <div class="esf-src">来源 · McKinsey《Breaking technical debt's vicious cycle》</div>
+
+      <footer class="ed-foot">
+        <span>深度行业观察 · 第四章 · 数据特写</span>
+        <span class="pg">19 / 20</span>
+      </footer>
+    </section>
+
+    <!-- P17 主编结论收束 · ed-closing · 克制不炸尾（END_NOT_PEAK） -->
+    <section class="slide ed-closing" data-layout="ed-closing" data-role="leave" data-energy="calm">
+      <div class="ed-rule-top" aria-hidden="true"></div>
+      <div class="ed-rule-bot" aria-hidden="true"></div>
+
+      <div class="ed-kicker">深度行业观察 · 主编结论</div>
+      <div class="ed-issue">Vol.01 · No.07 · 2026</div>
+
+      <div class="ecl-bar" aria-hidden="true"></div>
+      <div class="ecl-eyebrow">谁在为这场静默的迁移买单</div>
+      <h2 class="ecl-claim">答案是<em>时间</em>，<br>而时间，<br>总有人在付。</h2>
+
+      <p class="ecl-coda">这场迁移不会出现在任何财报的某一行。<b>但它真实发生过</b>——记在日历里，记在那些被偿还的工作日里。</p>
+      <div class="ecl-end">深度行业观察<br>全文完<span class="mk" aria-hidden="true"></span></div>
+
+      <footer class="ed-foot">
+        <span>深度行业观察 · 主编结论 · 全文完</span>
+        <span class="pg">20 / 20</span>
+      </footer>
+    </section>
+
+  </div><!-- /deck -->
+</div><!-- /stage -->
+
+<nav class="hud" aria-label="导航">
+  <button id="navPrev" aria-label="上一页">‹</button>
+  <span class="cnt" id="navCnt">01 / 01</span>
+  <button id="navNext" aria-label="下一页">›</button>
+</nav>
+
+<div class="rotate-hint" aria-hidden="true">
+  <svg class="rh-ico" viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v4h-4"/></svg>
+  <div class="rh-msg"><span class="rh-sq"></span>横屏观看更佳</div>
+  <div class="rh-sub">旋转手机以全屏查看这份演示</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var root=document.documentElement; root.classList.remove("no-js"); root.classList.add("js");
+  var deck=document.getElementById("deck");
+  var slides=[].slice.call(deck.querySelectorAll(".slide"));
+  var total=slides.length, cntEl=document.getElementById("navCnt"), i=0;
+  var pad2=function(n){return (n<10?"0":"")+n;};
+  function fit(){var s=Math.min(window.innerWidth/1280, window.innerHeight/720); var x=(window.innerWidth-1280*s)/2, y=(window.innerHeight-720*s)/2; deck.style.transform="translate("+x+"px,"+y+"px) scale("+s+")";}
+  function clamp(n){return Math.max(0,Math.min(total-1,n));}
+  function render(){
+    slides.forEach(function(sl,idx){sl.classList.toggle("is-active",idx===i);});
+    cntEl.textContent=pad2(i+1)+" / "+pad2(total);
+    if(("#"+(i+1))!==location.hash) history.replaceState(null,"","#"+(i+1));
+  }
+  function go(n){i=clamp(n);render();}
+  function next(){go(i+1);} function prev(){go(i-1);}
+  function fromHash(){var n=parseInt((location.hash||"").replace("#",""),10); if(!isNaN(n)&&n>=1&&n<=total)i=n-1;}
+  document.addEventListener("keydown",function(e){
+    switch(e.key){
+      case "ArrowRight": case "PageDown": case " ": e.preventDefault(); next(); break;
+      case "ArrowLeft": case "PageUp": e.preventDefault(); prev(); break;
+      case "Home": e.preventDefault(); go(0); break;
+      case "End": e.preventDefault(); go(total-1); break;
+    }
+  });
+  var tx=0,ty=0,tk=false;
+  document.addEventListener("touchstart",function(e){if(e.touches.length!==1)return;tk=true;tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
+  document.addEventListener("touchend",function(e){if(!tk)return;tk=false;var t=e.changedTouches[0],dx=t.clientX-tx,dy=t.clientY-ty;if(Math.abs(dx)>48&&Math.abs(dx)>Math.abs(dy)*1.4){dx<0?next():prev();}},{passive:true});
+  document.getElementById("navNext").addEventListener("click",next);
+  document.getElementById("navPrev").addEventListener("click",prev);
+  window.addEventListener("hashchange",function(){fromHash();render();});
+  window.addEventListener("resize",fit);
+  fromHash(); fit(); render();
+})();
+</script>
+</body>
+</html>

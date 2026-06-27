@@ -1,0 +1,1127 @@
+<!doctype html>
+<html lang="zh-CN" class="no-js" data-theme="info-data" data-scene="report" data-rendered-by="blcaptain">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>算力经济 — demo</title>
+
+<!-- preload 首屏主力字重（crossorigin 必须·制作规范：preload + font-display:optional 根治「首次打开文字跳一下」FOUT layout shift） -->
+<link rel="preload" href="./fonts/SourceSans3.subset.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="./fonts/GlowSansSC-Regular.info.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="./fonts/GlowSansSC-Medium.info.woff2" as="font" type="font/woff2" crossorigin>
+
+<style>
+/* FONTS · 全 OFL 本地打包（信息·数据设计：Source Sans 3 拉丁/数据 + Glow CJK 复用；Geist 沿用 mono） */
+@font-face{font-family:"Geist Mono";src:url("./fonts/GeistMono-Variable.woff2") format("woff2");font-weight:100 900;font-display:optional}
+@font-face{font-family:"Source Sans 3";src:url("./fonts/SourceSans3.subset.woff2") format("woff2");font-weight:200 900;font-display:optional}
+@font-face{font-family:"Glow Sans SC";src:url("./fonts/GlowSansSC-Regular.info.woff2") format("woff2");font-weight:400;font-display:optional}
+@font-face{font-family:"Glow Sans SC";src:url("./fonts/GlowSansSC-Medium.info.woff2") format("woff2");font-weight:500;font-display:optional}
+</style>
+
+<style>
+/* TOKENS START · 全局结构常量（与主题无关） */
+:root{
+  --font-data:"Source Sans 3","Glow Sans SC",system-ui,-apple-system,sans-serif;
+  --font-sans:"Source Sans 3","Glow Sans SC","Noto Sans SC","PingFang SC",system-ui,sans-serif;
+  --font-mono:"Geist Mono","SFMono-Regular",ui-monospace,"Glow Sans SC",monospace;
+  --font-cjk:"Glow Sans SC","Noto Sans SC","PingFang SC",sans-serif;
+  --sp-1:8px; --sp-2:16px; --sp-3:24px; --sp-4:32px; --sp-6:48px; --sp-8:64px; --sp-10:80px; --sp-12:96px; --sp-16:160px;
+  --radius:0px;
+  --deck-w:1280px; --deck-h:720px;
+  --dur-base:.28s; --ease:cubic-bezier(.22,1,.36,1);
+  --stage-void:#1d1d20;
+  --hud-fg:#C9C2B4; --hud-fg-hi:#fff;
+}
+
+/* 信息·数据设计 · info-data（亮场 · 解释方言  · 令牌一字取自 00-tokens-locked.md「信息·数据设计 theme」） */
+[data-theme="info-data"]{
+  --bg:#FAFBFC; --surface:#F3F4F6; --surface-2:#ECEEF1;
+  --ink:#1a1f29; --ink-mid:#4a5160; --ink-dim:#6a6a62; --ink-faint:#9a9a92;
+  --hairline:rgba(26,31,41,.14); --hairline-2:rgba(26,31,41,.07); --grid:#E2E2DA;
+  --accent:#1A4F9C; --accent-hot:#D85A30;
+  --seq-1:#E8EEF6; --seq-2:#B9CDE6; --seq-3:#7FA3CE; --seq-4:#3E6FB0; --seq-5:#1A4F9C; --seq-6:#123A75; --seq-7:#0C2A52;
+  --data-mute:#C2C2BA;
+  --pad-x:80px; --pad-top:72px; --pad-bottom:96px;
+}
+/* 一份 deck = 一个人格 / 冷白底 / 单信号靛蓝(+暖橙点睛)；变化靠数据密度与标注强度，不换主题。 */
+/* TOKENS END */
+
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%; background:var(--stage-void); overflow:hidden; -webkit-text-size-adjust:100%; text-size-adjust:100%}
+body{font-family:var(--font-sans); color:var(--ink); line-break:strict; word-break:normal; overflow-wrap:anywhere; text-wrap:pretty}
+
+/* ===== 翻页运行时（一次一页 · 横向切换 · 主题无关） ===== */
+.stage{position:fixed; inset:0; overflow:hidden}
+/* 居中=JS 算 px 平移（非 flex 居中）：手机上 1280px deck 远宽于视口时，flex justify-content:center 会把溢出盒钉到 start、
+   叠加 transform-origin:center 把缩放后画面推到屏幕右侧外（偏右看不全）。改 transform-origin:top-left + fit() 平移
+   (W−1280s)/2 居中→任意视口确定性居中、溢出无关（移动端正解·见制作规范）。 */
+.deck{position:absolute; left:0; top:0; width:var(--deck-w); height:var(--deck-h); transform-origin:top left}
+.slide{position:absolute; inset:0; width:var(--deck-w); height:var(--deck-h); overflow:hidden;
+  background:var(--bg); color:var(--ink); box-shadow:0 0 0 1px var(--hairline-2), 0 28px 80px rgba(0,0,0,.5);
+  opacity:0; visibility:hidden; pointer-events:none; z-index:0}
+.slide.is-active{opacity:1; visibility:visible; pointer-events:auto; z-index:2}
+@media (prefers-reduced-motion:no-preference){
+  html.js .slide.is-active{animation:fadeUp .34s var(--ease) both}
+  @keyframes fadeUp{from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:translateY(0)}}
+  /* 数据动效：先数据（线 draw-on / 柱·条 grow）后判断（标注延迟淡入）——揭示节奏即论证；reduced-motion 时本块整体失效→终态 */
+  html.js .lead-line,html.js .mute-line,html.js .slope,html.js .link,html.js .spark .lead,html.js .spark .mute{stroke-dasharray:1}
+  html.js .slide.is-active .lead-line,html.js .slide.is-active .mute-line,html.js .slide.is-active .slope,html.js .slide.is-active .link,html.js .slide.is-active .spark .lead,html.js .slide.is-active .spark .mute{stroke-dashoffset:1; animation:drawOn .9s var(--ease) forwards}
+  @keyframes drawOn{to{stroke-dashoffset:0}}
+  html.js .slide.is-active .sm-cell .bar{transform:scaleY(0); transform-box:fill-box; transform-origin:bottom; animation:growY .55s var(--ease) forwards}
+  html.js .slide.is-active .br-row .fill{transform:scaleX(0); transform-origin:left; animation:growX .7s var(--ease) forwards}
+  @keyframes growY{to{transform:scaleY(1)}}
+  @keyframes growX{to{transform:scaleX(1)}}
+  html.js .slide.is-active .anno,html.js .slide.is-active .anno-note,html.js .slide.is-active .br-split span,html.js .slide.is-active .gain,html.js .slide.is-active .peak,html.js .slide.is-active .guide{opacity:0; animation:riseIn .5s var(--ease) .9s forwards}
+  @keyframes riseIn{from{opacity:0} to{opacity:1}}
+}
+.hud{position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:50; display:flex; align-items:center; gap:12px; padding:8px 12px;
+  background:rgba(28,28,32,.82); border:1px solid rgba(255,255,255,.18); font-family:var(--font-mono); font-size:12px; color:var(--hud-fg);
+  -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); opacity:0; transition:opacity .28s}
+html.js .hud{opacity:.55} .hud:hover{opacity:1}
+.hud button{font:inherit; color:var(--hud-fg); background:none; border:1px solid rgba(255,255,255,.18); width:28px; height:24px; cursor:pointer; line-height:1}
+.hud button:hover{color:var(--hud-fg-hi); border-color:var(--hud-fg-hi)}
+.hud .cnt{font-variant-numeric:tabular-nums; min-width:54px; text-align:center}
+.nojs-hint{display:none}
+html.no-js .nojs-hint{display:block; position:fixed; top:0; left:0; right:0; z-index:60; padding:4px 12px; font-family:var(--font-mono); font-size:12px; text-align:center; color:var(--hud-fg); background:rgba(28,28,32,.9)}
+html.no-js body{overflow:auto}
+html.no-js .stage{position:static; display:block; padding:32px 0}
+html.no-js .deck{position:static; width:auto; height:auto; transform:none!important; display:flex; flex-direction:column; align-items:center; gap:16px}
+html.no-js .slide{position:relative; inset:auto; opacity:1; visibility:visible; pointer-events:auto; flex:none}
+html.no-js .hud{display:none}
+/* 横屏提示：16:9 deck 在竖屏手机=小条幅，引导旋转到横屏(横屏铺满·移动端正解)；旋转后媒体查询失配→自动隐藏。仅 js 路径(no-js 走滚动 fallback)。 */
+.rotate-hint{display:none}
+@media (orientation:portrait) and (max-width:768px){
+  html.js .rotate-hint{display:flex; position:fixed; inset:0; z-index:120; flex-direction:column; align-items:center; justify-content:center; gap:24px; background:var(--stage-void); color:var(--hud-fg-hi); text-align:center; padding:48px}
+  .rotate-hint .rh-ico{color:var(--accent-hot); animation:rhSpin 2.6s var(--ease) infinite; transform-origin:center}
+  .rotate-hint .rh-msg{display:flex; align-items:center; gap:8px; font-family:var(--font-data); font-weight:600; font-size:21px; letter-spacing:.02em}
+  .rotate-hint .rh-sq{width:12px; height:12px; background:var(--accent-hot)}
+  .rotate-hint .rh-sub{font-family:var(--font-mono); font-size:13px; color:var(--hud-fg); opacity:.75; line-height:1.6}
+  @keyframes rhSpin{0%,55%{transform:rotate(0)} 75%,100%{transform:rotate(-90deg)}}
+}
+
+/* ---- 共享 editorial 页眉 + folio（中性内容名·白标） ---- */
+.eyebrow{position:absolute; left:var(--pad-x); top:68px; display:flex; align-items:center; gap:12px; font-family:var(--font-data); font-weight:500; font-size:14px; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-dim)}
+.eyebrow .sq{width:11px; height:11px; background:var(--accent)}
+.folio{position:absolute; right:var(--pad-x); top:66px; text-align:right; font-family:var(--font-mono); font-size:13px; letter-spacing:.04em; line-height:1.6; color:var(--ink-dim); white-space:nowrap; font-variant-numeric:tabular-nums}
+.toprule{position:absolute; left:var(--pad-x); right:var(--pad-x); top:104px; height:1px; background:var(--hairline)}
+
+/* ---- data-cover（数据封面：大数 + 判断 + sparkline + 来源三态） ---- */
+.cover .kicker{position:absolute; left:var(--pad-x); top:188px; font-family:var(--font-data); font-size:18px; color:var(--ink-dim)}
+.cover .bignum{position:absolute; left:76px; top:214px; font-family:var(--font-data); font-weight:500; font-size:228px; line-height:.9; color:var(--ink); font-variant-numeric:tabular-nums; letter-spacing:-.01em}
+.cover .bignum .unit{font-size:96px; color:var(--accent); margin-left:8px}
+.cover .subclaim{position:absolute; left:80px; top:486px; font-family:var(--font-cjk); font-weight:500; font-size:30px; color:var(--ink); display:flex; align-items:center; gap:12px}
+.cover .subclaim .sq{width:11px; height:11px; background:var(--accent-hot); flex:none}
+.cover .source{position:absolute; left:var(--pad-x); bottom:var(--pad-bottom); font-family:var(--font-mono); font-size:12px; color:var(--ink-faint)}
+.cover .spark{position:absolute; right:var(--pad-x); top:240px; width:360px; height:200px}
+.cover .spark .lead{fill:none; stroke:var(--accent); stroke-width:3}
+.cover .spark .mute{fill:none; stroke:var(--data-mute); stroke-width:2}
+.cover .spark .peak{fill:var(--accent-hot)}
+
+/* ---- chart-lead（图为主角 + 标注层即论证 · #3 核心版式） ---- */
+.cl-head{position:absolute; left:var(--pad-x); top:146px; max-width:840px}
+.cl-head .h{font-family:var(--font-cjk); font-weight:500; font-size:42px; line-height:1.22; color:var(--ink); letter-spacing:.01em}
+.cl-head .sub{margin-top:16px; font-family:var(--font-data); font-size:18px; color:var(--ink-dim)}
+.cl-chart{position:absolute; left:var(--pad-x); right:var(--pad-x); top:300px; bottom:var(--pad-bottom)}
+.cl-chart svg{width:100%; height:100%; overflow:visible}
+.cl-chart .grid{stroke:var(--grid); stroke-width:1}
+.cl-chart .lead-line{fill:none; stroke:var(--accent); stroke-width:3}
+.cl-chart .mute-line{fill:none; stroke:var(--data-mute); stroke-width:2}
+.cl-chart .peak{fill:var(--accent-hot)}
+.cl-chart .guide{stroke:var(--accent); stroke-width:1; stroke-dasharray:4 3}
+.cl-chart .anno{font-family:var(--font-data); font-weight:500; font-size:16px; fill:var(--accent)}
+.cl-chart .anno-note{font-family:var(--font-data); font-size:12px; fill:var(--ink-dim)}
+.cl-chart .endlab{font-family:var(--font-data); font-size:13px; font-weight:500}
+.cl-chart .axlab{font-family:var(--font-data); font-size:13px; fill:var(--ink-dim); font-variant-numeric:tabular-nums}
+.cl-chart .ylab{font-family:var(--font-data); font-size:12px; fill:var(--ink-dim); font-variant-numeric:tabular-nums; text-anchor:end}
+.cl-source{position:absolute; left:var(--pad-x); bottom:36px; font-family:var(--font-mono); font-size:12px; color:var(--ink-faint)}
+
+/* ---- slope-compare（斜率图：份额/排名变化·反超 · 两列多线，斜率即变化 · 标注层即论证） ---- */
+.sl-head{position:absolute; left:var(--pad-x); top:146px; max-width:880px}
+.sl-head .h{font-family:var(--font-cjk); font-weight:500; font-size:38px; line-height:1.2; color:var(--ink)}
+.sl-head .sub{margin-top:12px; font-family:var(--font-data); font-size:18px; color:var(--ink-dim)}
+.sl-chart{position:absolute; left:var(--pad-x); right:var(--pad-x); top:300px; bottom:var(--pad-bottom)}
+.sl-chart svg{width:100%; height:100%; overflow:visible}
+.sl-chart .col{font-family:var(--font-data); font-weight:600; font-size:13px; fill:var(--ink-dim); letter-spacing:.1em}
+.sl-chart .slope{fill:none; stroke:var(--data-mute); stroke-width:2}
+.sl-chart .slope.lead{stroke:var(--accent); stroke-width:3}
+.sl-chart .dot{fill:var(--data-mute)}
+.sl-chart .dot.lead{fill:var(--accent)}
+.sl-chart .lab{font-family:var(--font-data); font-size:15px; fill:var(--ink-dim); font-variant-numeric:tabular-nums}
+.sl-chart .lab.lead{fill:var(--ink); font-weight:600}
+.sl-chart .anno{font-family:var(--font-data); font-weight:500; font-size:16px; fill:var(--accent)}
+.sl-chart .anno-note{font-family:var(--font-data); font-size:12px; fill:var(--ink-dim)}
+.sl-chart .guide{stroke:var(--accent); stroke-width:1; stroke-dasharray:4 3}
+.sl-source{position:absolute; left:var(--pad-x); bottom:36px; font-family:var(--font-mono); font-size:12px; color:var(--ink-faint)}
+
+/* ---- small-multiples（统一尺度小图阵列 · Tufte 小倍数） ---- */
+.sm-head{position:absolute; left:var(--pad-x); top:146px; max-width:880px}
+.sm-head .h{font-family:var(--font-cjk); font-weight:500; font-size:38px; line-height:1.2; color:var(--ink)}
+.sm-head .sub{margin-top:12px; font-family:var(--font-data); font-size:18px; color:var(--ink-dim)}
+.sm-grid{position:absolute; left:var(--pad-x); right:var(--pad-x); top:300px; bottom:var(--pad-bottom); display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:24px 48px}
+.sm-cell{position:relative; border-top:1px solid var(--ink); padding-top:8px}
+.sm-cell .lbl{font-family:var(--font-data); font-weight:500; font-size:17px; color:var(--ink)}
+.sm-cell .val{font-family:var(--font-data); font-size:14px; color:var(--ink-dim); font-variant-numeric:tabular-nums; margin-top:4px}
+.sm-cell svg{position:absolute; left:0; right:0; bottom:0; width:100%; height:104px; overflow:visible}
+.sm-cell .bar{fill:var(--accent)}
+.sm-cell .bar.peak{fill:var(--accent-hot)}
+.sm-cell .base{fill:none; stroke:var(--grid); stroke-width:1}
+.sm-source{position:absolute; left:var(--pad-x); bottom:36px; font-family:var(--font-mono); font-size:12px; color:var(--ink-faint)}
+
+/* ---- bar-ranking（横向排序条：排名/量级 · 长度即量级 · 断层标注即论证） ---- */
+.br-head{position:absolute; left:var(--pad-x); top:146px; max-width:880px}
+.br-head .h{font-family:var(--font-cjk); font-weight:500; font-size:38px; line-height:1.2; color:var(--ink)}
+.br-head .sub{margin-top:12px; font-family:var(--font-data); font-size:18px; color:var(--ink-dim)}
+.br-wrap{position:absolute; left:var(--pad-x); right:var(--pad-x); top:312px; bottom:var(--pad-bottom)}
+.br-row{display:grid; grid-template-columns:120px 1fr 92px; align-items:center; gap:16px; height:40px; margin-bottom:8px}
+.br-row .name{font-family:var(--font-data); font-weight:500; font-size:17px; color:var(--ink-dim); text-align:right}
+.br-row.lead .name{color:var(--ink); font-weight:600}
+.br-row .track{height:32px; display:flex; align-items:center}
+.br-row .fill{height:100%; background:var(--data-mute)}
+.br-row.lead .fill{background:var(--accent)}
+.br-row .v{font-family:var(--font-data); font-weight:600; font-size:16px; color:var(--ink); font-variant-numeric:tabular-nums; white-space:nowrap}
+.br-row .v .u{font-size:12px; color:var(--ink-dim); font-weight:400; margin-left:1px}
+.br-split{display:grid; grid-template-columns:120px 1fr 92px; gap:16px; height:32px; margin-bottom:8px; align-items:end}
+.br-split span{grid-column:2 / 4; border-top:1px dashed var(--accent); padding-top:8px; font-family:var(--font-data); font-weight:600; font-size:13px; color:var(--accent); letter-spacing:.01em}
+.br-source{position:absolute; left:var(--pad-x); bottom:36px; font-family:var(--font-mono); font-size:12px; color:var(--ink-faint)}
+
+/* ---- dumbbell（哑铃图：前后差距/分化 · 间距即变化幅度 · 标注层即论证） ---- */
+.db-head{position:absolute; left:var(--pad-x); top:146px; max-width:880px}
+.db-head .h{font-family:var(--font-cjk); font-weight:500; font-size:38px; line-height:1.2; color:var(--ink)}
+.db-head .sub{margin-top:12px; font-family:var(--font-data); font-size:18px; color:var(--ink-dim)}
+.db-chart{position:absolute; left:var(--pad-x); right:var(--pad-x); top:300px; bottom:var(--pad-bottom)}
+.db-chart svg{width:100%; height:100%; overflow:visible}
+.db-chart .axis{stroke:var(--grid); stroke-width:1}
+.db-chart .axlab{font-family:var(--font-data); font-size:12px; fill:var(--ink-dim); font-variant-numeric:tabular-nums; text-anchor:middle}
+.db-chart .name{font-family:var(--font-data); font-size:16px; fill:var(--ink-dim); text-anchor:end}
+.db-chart .name.lead{fill:var(--ink); font-weight:600}
+.db-chart .link{stroke:var(--data-mute); stroke-width:3}
+.db-chart .link.lead{stroke:var(--accent)}
+.db-chart .d20{fill:var(--bg); stroke:var(--data-mute); stroke-width:2}
+.db-chart .d26{fill:var(--data-mute)}
+.db-chart .d20.lead{stroke:var(--accent)}
+.db-chart .d26.lead{fill:var(--accent)}
+.db-chart .gain{font-family:var(--font-data); font-size:13px; fill:var(--ink-dim); font-variant-numeric:tabular-nums; text-anchor:middle}
+.db-chart .gain.lead{fill:var(--accent); font-weight:600}
+.db-chart .leg{font-family:var(--font-data); font-size:13px; fill:var(--ink-dim)}
+.db-chart .anno{font-family:var(--font-data); font-weight:500; font-size:16px; fill:var(--accent)}
+.db-chart .anno-note{font-family:var(--font-data); font-size:12px; fill:var(--ink-dim)}
+.db-source{position:absolute; left:var(--pad-x); bottom:36px; font-family:var(--font-mono); font-size:12px; color:var(--ink-faint)}
+
+/* ===== 新版式 CSS（workflow·11 版式） ===== */
+/* ---- agenda（章节导览 · ground/calm · 左对齐栏式 + hairline 分隔 + 巨序号） ---- */
+.agendapg .ag-head{position:absolute; left:var(--pad-x); top:146px}
+.agendapg .ag-head .h{font-family:var(--font-cjk); font-weight:500; font-size:42px; line-height:1.22; color:var(--ink); letter-spacing:.01em}
+.agendapg .ag-head .sub{margin-top:16px; font-family:var(--font-data); font-size:18px; color:var(--ink-dim)}
+.agendapg .ag-row{position:absolute; left:var(--pad-x); right:var(--pad-x); display:grid; grid-template-columns:132px 1fr; column-gap:48px; align-items:start; border-top:1px solid var(--hairline); padding-top:16px}
+.agendapg .ag-num{font-family:var(--font-data); font-weight:500; font-size:64px; line-height:1; color:var(--accent); font-variant-numeric:tabular-nums; letter-spacing:-.01em}
+.agendapg .ag-name{display:flex; align-items:baseline; gap:16px; font-family:var(--font-cjk); font-weight:500; font-size:28px; line-height:1; color:var(--ink)}
+.agendapg .ag-name .sq{width:11px; height:11px; background:var(--accent-hot); transform:translateY(-2px); flex:none}
+.agendapg .ag-en{margin-top:16px; font-family:var(--font-data); font-weight:600; font-size:13px; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-faint)}
+.agendapg .ag-desc{margin-top:8px; font-family:var(--font-data); font-size:17px; line-height:1.5; color:var(--ink-dim)}
+.agendapg .ag-source{position:absolute; left:var(--pad-x); bottom:36px; font-family:var(--font-mono); font-size:12px; color:var(--ink-faint)}
+/* ---- section-divider（章节分隔 · ground · 单判断 · 巨号 + 大留白；曲线预览本章论点·非装饰） ---- */
+.divpg .dv-kicker{position:absolute; left:84px; top:214px; font-family:var(--font-mono); font-size:14px; letter-spacing:.22em; text-transform:uppercase; color:var(--ink-dim)}
+.divpg .dv-num{position:absolute; left:76px; top:236px; font-family:var(--font-data); font-weight:500; font-size:220px; line-height:.9; color:var(--ink); font-variant-numeric:tabular-nums; letter-spacing:-.02em}
+.divpg .dv-name{position:absolute; left:432px; top:300px; font-family:var(--font-cjk); font-weight:500; font-size:72px; line-height:1; color:var(--accent); letter-spacing:.02em}
+.divpg .dv-en{position:absolute; left:436px; top:404px; font-family:var(--font-mono); font-size:15px; letter-spacing:.42em; text-transform:uppercase; color:var(--ink-dim)}
+.divpg .dv-rule{position:absolute; left:436px; top:444px; width:96px; height:2px; background:var(--accent-hot)}
+.divpg .dv-guide{position:absolute; left:80px; bottom:152px; display:flex; align-items:center; gap:16px; font-family:var(--font-cjk); font-weight:500; font-size:26px; color:var(--ink-dim)}
+.divpg .dv-guide .sq{width:11px; height:11px; background:var(--accent-hot); flex:none}
+.divpg .dv-spark{position:absolute; right:80px; bottom:160px; width:360px; height:150px}
+.divpg .dv-spark .mute{fill:none; stroke:var(--data-mute); stroke-width:2}
+.divpg .dv-spark .peak{fill:var(--accent-hot)}
+.divpg .dv-source{position:absolute; left:80px; bottom:36px; font-family:var(--font-mono); font-size:12px; color:var(--ink-faint)}
+/* ---- data-kpi（关键数字阵 · KPI 墙 · insight/blast · 三巨号 + 标签 + 判断，中间橙点睛） ---- */
+  .kpi-head{position:absolute; left:var(--pad-x); top:146px; max-width:880px}
+  .kpi-head .h{font-family:var(--font-cjk); font-weight:500; font-size:38px; line-height:1.2; color:var(--ink)}
+  .kpi-head .sub{margin-top:16px; font-family:var(--font-data); font-size:18px; color:var(--ink-dim)}
+  .kpi-wall{position:absolute; left:var(--pad-x); right:var(--pad-x); top:288px; display:grid; grid-template-columns:repeat(3,1fr); gap:64px}
+  .kpi-cell{position:relative; border-top:1.5px solid var(--ink); padding-top:24px}
+  .kpi-num{font-family:var(--font-data); font-weight:600; font-size:110px; line-height:.9; color:var(--accent); font-variant-numeric:tabular-nums; letter-spacing:-.01em}
+  .kpi-num .unit{font-size:48px; font-weight:500; color:var(--ink-dim); margin-left:8px; letter-spacing:0}
+  .kpi-cell.is-hot{border-top-color:var(--accent-hot)}
+  .kpi-cell.is-hot .kpi-num{color:var(--accent-hot)}
+  .kpi-cell.is-hot .kpi-num .unit{color:var(--ink-dim)}
+  .kpi-lbl{margin-top:24px; font-family:var(--font-cjk); font-weight:500; font-size:18px; color:var(--ink)}
+  .kpi-note{margin-top:8px; font-family:var(--font-data); font-size:14px; line-height:1.45; color:var(--ink-dim)}
+  .kpi-foot{position:absolute; left:var(--pad-x); right:var(--pad-x); top:608px; display:flex; align-items:baseline; gap:16px; flex-wrap:wrap}
+  .kpi-foot .anno{font-family:var(--font-data); font-weight:600; font-size:17px; color:var(--accent)}
+  .kpi-foot .anno-note{font-family:var(--font-data); font-size:14px; color:var(--ink-dim)}
+  .kpi-source{position:absolute; left:var(--pad-x); bottom:36px; font-family:var(--font-mono); font-size:12px; color:var(--ink-faint)}
+/* ---- compare-split（对照双栏：中线分左右·横条朝中线对峙·标注层即论证 · #09） ---- */
+.cmppg .cmp-intro{position:absolute; left:var(--pad-x); top:146px; max-width:880px; font-family:var(--font-cjk); font-weight:500; font-size:32px; line-height:1.25; color:var(--ink)}
+.cmppg .cmp-cols{position:absolute; left:var(--pad-x); right:var(--pad-x); top:214px; height:96px}
+.cmppg .cmp-col{position:absolute; top:0; width:360px; text-align:center}
+.cmppg .cmp-col.l{left:100px}
+.cmppg .cmp-col.r{right:100px}
+.cmppg .cmp-name{font-family:var(--font-cjk); font-weight:500; font-size:46px; line-height:1; color:var(--ink-dim)}
+.cmppg .cmp-col.r .cmp-name{color:var(--accent)}
+.cmppg .cmp-tag{margin-top:16px; font-family:var(--font-data); font-weight:500; font-size:15px; letter-spacing:.04em; color:var(--ink-dim)}
+.cmppg .cmp-col.r .cmp-tag{color:var(--accent)}
+.cmppg .cmp-chart{position:absolute; left:var(--pad-x); right:var(--pad-x); top:324px; bottom:168px}
+.cmppg .cmp-chart svg{width:100%; height:100%; overflow:visible}
+.cmppg .cmp-chart .divider{stroke:var(--grid); stroke-width:1}
+.cmppg .cmp-chart .mhalo{fill:var(--bg)}
+.cmppg .cmp-chart .mlabel{font-family:var(--font-data); font-weight:600; font-size:13px; letter-spacing:.08em; fill:var(--ink-dim)}
+.cmppg .cmp-chart .bar{fill:var(--data-mute)}
+.cmppg .cmp-chart .bar.us{fill:var(--accent)}
+.cmppg .cmp-chart .bval{font-family:var(--font-data); font-weight:600; font-size:18px; fill:var(--ink-dim); font-variant-numeric:tabular-nums}
+.cmppg .cmp-chart .bval.us{fill:var(--ink)}
+.cmppg .cmp-judge{position:absolute; left:var(--pad-x); right:var(--pad-x); top:600px; text-align:center}
+.cmppg .cmp-judge .anno{font-family:var(--font-cjk); font-weight:500; font-size:22px; color:var(--accent); letter-spacing:.01em}
+.cmppg .cmp-judge .anno-note{margin-top:8px; font-family:var(--font-data); font-size:14px; color:var(--ink-dim)}
+.cmppg .cmp-source{position:absolute; left:var(--pad-x); bottom:36px; font-family:var(--font-mono); font-size:12px; color:var(--ink-faint)}
+@media (prefers-reduced-motion:no-preference){
+  html.js .cmppg.slide.is-active .cmp-chart .bar{transform:scaleX(0); transform-box:fill-box; animation:growX .7s var(--ease) forwards}
+  html.js .cmppg.slide.is-active .cmp-chart .bar.cn{transform-origin:right}
+  html.js .cmppg.slide.is-active .cmp-chart .bar.us{transform-origin:left}
+}
+/* ---- data-table（数据表格化 · 列=指标 行=区域 · 斑马纹 + 高亮行 + 极淡分隔线 · 标注层即论证） ---- */
+.tbl-head{position:absolute; left:var(--pad-x); top:146px; max-width:880px}
+.tbl-head .h{font-family:var(--font-cjk); font-weight:500; font-size:38px; line-height:1.2; color:var(--ink)}
+.tbl-head .sub{margin-top:16px; font-family:var(--font-data); font-size:18px; color:var(--ink-dim)}
+.tbl{position:absolute; left:var(--pad-x); right:var(--pad-x); top:316px; bottom:var(--pad-bottom)}
+.tbl-row{display:grid; grid-template-columns:248px repeat(3,1fr); align-items:center; height:56px; position:relative; border-bottom:1px solid var(--hairline)}
+.tbl-row:nth-of-type(odd){background:var(--surface)}
+.tbl-hrow{height:52px; background:none; border-bottom:1px solid var(--ink)}
+.tbl-region{padding:0 24px; font-family:var(--font-data); font-weight:500; font-size:18px; color:var(--ink)}
+.td{padding:0 24px; font-family:var(--font-data); font-weight:500; font-size:19px; color:var(--ink); text-align:right; font-variant-numeric:tabular-nums lining-nums}
+.th{padding:0 24px; font-family:var(--font-data); font-weight:600; font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-dim)}
+.th.tbl-region{font-weight:600; font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-dim); text-align:left}
+.th.tnum{text-align:right; font-variant-numeric:tabular-nums}
+.th .uu,.td .uu{font-weight:400; color:var(--ink-faint); margin-left:8px}
+.tnum{font-variant-numeric:tabular-nums lining-nums}
+.tbl-row.is-lead{background:var(--surface-2); box-shadow:inset 3px 0 0 0 var(--accent)}
+.tbl-row.is-lead .tbl-region{color:var(--accent); font-weight:600}
+.tbl-row.is-lead .lead-cell{color:var(--accent); font-weight:600}
+/* 判断标注层：占据标题与表之间的空带，右对齐对准高亮列，不挤表宽（表满宽无侧栏） */
+.tbl-anno{position:absolute; right:var(--pad-x); top:250px; width:560px; display:flex; flex-direction:column; align-items:flex-end; pointer-events:none}
+.tbl-anno .anno-k{display:flex; align-items:center; gap:8px; font-family:var(--font-data); font-weight:600; font-size:17px; color:var(--accent)}
+.tbl-anno .anno-k::before{content:""; width:9px; height:9px; background:var(--accent); flex:none}
+.tbl-anno .anno-s{margin-top:8px; font-family:var(--font-data); font-size:13px; line-height:1.5; color:var(--ink-dim); text-align:right}
+.tbl-source{position:absolute; left:var(--pad-x); bottom:36px; font-family:var(--font-mono); font-size:12px; color:var(--ink-faint)}
+/* ---- area-stack（百分百堆叠面积：构成随时间迁移 · 重心转移 · 标注层即论证） ---- */
+.ar-head{position:absolute; left:var(--pad-x); top:146px; max-width:880px}
+.ar-head .h{font-family:var(--font-cjk); font-weight:500; font-size:42px; line-height:1.22; color:var(--ink); letter-spacing:.01em}
+.ar-head .sub{margin-top:16px; font-family:var(--font-data); font-size:18px; color:var(--ink-dim)}
+.ar-chart{position:absolute; left:var(--pad-x); right:var(--pad-x); top:300px; bottom:var(--pad-bottom)}
+.ar-chart svg{width:100%; height:100%; overflow:visible}
+.ar-grid{stroke:var(--grid); stroke-width:1}
+.ar-base{stroke:var(--ink-faint); stroke-width:1}
+.ar-band{stroke:none}
+.ar-train{fill:var(--seq-5)}
+.ar-infer{fill:var(--seq-3)}
+.ar-edge{fill:var(--seq-2)}
+.ar-sep{fill:none; stroke:var(--bg); stroke-width:1.25; opacity:.55}
+.ar-hot{fill:var(--accent-hot)}
+.ar-end{font-family:var(--font-data); font-weight:500; font-size:16px; fill:var(--ink)}
+.ar-end-v{font-family:var(--font-data); font-weight:600; font-size:16px; fill:var(--ink); font-variant-numeric:tabular-nums}
+.ar-end-on-dark{fill:var(--bg)}
+.ar-end-hero{fill:var(--accent)}
+.ar-guide{stroke:var(--accent); stroke-width:1; stroke-dasharray:4 3}
+.ar-axlab{font-family:var(--font-data); font-size:13px; fill:var(--ink-dim); font-variant-numeric:tabular-nums}
+.ar-ylab{font-family:var(--font-data); font-size:12px; fill:var(--ink-dim); font-variant-numeric:tabular-nums; text-anchor:end}
+.ar-source{position:absolute; left:var(--pad-x); bottom:36px; font-family:var(--font-mono); font-size:12px; color:var(--ink-faint)}
+/* 数据先于判断：面积层 L→R 揭示（时间方向），末端直标随后淡入；reduced-motion / no-js 直接终态 */
+@media (prefers-reduced-motion:no-preference){
+  html.js .arstack .ar-band{clip-path:inset(0 100% 0 0)}
+  html.js .arstack.is-active .ar-band{animation:arWipe 1s var(--ease) forwards}
+  @keyframes arWipe{to{clip-path:inset(0 0 0 0)}}
+  html.js .arstack .ar-end,html.js .arstack .ar-end-v,html.js .arstack .ar-hot,html.js .arstack .ar-sep{opacity:0}
+  html.js .arstack.is-active .ar-end,html.js .arstack.is-active .ar-end-v,html.js .arstack.is-active .ar-hot,html.js .arstack.is-active .ar-sep{animation:arFade .5s var(--ease) .95s forwards}
+  @keyframes arFade{from{opacity:0} to{opacity:1}}
+}
+/* ---- scatter（散点/气泡图：规模×效率×投资 三变量 · 赢家象限高亮 · 标注层即论证） ---- */
+.sc-head{position:absolute; left:var(--pad-x); top:146px; max-width:880px}
+.sc-head .h{font-family:var(--font-cjk); font-weight:500; font-size:38px; line-height:1.2; color:var(--ink)}
+.sc-head .sub{margin-top:16px; font-family:var(--font-data); font-size:18px; color:var(--ink-dim)}
+.sc-chart{position:absolute; left:var(--pad-x); right:var(--pad-x); top:300px; bottom:var(--pad-bottom)}
+.sc-chart svg{width:100%; height:100%; overflow:visible}
+.sc-chart .grid{stroke:var(--grid); stroke-width:1}
+.sc-chart .axis{stroke:var(--ink-faint); stroke-width:1}
+.sc-chart .quad{fill:var(--accent); opacity:.05}
+.sc-chart .quad-line{stroke:var(--accent); stroke-width:1; stroke-dasharray:4 4; opacity:.45}
+.sc-chart .bub{fill:none; stroke:var(--data-mute); stroke-width:2}
+.sc-chart .bub.lead{fill:var(--accent); fill-opacity:.92; stroke:var(--accent); stroke-width:0}
+.sc-chart .blab{font-family:var(--font-data); font-size:14px; fill:var(--ink-dim); font-variant-numeric:tabular-nums}
+.sc-chart .blab.lead{fill:var(--bg); font-weight:600; text-anchor:middle}
+.sc-chart .axlab{font-family:var(--font-data); font-size:13px; fill:var(--ink-dim); font-variant-numeric:tabular-nums; text-anchor:middle}
+.sc-chart .ylab{font-family:var(--font-data); font-size:12px; fill:var(--ink-dim); font-variant-numeric:tabular-nums; text-anchor:end}
+.sc-chart .axtitle{font-family:var(--font-data); font-weight:500; font-size:13px; fill:var(--ink-dim); letter-spacing:.04em}
+.sc-chart .quad-tag{font-family:var(--font-data); font-weight:600; font-size:13px; fill:var(--accent); letter-spacing:.02em}
+.sc-chart .guide{stroke:var(--accent); stroke-width:1; stroke-dasharray:4 3}
+.sc-source{position:absolute; left:var(--pad-x); bottom:36px; font-family:var(--font-mono); font-size:12px; color:var(--ink-faint)}
+
+/* ---- statement-serif（陈述→判断 双层修辞 · 上三行小字事实 / 下巨大判断句 · 私有命名空间 .sts-） ---- */
+.sts-facts{position:absolute; left:var(--pad-x); top:188px}
+.sts-fact{font-family:var(--font-data); font-weight:400; font-size:16px; line-height:1.5; color:var(--ink-dim); font-variant-numeric:tabular-nums; display:flex; align-items:baseline; gap:8px}
+.sts-fact + .sts-fact{margin-top:16px}
+.sts-fact .dot{color:var(--accent); font-weight:600}
+.sts-rule{position:absolute; left:var(--pad-x); top:362px; width:64px; height:2px; background:var(--accent)}
+.sts-claim{position:absolute; left:var(--pad-x); right:var(--pad-x); top:426px; font-family:var(--font-cjk); font-weight:500; font-size:60px; line-height:1.2; color:var(--ink); letter-spacing:.005em}
+.sts-claim .sts-key{font-style:normal; color:var(--accent)}
+.sts-source{position:absolute; left:var(--pad-x); bottom:36px; font-family:var(--font-mono); font-size:12px; color:var(--ink-faint)}
+/* ---- waterfall（瀑布图：基线→增量拆解→终值 · 浮动增量柱 + 累积虚线 · 最大单一增量点睛 · 标注层即论证） ---- */
+.wf-head{position:absolute; left:var(--pad-x); top:146px; max-width:880px}
+.wf-head .h{font-family:var(--font-cjk); font-weight:500; font-size:38px; line-height:1.2; color:var(--ink)}
+.wf-head .sub{margin-top:16px; font-family:var(--font-data); font-size:18px; color:var(--ink-dim)}
+.wf-chart{position:absolute; left:var(--pad-x); right:var(--pad-x); top:300px; bottom:var(--pad-bottom)}
+.wf-chart svg{width:100%; height:100%; overflow:visible}
+.wf-chart .grid{stroke:var(--grid); stroke-width:1}
+.wf-chart .ylab{font-family:var(--font-data); font-size:12px; fill:var(--ink-dim); font-variant-numeric:tabular-nums; text-anchor:end}
+.wf-chart .bar{fill:var(--accent)}
+.wf-chart .bar.end{fill:var(--accent)}
+.wf-chart .bar.peak{fill:var(--accent-hot)}
+.wf-chart .wf-link{stroke:var(--ink-faint); stroke-width:1; stroke-dasharray:4 3}
+.wf-chart .wf-gain{font-family:var(--font-data); font-weight:600; font-size:15px; fill:var(--accent); font-variant-numeric:tabular-nums}
+.wf-chart .wf-gain.hot{fill:var(--accent-hot)}
+.wf-chart .wf-tot{font-family:var(--font-data); font-weight:600; font-size:15px; fill:var(--ink); font-variant-numeric:tabular-nums}
+.wf-chart .wf-tot.end{fill:var(--accent)}
+.wf-chart .wf-cat{font-family:var(--font-data); font-size:13px; fill:var(--ink-dim); font-variant-numeric:tabular-nums}
+.wf-chart .wf-cat.hot{fill:var(--accent-hot); font-weight:600}
+.wf-chart .guide{stroke:var(--accent); stroke-width:1; stroke-dasharray:4 3}
+.wf-chart .anno{font-family:var(--font-data); font-weight:500; font-size:16px; fill:var(--accent)}
+.wf-chart .anno-note{font-family:var(--font-data); font-size:12px; fill:var(--ink-dim)}
+.wf-source{position:absolute; left:var(--pad-x); bottom:36px; font-family:var(--font-mono); font-size:12px; color:var(--ink-faint)}
+/* 数据动效：柱 grow（各自底边升起）后判断标注延迟淡入——揭示节奏即论证；reduced-motion 时整体失效→终态 */
+@media (prefers-reduced-motion:no-preference){
+  html.js .wf-chart .bar{transform:scaleY(0); transform-box:fill-box; transform-origin:bottom}
+  html.js .slide.is-active .wf-chart .bar{animation:growY .55s var(--ease) forwards}
+  html.js .wf-chart .wf-gain,html.js .wf-chart .wf-tot,html.js .wf-chart .wf-cat,html.js .wf-chart .wf-link,html.js .wf-chart .guide,html.js .wf-chart .anno,html.js .wf-chart .anno-note{opacity:0}
+  html.js .slide.is-active .wf-chart .wf-gain,html.js .slide.is-active .wf-chart .wf-tot,html.js .slide.is-active .wf-chart .wf-cat,html.js .slide.is-active .wf-chart .wf-link,html.js .slide.is-active .wf-chart .guide,html.js .slide.is-active .wf-chart .anno,html.js .slide.is-active .wf-chart .anno-note{animation:riseIn .5s var(--ease) .6s forwards}
+}
+/* ---- quote（ground · 引言页：巨大引号 + 大号引言，论点即基础设施 · energy=half 克制留白） ---- */
+.quotepg .qt-mark{position:absolute; left:72px; top:150px; font-family:var(--font-cjk); font-weight:500; font-size:208px; line-height:1; color:var(--accent); user-select:none; pointer-events:none}
+.quotepg .qt-body{position:absolute; left:80px; right:var(--pad-x); top:300px; max-width:1040px; font-family:var(--font-cjk); font-weight:500; font-size:40px; line-height:1.4; color:var(--ink); letter-spacing:.01em}
+.quotepg .qt-body .qt-num{font-family:var(--font-data); font-weight:600; font-variant-numeric:tabular-nums}
+.quotepg .qt-body em{font-style:normal; color:var(--accent)}
+.quotepg .qt-cite{position:absolute; left:80px; top:486px; font-family:var(--font-mono); font-size:15px; letter-spacing:.02em; color:var(--ink-dim)}
+.quotepg .qt-source{position:absolute; left:var(--pad-x); bottom:36px; font-family:var(--font-mono); font-size:12px; color:var(--ink-faint)}
+/* ---- method-source（方法与来源·诚实声明 · ground/calm · 三栏 hairline · 标注纪律=诚实层即论证） ---- */
+  .ms-head{position:absolute; left:var(--pad-x); top:146px; max-width:920px}
+  .ms-head .h{font-family:var(--font-cjk); font-weight:500; font-size:42px; line-height:1.22; color:var(--ink); letter-spacing:.01em}
+  .ms-head .sub{margin-top:16px; font-family:var(--font-data); font-size:18px; color:var(--ink-dim)}
+  .ms-cols{position:absolute; left:var(--pad-x); right:var(--pad-x); top:300px; bottom:120px;
+    display:grid; grid-template-columns:repeat(3,1fr); gap:64px}
+  .ms-rule{position:absolute; top:0; bottom:0; width:1px; background:var(--hairline)}
+  .ms-col{position:relative; display:flex; flex-direction:column}
+  .ms-no{font-family:var(--font-mono); font-weight:500; font-size:34px; line-height:1; color:var(--accent); font-variant-numeric:tabular-nums; letter-spacing:.02em}
+  .ms-k{margin-top:16px; font-family:var(--font-mono); font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-faint)}
+  .ms-h{margin-top:24px; font-family:var(--font-cjk); font-weight:500; font-size:21px; line-height:1.3; color:var(--ink)}
+  .ms-b{margin-top:16px; font-family:var(--font-data); font-size:15px; line-height:1.66; color:var(--ink-dim)}
+  .ms-b .ms-em{font-weight:600; color:var(--ink)}
+  .ms-b .ms-hot{color:var(--accent-hot)}
+  .ms-tag{margin-top:32px; align-self:flex-start; display:inline-flex; align-items:center; gap:8px;
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.04em; color:var(--accent);
+    border-top:1px solid var(--hairline); padding-top:16px}
+  .ms-tag-hot{color:var(--accent-hot)}
+  .ms-tag .dot{width:8px; height:8px; background:var(--accent-hot); flex:none}
+  .ms-source{position:absolute; left:var(--pad-x); bottom:36px; font-family:var(--font-mono); font-size:12px; color:var(--ink-faint)}
+
+/* ---- final（act · 数据指向的行动·收尾回峰） ---- */
+.finalpg .fin-head{position:absolute; left:var(--pad-x); top:208px; max-width:960px}
+.finalpg .lead{font-family:var(--font-data); font-size:20px; color:var(--accent); letter-spacing:.04em; margin-bottom:16px}
+.finalpg .h{font-family:var(--font-cjk); font-weight:500; font-size:96px; line-height:1.18; color:var(--ink); white-space:nowrap}
+.finalpg .h em{font-style:normal; color:var(--accent)}
+.finalpg .fin-source{position:absolute; left:var(--pad-x); bottom:36px; font-family:var(--font-mono); font-size:12px; color:var(--ink-faint)}
+</style>
+</head>
+
+<body>
+<div class="nojs-hint">本演示用 ← → 翻页；当前为无脚本竖排兜底。</div>
+<div class="stage"><div class="deck" id="deck">
+
+  <!-- 01 DATA COVER -->
+  <!-- 01 -->
+  <section class="slide cover" data-layout="data-cover" data-role="state" data-energy="blast">
+    <div class="eyebrow"><span class="sq"></span>算力经济 · COMPUTE ECONOMY</div>
+    <div class="folio">DATA · 01 / 20</div>
+    <div class="toprule"></div>
+    <div class="kicker">2020–2026 · 全球 AI 算力支出</div>
+    <div class="bignum">12<span class="unit">×</span></div>
+    <div class="subclaim"><span class="sq"></span>六年十二倍——这不是成本，是新的资本开支</div>
+    <svg class="spark diagram" viewBox="0 0 360 200" role="img" aria-label="算力支出 sparkline 示意，2024 拐点">
+      <polyline class="mute" pathLength="1" points="0,176 72,172 144,170 216,168 288,166 360,164"/>
+      <polyline class="lead" pathLength="1" points="0,180 72,166 144,148 216,116 288,64 360,16"/>
+      <circle class="peak" cx="216" cy="116" r="5"/>
+    </svg>
+    <div class="source">示意数据 · 形态演示（非真实财报）</div>
+  </section>
+
+  <!-- 02 -->
+  <section class="slide agendapg" data-layout="agenda" data-role="state" data-energy="calm">
+  <div class="eyebrow"><span class="sq"></span>算力经济 · COMPUTE ECONOMY</div>
+  <div class="folio">DATA · 02 / 20</div>
+  <div class="toprule"></div>
+  <div class="ag-head">
+    <div class="h">本场三章</div>
+    <div class="sub">从趋势，到格局，再到拐点——一条线索，三个判断。</div>
+  </div>
+  <div class="ag-row" style="top:290px">
+    <div class="ag-num">01</div>
+    <div>
+      <div class="ag-name">趋势</div>
+      <div class="ag-en">The Trend</div>
+      <div class="ag-desc">算力支出的非线性拐点——这条曲线，2024 年起不再是直线。</div>
+    </div>
+  </div>
+  <div class="ag-row" style="top:418px">
+    <div class="ag-num">02</div>
+    <div>
+      <div class="ag-name">格局</div>
+      <div class="ag-en">The Landscape</div>
+      <div class="ag-desc">谁在出钱、谁在领跑——同一块蛋糕，切法已经换了人。</div>
+    </div>
+  </div>
+  <div class="ag-row" style="top:546px">
+    <div class="ag-num">03</div>
+    <div>
+      <div class="ag-name">拐点</div>
+      <div class="ag-en">The Inflection</div>
+      <div class="ag-desc">效率、构成与风险——增长之后，真正要回答的三个问题。</div>
+    </div>
+  </div>
+  <div class="ag-source">示意 · 全场结构导览（非真实数据）</div>
+</section>
+
+  <!-- 03 -->
+  <section class="slide divpg" data-layout="section-divider" data-role="ground" data-energy="half">
+    <div class="eyebrow"><span class="sq"></span>算力经济 · COMPUTE ECONOMY</div>
+    <div class="folio">DATA · 03 / 20</div>
+    <div class="toprule"></div>
+    <div class="dv-kicker">第一章</div>
+    <div class="dv-num">01</div>
+    <div class="dv-name">趋势</div>
+    <div class="dv-en">THE TREND</div>
+    <div class="dv-rule"></div>
+    <div class="dv-guide"><span class="sq"></span>先看这条不再线性的曲线</div>
+    <svg class="dv-spark diagram" viewBox="0 0 360 150" preserveAspectRatio="xMidYMid meet" role="img" aria-label="本章预览：算力曲线由平缓转为指数级抬升的形态示意，末端拐点高亮">
+      <polyline class="mute" pathLength="1" points="0,132 58,128 117,122 175,110 233,88 292,52 350,12"/>
+      <circle class="peak" cx="350" cy="12" r="5"/>
+    </svg>
+    <div class="dv-source">本章导引 · 形态预览(非真实数据)</div>
+  </section>
+
+  <!-- 04 -->
+  <section class="slide chartlead" data-layout="chart-lead" data-role="insight" data-energy="calm">
+    <div class="eyebrow"><span class="sq"></span>算力经济 · COMPUTE ECONOMY</div>
+    <div class="folio">DATA · 04 / 20</div>
+    <div class="toprule"></div>
+    <div class="cl-head">
+      <div class="h">算力支出，正从「成本」变成「资本」</div>
+      <div class="sub">2024 年起，这条曲线不再线性。</div>
+    </div>
+    <div class="cl-chart">
+      <svg class="diagram" viewBox="0 0 1120 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="AI 算力 capex 折线图：2020 与传统 IT 同起点约 1.5 万亿美元，此后 AI 指数级加速至 2026 约 6 万亿、2024 拐点 3.2 万亿，传统 IT 平缓至约 2.4 万亿（示意）">
+        <line class="grid" x1="110" y1="40" x2="940" y2="40"/>
+        <line class="grid" x1="110" y1="112" x2="940" y2="112"/>
+        <line class="grid" x1="110" y1="185" x2="940" y2="185"/>
+        <line class="grid" x1="110" y1="258" x2="940" y2="258"/>
+        <text class="ylab" x="98" y="44">$6T</text>
+        <text class="ylab" x="98" y="116">$4T</text>
+        <text class="ylab" x="98" y="189">$2T</text>
+        <text class="ylab" x="98" y="262">$0</text>
+        <polyline class="mute-line" pathLength="1" points="110,201 248,199 386,194 524,187 662,182 800,176 940,171"/>
+        <text class="endlab" x="946" y="174" style="fill:var(--ink-dim);font-weight:400">传统 IT</text>
+        <polyline class="lead-line" pathLength="1" points="110,201 248,196 386,180 524,158 662,140 800,92 940,40"/>
+        <text class="endlab" x="946" y="40" style="fill:var(--accent)">AI 算力 capex</text>
+        <text class="endlab" x="946" y="57" style="fill:var(--ink-dim);font-weight:400">≈ $6T</text>
+        <line class="guide" x1="620" y1="114" x2="658" y2="138"/>
+        <circle class="peak" cx="662" cy="140" r="5.5"/>
+        <text class="anno" x="430" y="92">2024 拐点 · $3.2T</text>
+        <text class="anno-note" x="430" y="110">曲线转折——指数级甩开传统 IT</text>
+        <text class="axlab" x="110" y="284" text-anchor="middle">2020</text>
+        <text class="axlab" x="386" y="284" text-anchor="middle">2022</text>
+        <text class="axlab" x="662" y="284" text-anchor="middle">2024</text>
+        <text class="axlab" x="940" y="284" text-anchor="middle">2026</text>
+      </svg>
+    </div>
+    <div class="cl-source">示意数据 · 形态演示（非真实财报）</div>
+  </section>
+
+  <!-- 05 -->
+  <section class="slide kpipg" data-layout="data-kpi" data-role="insight" data-energy="blast">
+    <div class="eyebrow"><span class="sq"></span>算力经济 · COMPUTE ECONOMY</div>
+    <div class="folio">DATA · 05 / 20</div>
+    <div class="toprule"></div>
+    <div class="kpi-head">
+      <div class="h">三个数字，框定这门生意的盘面</div>
+      <div class="sub">规模、速度、集中度——一眼读完算力经济的当下结构（示意）。</div>
+    </div>
+    <div class="kpi-wall">
+
+      <div class="kpi-cell">
+        <div class="kpi-num">$6<span class="unit">T</span></div>
+        <div class="kpi-lbl">2026 市场规模</div>
+        <div class="kpi-note">全球 AI 算力支出总盘，六年 ×12（示意）</div>
+      </div>
+
+      <div class="kpi-cell is-hot">
+        <div class="kpi-num">+214<span class="unit">%</span></div>
+        <div class="kpi-lbl">2024 同比增速</div>
+        <div class="kpi-note">拐点之年，需求超出所有产能预期（示意）</div>
+      </div>
+
+      <div class="kpi-cell">
+        <div class="kpi-num">73<span class="unit">%</span></div>
+        <div class="kpi-lbl">头部集中度 · 前二占比</div>
+        <div class="kpi-note">两强吃下近四分之三，长尾被持续挤压（示意）</div>
+      </div>
+
+    </div>
+    <div class="kpi-foot"><span class="anno">不是均匀大市场</span><span class="anno-note">——高速扩张 + 高度集中，窗口属于头部</span></div>
+    <div class="kpi-source">示意 · 盘面结构演示（非真实市场数据）</div>
+  </section>
+
+  <!-- 06 -->
+  <section class="slide slopepg" data-layout="slope-compare" data-role="insight" data-energy="half">
+    <div class="eyebrow"><span class="sq"></span>算力经济 · COMPUTE ECONOMY</div>
+    <div class="folio">DATA · 06 / 20</div>
+    <div class="toprule"></div>
+    <div class="sl-head">
+      <div class="h">谁在出钱——算力投入的主体正在洗牌</div>
+      <div class="sub">同一块蛋糕，2020 与 2026 的切法已经不同（份额示意）。</div>
+    </div>
+    <div class="sl-chart">
+      <svg class="diagram" viewBox="0 0 1120 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="算力投入主体份额斜率图：云厂商 68% 降至 52%，企业自建 24% 降至 21%，主权算力 8% 升至 27% 反超企业自建（示意）">
+        <text class="col" x="380" y="22" text-anchor="middle">2020</text>
+        <text class="col" x="740" y="22" text-anchor="middle">2026</text>
+        <line class="slope" pathLength="1" x1="380" y1="54" x2="740" y2="109"/>
+        <circle class="dot" cx="380" cy="54" r="4"/><circle class="dot" cx="740" cy="109" r="4"/>
+        <text class="lab" x="364" y="58" text-anchor="end">云厂商 68%</text>
+        <text class="lab" x="756" y="113" text-anchor="start">52% 云厂商</text>
+        <line class="slope" pathLength="1" x1="380" y1="207" x2="740" y2="217"/>
+        <circle class="dot" cx="380" cy="207" r="4"/><circle class="dot" cx="740" cy="217" r="4"/>
+        <text class="lab" x="364" y="211" text-anchor="end">企业自建 24%</text>
+        <text class="lab" x="756" y="221" text-anchor="start">21% 企业自建</text>
+        <line class="slope lead" pathLength="1" x1="380" y1="262" x2="740" y2="196"/>
+        <circle class="dot lead" cx="380" cy="262" r="5"/><circle class="dot lead" cx="740" cy="196" r="5"/>
+        <text class="lab lead" x="364" y="266" text-anchor="end">主权算力 8%</text>
+        <text class="lab lead" x="756" y="200" text-anchor="start">27% 主权算力</text>
+        <line class="guide" x1="528" y1="172" x2="558" y2="226"/>
+        <text class="anno" x="420" y="150">主权算力：3 年涨到 27%</text>
+        <text class="anno-note" x="420" y="168">份额 ×3.4，反超企业自建、成第二极</text>
+      </svg>
+    </div>
+    <div class="sl-source">示意 · 份额形态演示（非真实市场数据）</div>
+  </section>
+
+  <!-- 07 -->
+  <section class="slide divpg" data-layout="section-divider" data-role="ground" data-energy="half">
+    <div class="eyebrow"><span class="sq"></span>算力经济 · COMPUTE ECONOMY</div>
+    <div class="folio">DATA · 07 / 20</div>
+    <div class="toprule"></div>
+    <div class="dv-kicker">第二章</div>
+    <div class="dv-num">02</div>
+    <div class="dv-name">格局</div>
+    <div class="dv-en">THE LANDSCAPE</div>
+    <div class="dv-rule"></div>
+    <div class="dv-guide"><span class="sq"></span>同一块蛋糕，切法已经换了人</div>
+    <div class="dv-source">本章导引 · 形态预览(非真实数据)</div>
+  </section>
+
+  <!-- 08 -->
+  <section class="slide brankpg" data-layout="bar-ranking" data-role="ground" data-energy="calm">
+    <div class="eyebrow"><span class="sq"></span>算力经济 · COMPUTE ECONOMY</div>
+    <div class="folio">DATA · 08 / 20</div>
+    <div class="toprule"></div>
+    <div class="br-head">
+      <div class="h">2026：钱往哪去</div>
+      <div class="sub">AI 算力 capex 规模排名——头部断层，不是梯度（示意）。</div>
+    </div>
+    <div class="br-wrap">
+      <div class="br-row lead"><div class="name">美国</div><div class="track"><div class="fill" style="width:100%"></div></div><div class="v">$2.40<span class="u">T</span></div></div>
+      <div class="br-row lead"><div class="name">中国</div><div class="track"><div class="fill" style="width:65%"></div></div><div class="v">$1.55<span class="u">T</span></div></div>
+      <div class="br-split"><span>断层 · 头部两强 ≈ 75%，长尾三地合计 ≈ 25%</span></div>
+      <div class="br-row"><div class="name">欧盟</div><div class="track"><div class="fill" style="width:27%"></div></div><div class="v">$0.64<span class="u">T</span></div></div>
+      <div class="br-row"><div class="name">中东</div><div class="track"><div class="fill" style="width:15%"></div></div><div class="v">$0.36<span class="u">T</span></div></div>
+      <div class="br-row"><div class="name">其他</div><div class="track"><div class="fill" style="width:12%"></div></div><div class="v">$0.30<span class="u">T</span></div></div>
+    </div>
+    <div class="br-source">示意 · 规模形态演示（非真实国别数据）</div>
+  </section>
+
+  <!-- 09 -->
+  <section class="slide cmppg" data-layout="compare-split" data-role="insight" data-energy="calm">
+    <div class="eyebrow"><span class="sq"></span>算力经济 · COMPUTE ECONOMY</div>
+    <div class="folio">DATA · 09 / 20</div>
+    <div class="toprule"></div>
+    <div class="cmp-intro">中美算力，同量级、不同结构</div>
+    <div class="cmp-cols">
+      <div class="cmp-col l">
+        <div class="cmp-name">中国</div>
+        <div class="cmp-tag">增速更快</div>
+      </div>
+      <div class="cmp-col r">
+        <div class="cmp-name">美国</div>
+        <div class="cmp-tag">规模 · 能效双领先</div>
+      </div>
+    </div>
+    <div class="cmp-chart">
+      <svg class="diagram" viewBox="0 0 1120 228" preserveAspectRatio="xMidYMid meet" role="img" aria-label="中美算力三指标对照（示意）：横条朝中线对峙、长度即量级。2026 规模美国 2.40 万亿对中国 1.55 万亿，美国领先；6 年增速中国 ×8.6 对美国 ×8.0，中国略快；单位能效美国 0.92 对中国 0.78，美国领先。美国列靛蓝、中国列灰阶降噪。">
+        <line class="divider" x1="560" y1="8" x2="560" y2="220"/>
+        <rect class="bar cn" x="431" y="28" width="109" height="24"/>
+        <rect class="bar us" x="580" y="28" width="168" height="24"/>
+        <rect class="bar cn" x="372" y="102" width="168" height="24"/>
+        <rect class="bar us" x="580" y="102" width="156" height="24"/>
+        <rect class="bar cn" x="398" y="176" width="142" height="24"/>
+        <rect class="bar us" x="580" y="176" width="168" height="24"/>
+        <rect class="mhalo" x="496" y="24" width="128" height="22"/>
+        <text class="mlabel" x="560" y="40" text-anchor="middle">2026 规模</text>
+        <rect class="mhalo" x="496" y="98" width="128" height="22"/>
+        <text class="mlabel" x="560" y="114" text-anchor="middle">6 年增速</text>
+        <rect class="mhalo" x="496" y="172" width="128" height="22"/>
+        <text class="mlabel" x="560" y="188" text-anchor="middle">单位能效</text>
+        <text class="bval cn" x="300" y="46" text-anchor="end">$1.55T</text>
+        <text class="bval us" x="820" y="46" text-anchor="start">$2.40T</text>
+        <text class="bval cn" x="300" y="120" text-anchor="end">×8.6</text>
+        <text class="bval us" x="820" y="120" text-anchor="start">×8.0</text>
+        <text class="bval cn" x="300" y="194" text-anchor="end">0.78</text>
+        <text class="bval us" x="820" y="194" text-anchor="start">0.92</text>
+      </svg>
+    </div>
+    <div class="cmp-judge">
+      <div class="anno">两强总量接近、结构分化</div>
+      <div class="anno-note">美方靠规模与能效、中方靠增速咬住——同体量，不同路径</div>
+    </div>
+    <div class="cmp-source">示意 · 双栏形态对照（非真实国别数据）· 横条朝中线对峙，长度即量级</div>
+  </section>
+
+  <!-- 10 -->
+  <section class="slide smult" data-layout="small-multiples" data-role="ground" data-energy="calm">
+    <div class="eyebrow"><span class="sq"></span>算力经济 · COMPUTE ECONOMY</div>
+    <div class="folio">DATA · 10 / 20</div>
+    <div class="toprule"></div>
+    <div class="sm-head">
+      <div class="h">不止一处——四区域，增速分化</div>
+      <div class="sub">超大规模算力 capex，统一 Y 尺度下高下立见：亚太最陡、其他最缓（示意对比）。</div>
+    </div>
+    <div class="sm-grid">
+      <div class="sm-cell"><div class="lbl">北美</div><div class="val">×9.4（示意）</div>
+        <svg class="diagram" viewBox="0 0 460 130" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><line class="base" x1="0" y1="128" x2="460" y2="128"/><rect class="bar" x="18" y="104" width="50" height="24"/><rect class="bar" x="92" y="96" width="50" height="32"/><rect class="bar" x="166" y="84" width="50" height="44"/><rect class="bar" x="240" y="68" width="50" height="60"/><rect class="bar" x="314" y="48" width="50" height="80"/><rect class="bar peak" x="388" y="24" width="50" height="104"/></svg></div>
+      <div class="sm-cell"><div class="lbl">欧洲</div><div class="val">×6.1（示意）</div>
+        <svg class="diagram" viewBox="0 0 460 130" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><line class="base" x1="0" y1="128" x2="460" y2="128"/><rect class="bar" x="18" y="108" width="50" height="20"/><rect class="bar" x="92" y="102" width="50" height="26"/><rect class="bar" x="166" y="94" width="50" height="34"/><rect class="bar" x="240" y="82" width="50" height="46"/><rect class="bar" x="314" y="68" width="50" height="60"/><rect class="bar peak" x="388" y="50" width="50" height="78"/></svg></div>
+      <div class="sm-cell"><div class="lbl">亚太</div><div class="val">×11.2（示意）</div>
+        <svg class="diagram" viewBox="0 0 460 130" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><line class="base" x1="0" y1="128" x2="460" y2="128"/><rect class="bar" x="18" y="110" width="50" height="18"/><rect class="bar" x="92" y="100" width="50" height="28"/><rect class="bar" x="166" y="84" width="50" height="44"/><rect class="bar" x="240" y="58" width="50" height="70"/><rect class="bar" x="314" y="34" width="50" height="94"/><rect class="bar peak" x="388" y="18" width="50" height="110"/></svg></div>
+      <div class="sm-cell"><div class="lbl">其他</div><div class="val">×4.7（示意）</div>
+        <svg class="diagram" viewBox="0 0 460 130" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><line class="base" x1="0" y1="128" x2="460" y2="128"/><rect class="bar" x="18" y="114" width="50" height="14"/><rect class="bar" x="92" y="110" width="50" height="18"/><rect class="bar" x="166" y="104" width="50" height="24"/><rect class="bar" x="240" y="94" width="50" height="34"/><rect class="bar" x="314" y="82" width="50" height="46"/><rect class="bar peak" x="388" y="68" width="50" height="60"/></svg></div>
+    </div>
+    <div class="sm-source">示意 · 形态对比（非真实区域数据）· 四图统一 Y 尺度，仅地域变量不同</div>
+  </section>
+
+  <!-- 11 -->
+  <section class="slide dumbpg" data-layout="dumbbell" data-role="insight" data-energy="half">
+    <div class="eyebrow"><span class="sq"></span>算力经济 · COMPUTE ECONOMY</div>
+    <div class="folio">DATA · 11 / 20</div>
+    <div class="toprule"></div>
+    <div class="db-head">
+      <div class="h">差距，正在指数级拉大</div>
+      <div class="sub">2020 大家挤在起跑线；2026，头部把长尾甩开一个数量级（示意）。</div>
+    </div>
+    <div class="db-chart">
+      <svg class="diagram" viewBox="0 0 1120 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="哑铃图：各区域 AI 算力规模 2020 到 2026 增长区间，美国由 0.3 增至 2.4 万亿增量最大，长尾区域增量小，头尾差距由 0.26 扩大到 2.1 万亿（示意）">
+        <line class="axis" x1="90" y1="312" x2="980" y2="312"/>
+        <text class="axlab" x="90" y="330">$0</text>
+        <text class="axlab" x="446" y="330">$1T</text>
+        <text class="axlab" x="802" y="330">$2T</text>
+        <circle class="d20" cx="806" cy="20" r="6"/><text class="leg" x="820" y="24">2020</text>
+        <circle class="d26" cx="884" cy="20" r="7"/><text class="leg" x="898" y="24">2026</text>
+        <text class="name lead" x="76" y="61">美国</text>
+        <line class="link lead" pathLength="1" x1="197" y1="56" x2="944" y2="56"/>
+        <circle class="d20 lead" cx="197" cy="56" r="6"/><circle class="d26 lead" cx="944" cy="56" r="7"/>
+        <text class="gain lead" x="570" y="46">+$2.1T</text>
+        <text class="name lead" x="76" y="121">中国</text>
+        <line class="link lead" pathLength="1" x1="154" y1="116" x2="642" y2="116"/>
+        <circle class="d20 lead" cx="154" cy="116" r="6"/><circle class="d26 lead" cx="642" cy="116" r="7"/>
+        <text class="gain lead" x="398" y="106">+$1.37T</text>
+        <text class="name" x="76" y="181">欧盟</text>
+        <line class="link" pathLength="1" x1="133" y1="176" x2="318" y2="176"/>
+        <circle class="d20" cx="133" cy="176" r="6"/><circle class="d26" cx="318" cy="176" r="7"/>
+        <text class="gain" x="225" y="166">+$0.52T</text>
+        <text class="name" x="76" y="241">中东</text>
+        <line class="link" pathLength="1" x1="104" y1="236" x2="218" y2="236"/>
+        <circle class="d20" cx="104" cy="236" r="6"/><circle class="d26" cx="218" cy="236" r="7"/>
+        <text class="gain" x="161" y="226">+$0.32T</text>
+        <text class="name" x="76" y="301">其他</text>
+        <line class="link" pathLength="1" x1="118" y1="296" x2="197" y2="296"/>
+        <circle class="d20" cx="118" cy="296" r="6"/><circle class="d26" cx="197" cy="296" r="7"/>
+        <text class="gain" x="157" y="286">+$0.22T</text>
+        <text class="anno" x="600" y="188">头尾差距 6 年扩大 ×8</text>
+        <text class="anno-note" x="600" y="208">2020 相差 $0.26T，2026 已达 $2.10T</text>
+      </svg>
+    </div>
+    <div class="db-source">示意 · 2020→2026 增长形态（非真实数据）</div>
+  </section>
+
+  <!-- 12 -->
+  <!-- 12 DATA-TABLE（数据表格化 · 三指标五区一表对齐 · 斑马纹 + 高亮行即论证） -->
+  <section class="slide datatbl" data-layout="data-table" data-role="ground" data-energy="calm">
+    <div class="eyebrow"><span class="sq"></span>算力经济 · COMPUTE ECONOMY</div>
+    <div class="folio">DATA · 12 / 20</div>
+    <div class="toprule"></div>
+    <div class="tbl-head">
+      <div class="h">三项指标，五区一表对齐</div>
+      <div class="sub">规模、增速、份额并列同一张表——亚太规模非最大，但增速最陡。</div>
+    </div>
+    <div class="tbl-anno"><span class="anno-k">亚太：增速最陡</span><span class="anno-s">六年增速领跑五区，份额正快速逼近头部</span></div>
+    <div class="tbl">
+      <div class="tbl-row tbl-hrow">
+        <div class="tbl-region th">区域</div>
+        <div class="th tnum">2026 规模<span class="uu">$T</span></div>
+        <div class="th tnum">6 年增速<span class="uu">×</span></div>
+        <div class="th tnum">全球份额<span class="uu">%</span></div>
+      </div>
+      <div class="tbl-row">
+        <div class="tbl-region">北美</div>
+        <div class="td tnum">2.40</div>
+        <div class="td tnum">9.4</div>
+        <div class="td tnum">38.1</div>
+      </div>
+      <div class="tbl-row">
+        <div class="tbl-region">欧洲</div>
+        <div class="td tnum">0.78</div>
+        <div class="td tnum">6.1</div>
+        <div class="td tnum">12.4</div>
+      </div>
+      <div class="tbl-row is-lead">
+        <div class="tbl-region">亚太</div>
+        <div class="td tnum">1.92</div>
+        <div class="td tnum lead-cell">11.2</div>
+        <div class="td tnum">30.5</div>
+      </div>
+      <div class="tbl-row">
+        <div class="tbl-region">中东</div>
+        <div class="td tnum">0.36</div>
+        <div class="td tnum">7.8</div>
+        <div class="td tnum">5.7</div>
+      </div>
+      <div class="tbl-row">
+        <div class="tbl-region">其他</div>
+        <div class="td tnum">0.84</div>
+        <div class="td tnum">4.7</div>
+        <div class="td tnum">13.3</div>
+      </div>
+    </div>
+    <div class="tbl-source">示意 · 非真实区域数据</div>
+  </section>
+
+  <!-- 13 -->
+  <section class="slide divpg" data-layout="section-divider" data-role="ground" data-energy="half">
+    <div class="eyebrow"><span class="sq"></span>算力经济 · COMPUTE ECONOMY</div>
+    <div class="folio">DATA · 13 / 20</div>
+    <div class="toprule"></div>
+    <div class="dv-kicker">第三章</div>
+    <div class="dv-num">03</div>
+    <div class="dv-name">拐点</div>
+    <div class="dv-en">THE INFLECTION</div>
+    <div class="dv-rule"></div>
+    <div class="dv-guide"><span class="sq"></span>增长之后，真正的三个问题</div>
+    <div class="dv-source">本章导引 · 形态预览(非真实数据)</div>
+  </section>
+
+  <!-- 14 -->
+  <section class="slide arstack" data-layout="area-stack" data-role="insight" data-energy="calm">
+  <div class="eyebrow"><span class="sq"></span>算力经济 · COMPUTE ECONOMY</div>
+  <div class="folio">DATA · 14 / 20</div>
+  <div class="toprule"></div>
+  <div class="ar-head">
+    <div class="h">算力构成的重心，正从训练滑向推理</div>
+    <div class="sub">2020→2026 · 三层算力支出占比（百分百堆叠 · 示意）。</div>
+  </div>
+  <div class="ar-chart">
+    <svg class="diagram" viewBox="0 0 1120 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="百分百堆叠面积图：算力支出三层构成 2020 至 2026。底层训练占比由 68% 降至 27%，中层推理由 20% 升至 55% 成为最大单层，顶层边缘由 12% 升至 18%。重心由训练转向推理（示意）。">
+      <!-- 网格基线 + 100% 顶线 -->
+      <line class="ar-grid" x1="110" y1="40" x2="940" y2="40"/>
+      <line class="ar-grid" x1="110" y1="149" x2="940" y2="149"/>
+      <line class="ar-base" x1="110" y1="258" x2="940" y2="258"/>
+      <text class="ar-ylab" x="98" y="44">100%</text>
+      <text class="ar-ylab" x="98" y="153">50%</text>
+      <text class="ar-ylab" x="98" y="262">0</text>
+
+      <!-- 三层堆叠面积（由下到上 seq-5 训练 / seq-3 推理 / seq-2 边缘） -->
+      <g class="ar-bands">
+        <path class="ar-band ar-train" d="M110,258 L110,110 248,121 387,138 525,158 663,175 802,190 940,199 L940,258 Z"/>
+        <path class="ar-band ar-infer" d="M110,110 L110,66 248,64 387,66 525,71 663,73 802,77 940,79 L940,199 L802,190 663,175 525,158 387,138 248,121 110,110 Z"/>
+        <path class="ar-band ar-edge" d="M110,40 L940,40 L940,79 802,77 663,73 525,71 387,66 248,64 110,66 Z"/>
+        <!-- 层间分界细线（提升各层可读边界） -->
+        <polyline class="ar-sep" points="110,110 248,121 387,138 525,158 663,175 802,190 940,199"/>
+        <polyline class="ar-sep" points="110,66 248,64 387,66 525,71 663,73 802,77 940,79"/>
+      </g>
+
+      <!-- 末端直标：各层名称 + 2026 占比（按各自底色取对比色） -->
+      <text class="ar-end ar-end-on-dark" x="950" y="227">训练</text>
+      <text class="ar-end-v ar-end-on-dark" x="1010" y="227">27%</text>
+      <text class="ar-end ar-end-hero" x="950" y="135">推理</text>
+      <text class="ar-end-v ar-end-hero" x="1010" y="135">55%</text>
+      <circle class="ar-hot" cx="940" cy="139" r="5"/>
+      <text class="ar-end" x="950" y="63">边缘</text>
+      <text class="ar-end-v" x="1010" y="63">18%</text>
+
+      <!-- 判断标注（accent · 落 seq-2 浅层上 · AA 4.9）+ 指向推理胀大处的引导线 -->
+      <line class="ar-guide" x1="300" y1="98" x2="466" y2="120"/>
+      <text class="anno" x="132" y="92">推理已成主战场：20% → 55%</text>
+      <text class="anno-note" x="132" y="110">六年内升至最大单层，训练 68%→27% 让出重心</text>
+
+      <!-- X 轴年份 -->
+      <text class="ar-axlab" x="110" y="284" text-anchor="middle">2020</text>
+      <text class="ar-axlab" x="387" y="284" text-anchor="middle">2022</text>
+      <text class="ar-axlab" x="663" y="284" text-anchor="middle">2024</text>
+      <text class="ar-axlab" x="940" y="284" text-anchor="middle">2026</text>
+    </svg>
+  </div>
+  <div class="ar-source">示意 · 构成形态演示（非真实数据）· 三层逐年合计 100%，仅占比结构变化</div>
+</section>
+
+  <!-- 15 -->
+  <section class="slide scatpg" data-layout="scatter" data-role="insight" data-energy="calm">
+    <div class="eyebrow"><span class="sq"></span>算力经济 · COMPUTE ECONOMY</div>
+    <div class="folio">DATA · 15 / 20</div>
+    <div class="toprule"></div>
+    <div class="sc-head">
+      <div class="h">规模与效率，正在同一个方向上拉开</div>
+      <div class="sub">横轴算力规模、纵轴能效，气泡大小=投资额——赢家不在某一维，而在右上角（示意）。</div>
+    </div>
+    <div class="sc-chart">
+      <svg class="diagram" viewBox="0 0 1120 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="算力规模与能效散点气泡图：横轴算力规模 0 到 2.5 万亿美元，纵轴能效 perf/watt 相对值，气泡半径表示投资额。美国位于右上高规模高效率赢家象限且投资额最大（实心高亮），中国居中，中东能效较高但规模小，欧盟、亚太其他、印度规模与能效双低（示意）">
+        <rect class="quad" x="648" y="28" width="332" height="79"/>
+        <line class="quad-line" x1="648" y1="28" x2="648" y2="250"/>
+        <line class="quad-line" x1="150" y1="107" x2="980" y2="107"/>
+        <line class="grid" x1="150" y1="40" x2="980" y2="40"/>
+        <line class="grid" x1="150" y1="82" x2="980" y2="82"/>
+        <line class="grid" x1="150" y1="124" x2="980" y2="124"/>
+        <line class="grid" x1="150" y1="166" x2="980" y2="166"/>
+        <line class="grid" x1="150" y1="208" x2="980" y2="208"/>
+        <text class="ylab" x="138" y="44">2.5</text>
+        <text class="ylab" x="138" y="86">2.0</text>
+        <text class="ylab" x="138" y="128">1.5</text>
+        <text class="ylab" x="138" y="170">1.0</text>
+        <text class="ylab" x="138" y="212">0.5</text>
+        <line class="axis" x1="150" y1="250" x2="980" y2="250"/>
+        <line class="axis" x1="150" y1="28" x2="150" y2="250"/>
+        <text class="axlab" x="150" y="270">$0</text>
+        <text class="axlab" x="316" y="270">$0.5T</text>
+        <text class="axlab" x="482" y="270">$1.0T</text>
+        <text class="axlab" x="648" y="270">$1.5T</text>
+        <text class="axlab" x="814" y="270">$2.0T</text>
+        <text class="axlab" x="980" y="270">$2.5T</text>
+        <text class="axtitle" x="565" y="292" text-anchor="middle">算力规模（capex · $T）</text>
+        <text class="axtitle" x="-139" y="20" transform="rotate(-90)" text-anchor="middle">能效 perf/watt（相对值）</text>
+        <text class="quad-tag" x="744" y="46" text-anchor="middle">赢家象限</text>
+        <text class="quad-tag" x="744" y="62" text-anchor="middle" style="font-weight:400;fill:var(--ink-dim)">高规模 · 高效率</text>
+        <circle class="bub" cx="210" cy="191" r="11"/>
+        <text class="blab" x="210" y="217" text-anchor="middle">印度</text>
+        <circle class="bub" cx="250" cy="179" r="13"/>
+        <text class="blab" x="250" y="153" text-anchor="middle">亚太其他</text>
+        <circle class="bub" cx="356" cy="145" r="18"/>
+        <text class="blab" x="356" y="113" text-anchor="middle">欧盟</text>
+        <circle class="bub" cx="283" cy="107" r="15"/>
+        <text class="blab" x="283" y="79" text-anchor="middle">中东</text>
+        <circle class="bub" cx="631" cy="120" r="27"/>
+        <text class="blab" x="631" y="159" text-anchor="middle">中国</text>
+        <circle class="bub lead" cx="880" cy="78" r="34"/>
+        <text class="blab lead" x="880" y="83">美国</text>
+        <line class="guide" x1="700" y1="196" x2="842" y2="96"/>
+        <text class="anno" x="430" y="200">规模与效率，正在同时领先</text>
+        <text class="anno-note" x="430" y="218">美国独占右上象限：投资额最大、能效仍最高</text>
+      </svg>
+    </div>
+    <div class="sc-source">示意 · 规模×能效×投资额形态演示（非真实国别数据）· 气泡半径∝投资额</div>
+  </section>
+
+  <!-- 16 -->
+  <!-- 16 STATEMENT-SERIF（陈述→判断 双层修辞：上三行事实陈述 / 下巨大判断句 · 视觉版式名 statement-serif，data-layout 取 validator 白名单合法值 statement） -->
+  <section class="slide stspg" data-layout="statement" data-role="insight" data-energy="blast">
+    <div class="eyebrow"><span class="sq"></span>算力经济 · COMPUTE ECONOMY</div>
+    <div class="folio">DATA · 16 / 20</div>
+    <div class="toprule"></div>
+    <div class="sts-facts">
+      <div class="sts-fact"><span class="dot">·</span>六年十二倍</div>
+      <div class="sts-fact"><span class="dot">·</span>2024 反超传统 IT</div>
+      <div class="sts-fact"><span class="dot">·</span>头部两强占七成</div>
+    </div>
+    <div class="sts-rule"></div>
+    <p class="sts-claim">算力，已经不是成本——<br>是新的<em class="sts-key">基础设施</em>。</p>
+    <div class="sts-source">示意 · 据前文形态推断（非真实数据）</div>
+  </section>
+
+  <!-- 17 -->
+  <section class="slide wfallpg" data-layout="waterfall" data-role="ground" data-energy="calm">
+    <div class="eyebrow"><span class="sq"></span>算力经济 · COMPUTE ECONOMY</div>
+    <div class="folio">DATA · 17 / 20</div>
+    <div class="toprule"></div>
+    <div class="wf-head">
+      <div class="h">$1.5T 到 $6.0T，缺口是谁补上的</div>
+      <div class="sub">2020→2026 算力市场增量拆解：四股力量，量级并不对等（示意）。</div>
+    </div>
+    <div class="wf-chart">
+      <svg class="diagram" viewBox="0 0 1120 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="瀑布图：2020 基线 1.5 万亿美元，叠加云厂商 +1.4、主权算力 +2.0、企业 +0.6、新兴 +0.5 万亿，累积至 2026 年 6.0 万亿美元；其中主权算力为最大单一增量来源（示意）">
+        <line class="grid" x1="110" y1="40" x2="1042" y2="40"/>
+        <line class="grid" x1="110" y1="112.7" x2="1042" y2="112.7"/>
+        <line class="grid" x1="110" y1="185.3" x2="1042" y2="185.3"/>
+        <line class="grid" x1="110" y1="258" x2="1042" y2="258"/>
+        <text class="ylab" x="98" y="44">$6T</text>
+        <text class="ylab" x="98" y="116.7">$4T</text>
+        <text class="ylab" x="98" y="189.3">$2T</text>
+        <text class="ylab" x="98" y="262">$0</text>
+
+        <line class="wf-link" x1="272" y1="203.5" x2="322" y2="203.5"/>
+        <line class="wf-link" x1="426" y1="152.6" x2="476" y2="152.6"/>
+        <line class="wf-link" x1="580" y1="80" x2="630" y2="80"/>
+        <line class="wf-link" x1="734" y1="58.2" x2="784" y2="58.2"/>
+        <line class="wf-link" x1="888" y1="40" x2="938" y2="40"/>
+
+        <rect class="bar end" x="168" y="203.5" width="104" height="54.5"/>
+        <rect class="bar" x="322" y="152.6" width="104" height="50.9"/>
+        <rect class="bar peak" x="476" y="80" width="104" height="72.6"/>
+        <rect class="bar" x="630" y="58.2" width="104" height="21.8"/>
+        <rect class="bar" x="784" y="40" width="104" height="18.2"/>
+        <rect class="bar end" x="938" y="40" width="104" height="218"/>
+
+        <text class="wf-tot" x="220" y="193.5" text-anchor="middle">$1.5T</text>
+        <text class="wf-gain" x="374" y="140.6" text-anchor="middle">+$1.4T</text>
+        <text class="wf-gain hot" x="528" y="62" text-anchor="middle">+$2.0T</text>
+        <text class="wf-gain" x="682" y="46.2" text-anchor="middle">+$0.6T</text>
+        <text class="wf-gain" x="836" y="28" text-anchor="middle">+$0.5T</text>
+        <text class="wf-tot end" x="990" y="28" text-anchor="middle">$6.0T</text>
+
+        <text class="wf-cat" x="220" y="282" text-anchor="middle">2020 基线</text>
+        <text class="wf-cat" x="374" y="282" text-anchor="middle">云厂商</text>
+        <text class="wf-cat hot" x="528" y="282" text-anchor="middle">主权算力</text>
+        <text class="wf-cat" x="682" y="282" text-anchor="middle">企业</text>
+        <text class="wf-cat" x="836" y="282" text-anchor="middle">新兴</text>
+        <text class="wf-cat" x="990" y="282" text-anchor="middle">2026</text>
+
+        <line class="guide" x1="226" y1="112" x2="474" y2="84"/>
+        <text class="anno" x="150" y="100">主权算力：单笔 +$2.0T</text>
+        <text class="anno-note" x="150" y="118">四股增量里最大的一股——超过云厂商 (+$1.4T)，是 2026 缺口的第一来源</text>
+      </svg>
+    </div>
+    <div class="wf-source">示意 · 增量拆解形态演示（非真实市场数据）· 增量经四舍五入，合计 $6.0T</div>
+  </section>
+
+  <!-- 18 -->
+  <section class="slide quotepg" data-layout="quote" data-role="ground" data-energy="half">
+    <div class="eyebrow"><span class="sq"></span>算力经济 · COMPUTE ECONOMY</div>
+    <div class="folio">DATA · 18 / 20</div>
+    <div class="toprule"></div>
+    <div class="qt-mark" aria-hidden="true">&ldquo;</div>
+    <blockquote class="qt-body">当一项支出的增速连续三年超过 <span class="qt-num">200%</span>，<br>它就不再是成本，<em>而是基础设施</em>。</blockquote>
+    <div class="qt-cite">&mdash;&mdash;某算力经济研究 · 示意观点（非真实引用）</div>
+    <div class="qt-source">示意 · 观点形态演示（非真实引用，未对应任何真实人物或机构）</div>
+  </section>
+
+  <!-- 19 -->
+  <section class="slide methsrc" data-layout="method-source" data-role="ground" data-energy="calm">
+    <div class="eyebrow"><span class="sq"></span>算力经济 · COMPUTE ECONOMY</div>
+    <div class="folio">DATA · 19 / 20</div>
+    <div class="toprule"></div>
+    <div class="ms-head">
+      <div class="h">方法与边界</div>
+      <div class="sub">先说清楚：这份 deck 演示「怎么让数据自己下结论」，不是结论本身。</div>
+    </div>
+    <div class="ms-cols">
+      <i class="ms-rule" style="left:363px"></i>
+      <i class="ms-rule" style="left:757px"></i>
+      <div class="ms-col">
+        <div class="ms-no">01</div>
+        <div class="ms-k">数据口径 · DATA</div>
+        <div class="ms-h">全部示意数据</div>
+        <div class="ms-b">曲线、份额、排名只<b class="ms-em">演示形态</b>——表达「关系长什么样」，数值构造、非真实。</div>
+        <div class="ms-tag">示意 · 形态优先</div>
+      </div>
+      <div class="ms-col">
+        <div class="ms-no">02</div>
+        <div class="ms-k">方法 · METHOD</div>
+        <div class="ms-h">按关系选图，让标注下结论</div>
+        <div class="ms-b">FT Visual Vocabulary 选图型 · Tufte 小倍数 · <b class="ms-em">标注层即论证</b>：判断直接写在图上。</div>
+        <div class="ms-tag">关系 → 图型 → 判断</div>
+      </div>
+      <div class="ms-col">
+        <div class="ms-no">03</div>
+        <div class="ms-k">边界 · SCOPE</div>
+        <div class="ms-h">仅演示信息设计能力</div>
+        <div class="ms-b">演示「信息·数据设计」的论证能力，<b class="ms-em ms-hot">数值不可引用</b>、不构成决策依据。</div>
+        <div class="ms-tag ms-tag-hot"><span class="dot"></span>不可引用</div>
+      </div>
+    </div>
+    <div class="ms-source">示意 · 方法声明页（非真实数据）· 图型法 FT Visual Vocabulary / 小倍数 Tufte</div>
+  </section>
+
+  <!-- 20 -->
+  <section class="slide finalpg" data-layout="final" data-role="act" data-energy="blast">
+    <div class="eyebrow"><span class="sq"></span>算力经济 · COMPUTE ECONOMY</div>
+    <div class="folio">DATA · 20 / 20</div>
+    <div class="toprule"></div>
+    <div class="fin-head">
+      <div class="lead">所以——</div>
+      <div class="h">别再把算力<em>记成本</em>，<br>把它当<em>资本</em>来配置。</div>
+    </div>
+    <div class="fin-source">据前三图形态推断 · 示意</div>
+  </section>
+
+
+
+</div></div>
+
+<nav class="hud" aria-label="导航">
+  <button id="navPrev" aria-label="上一页">‹</button>
+  <span class="cnt" id="navCnt">01 / 01</span>
+  <button id="navNext" aria-label="下一页">›</button>
+</nav>
+
+<div class="rotate-hint" aria-hidden="true">
+  <svg class="rh-ico" viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v4h-4"/></svg>
+  <div class="rh-msg"><span class="rh-sq"></span>横屏观看更佳</div>
+  <div class="rh-sub">旋转手机以全屏查看这份演示</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var root=document.documentElement; root.classList.remove("no-js"); root.classList.add("js");
+  var deck=document.getElementById("deck");
+  var slides=[].slice.call(deck.querySelectorAll(".slide"));
+  var total=slides.length, cntEl=document.getElementById("navCnt"), i=0;
+  var pad2=function(n){return (n<10?"0":"")+n;};
+  function fit(){var s=Math.min(window.innerWidth/1280, window.innerHeight/720); var x=(window.innerWidth-1280*s)/2, y=(window.innerHeight-720*s)/2; deck.style.transform="translate("+x+"px,"+y+"px) scale("+s+")";}
+  function clamp(n){return Math.max(0,Math.min(total-1,n));}
+  // 封面巨数 count-up：进入封面时从 0 滚到目标值（戏剧性揭示）；只播一次；reduced-motion 直接显终值
+  var counted=false, reduceM=(window.matchMedia&&window.matchMedia("(prefers-reduced-motion:reduce)").matches);
+  function countUp(){
+    var el=deck.querySelector(".cover .bignum"); if(!el||!el.firstChild) return;
+    var target=parseInt((el.firstChild.nodeValue||"").replace(/[^0-9]/g,""),10); if(isNaN(target)) return;
+    if(reduceM){el.firstChild.nodeValue=target; return;}
+    el.firstChild.nodeValue="0"; var dur=900,t0=0;
+    function tick(ts){ if(!t0)t0=ts; var p=Math.min((ts-t0)/dur,1), e=1-Math.pow(1-p,3);
+      el.firstChild.nodeValue=Math.round(target*e); if(p<1){requestAnimationFrame(tick);} else {el.firstChild.nodeValue=target;} }
+    requestAnimationFrame(tick);
+  }
+  function maybeCount(){ if(i===0&&!counted){counted=true;countUp();} }
+  function render(){
+    slides.forEach(function(sl,idx){sl.classList.toggle("is-active",idx===i);});
+    cntEl.textContent=pad2(i+1)+" / "+pad2(total);
+    if(("#"+(i+1))!==location.hash) history.replaceState(null,"","#"+(i+1));
+    maybeCount();
+  }
+  function go(n){i=clamp(n);render();}
+  function next(){go(i+1);} function prev(){go(i-1);}
+  function fromHash(){var n=parseInt((location.hash||"").replace("#",""),10); if(!isNaN(n)&&n>=1&&n<=total)i=n-1;}
+  document.addEventListener("keydown",function(e){
+    switch(e.key){
+      case "ArrowRight": case "PageDown": case " ": e.preventDefault(); next(); break;
+      case "ArrowLeft": case "PageUp": e.preventDefault(); prev(); break;
+      case "Home": e.preventDefault(); go(0); break;
+      case "End": e.preventDefault(); go(total-1); break;
+    }
+  });
+  var tx=0,ty=0,tk=false;
+  document.addEventListener("touchstart",function(e){if(e.touches.length!==1)return;tk=true;tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
+  document.addEventListener("touchend",function(e){if(!tk)return;tk=false;var t=e.changedTouches[0],dx=t.clientX-tx,dy=t.clientY-ty;if(Math.abs(dx)>48&&Math.abs(dx)>Math.abs(dy)*1.4){dx<0?next():prev();}},{passive:true});
+  document.getElementById("navNext").addEventListener("click",next);
+  document.getElementById("navPrev").addEventListener("click",prev);
+  window.addEventListener("hashchange",function(){fromHash();render();});
+  window.addEventListener("resize",fit);
+  fromHash(); fit(); render();
+})();
+</script>
+</body>
+</html>

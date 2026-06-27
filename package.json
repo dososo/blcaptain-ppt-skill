@@ -1,0 +1,51 @@
+{
+  "name": "blcaptain-ppt-skill",
+  "version": "1.0.0",
+  "description": "AI-native single-file HTML presentation skill — 7 design-system-anchored visual personas with machine-enforced taste (WCAG / spacing / P0-P2 / 32-dimension audit) and an anti-fabrication discipline. Zero dependencies.",
+  "type": "module",
+  "author": "爆裂队长NEXT <blteam2026@outlook.com>",
+  "homepage": "https://github.com/dososo/blcaptain-ppt-skill#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dososo/blcaptain-ppt-skill.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dososo/blcaptain-ppt-skill/issues"
+  },
+  "files": [
+    "SKILL.md",
+    "AGENTS.md",
+    "PRODUCT.md",
+    "references/",
+    "scripts/",
+    "templates/",
+    "examples/",
+    "docs/gallery/",
+    "README.md",
+    "README.en.md",
+    "LICENSE",
+    "CONTRIBUTING.md",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "validate": "node scripts/validate-deck.mjs",
+    "check": "node --check scripts/validate-deck.mjs && node --check scripts/chart-render.mjs && node --check scripts/image-gen.mjs && node --check scripts/ingest.mjs && node --check scripts/make-preview.mjs && node --check scripts/subset-fonts.mjs"
+  },
+  "keywords": [
+    "claude-skill",
+    "codex-skill",
+    "agent-skill",
+    "presentation",
+    "deck",
+    "slides",
+    "html-presentation",
+    "design-system",
+    "wcag",
+    "anti-fabrication",
+    "zero-dependency"
+  ],
+  "license": "SEE LICENSE IN LICENSE",
+  "engines": {
+    "node": ">=18"
+  }
+}
