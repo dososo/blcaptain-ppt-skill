@@ -1,12 +1,16 @@
+<div align="center">
+
 # blcaptain-ppt-skill
+
+把一个想法 / 一篇文章 / 一组数据，变成 **7 套各有灵魂、好看与诚实都由机器强制**的单文件 HTML 演示
 
 **中文** · [English](README.en.md)
 
-> 把一个想法 / 一篇文章 / 一组数据，变成有观点、有节奏、第一眼就专业的**单文件 HTML 演示**——7 套各有灵魂的视觉人格，**好看与诚实都由机器强制**。
-
-![7 套视觉人格 · 总览一览](docs/gallery/compute-overview-hd.png)
-
 [![License](https://img.shields.io/badge/License-个人免费%20·%20商业授权-2E6FDB.svg)](LICENSE) ![Node](https://img.shields.io/badge/Node-%3E%3D18-3FD6C2.svg) ![Zero-dependency](https://img.shields.io/badge/依赖-0%20npm%20包-3FD6C2.svg) ![Agent Skill](https://img.shields.io/badge/Agent-Skill-2E6FDB.svg)
+
+</div>
+
+<img src="docs/gallery/hero-wall.jpg" width="100%" alt="blcaptain-ppt-skill — 7 套视觉人格 · 各 20 页总览墙" />
 
 > **安装**：对你的 Agent（Codex / Claude Code / Cursor / Gemini CLI…）说 ——「帮我安装这个 Skill：`github.com/dososo/blcaptain-ppt-skill`」
 
@@ -54,15 +58,28 @@ blcaptain 把这套功夫**固化成机器能强制执行的约束**：你给内
 - **编辑主义 · Editorial**（编辑深度）— 杂志编辑传统 + 七人格唯一衬线正文。**深度行业观察 / 长文分析。**
 - **演示禅 · Zen**（禅意留白）— 演示禅 × 阴翳 × MUJI 空 + 暗墨「第二种黑」。**思想 / 品牌 keynote。** 〔窄人格：一图一念·数据 / pitch 不用〕
 
-## 样例（每套 20 页总览）
+## 画廊 · 7 套人格 × 各 20 页总览
 
-更多见 [`docs/gallery/`](docs/gallery/)：技术崇高（暗场冷光）· 奢侈极简（裸色留白）· 演示禅（暗墨一念）。
+每一张 = 该人格 20 页真渲染缩览（点开看大图；想看活体直接打开对应 `templates/deck-<persona>.html`）：
 
-<p>
-<img src="docs/gallery/compute-overview-hd.png" width="32%" />
-<img src="docs/gallery/luxury-overview-hd.png" width="32%" />
-<img src="docs/gallery/zen-overview-hd.png" width="32%" />
-</p>
+<table>
+<tr>
+<td align="center" width="50%"><img src="docs/gallery/compute-overview-hd.png" width="100%" alt="技术崇高 · 20 页总览"/><br/><b>技术崇高 · Technical Sublime</b><br/><sub>工程冷光 + iso-compute 算力等值场 · 技术战报 / 算力 / AI</sub></td>
+<td align="center" width="50%"><img src="docs/gallery/constructivist-overview-hd.png" width="100%" alt="构成主义 · 20 页总览"/><br/><b>构成主义 · Constructivism</b><br/><sub>红场分幕 + 非对称张力 · 宣言 / 强主张 / 号召</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="docs/gallery/info-data-overview-hd.png" width="100%" alt="信息·数据 · 20 页总览"/><br/><b>信息·数据 · Information Design</b><br/><sub>Tufte / FT / Pudding 图表语汇 · 数据 / 趋势 / 报告</sub></td>
+<td align="center"><img src="docs/gallery/luxury-overview-hd.png" width="100%" alt="判断震慑 · 20 页总览"/><br/><b>判断震慑 · Luxury Minimalism</b><br/><sub>Didone 裸色 + 留白即定价 · 高端品牌 / 判断</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="docs/gallery/de-stijl-overview-hd.png" width="100%" alt="新造型 · 20 页总览"/><br/><b>新造型 · De Stijl</b><br/><sub>Mondrian / Vignelli 浊三原色 · 标准 / 秩序 / 系统框架</sub></td>
+<td align="center"><img src="docs/gallery/editorial-overview-hd.png" width="100%" alt="编辑主义 · 20 页总览"/><br/><b>编辑主义 · Editorial</b><br/><sub>杂志编辑传统 + 唯一衬线正文 · 深度观察 / 长文</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="docs/gallery/zen-overview-hd.png" width="100%" alt="演示禅 · 20 页总览"/><br/><b>演示禅 · Zen</b><br/><sub>阴翳 × MUJI 空 + 暗墨「第二种黑」· 思想 / 品牌 keynote</sub></td>
+<td align="center" valign="center"><sub>7 套 = 7 种被时间验证的设计体系，<br/>**不是换皮模板**。<br/><br/>每套均 20 页、全 P0=0 机检过线。<br/>全部超清原图见 <a href="docs/gallery/">docs/gallery/</a>。</sub></td>
+</tr>
+</table>
 
 ## 适合 / 不适合
 

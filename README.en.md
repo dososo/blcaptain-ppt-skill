@@ -1,10 +1,16 @@
+<div align="center">
+
 # blcaptain-ppt-skill
+
+Turn an idea / article / dataset into **single-file HTML presentations across 7 visual personas — where both taste and honesty are machine-enforced**
 
 [中文](README.md) · **English**
 
-![7 personas — 20-page overviews](docs/gallery/compute-overview-hd.png)
-
 [![License](https://img.shields.io/badge/license-personal%20free%20%C2%B7%20commercial-2E6FDB.svg)](LICENSE) ![Node](https://img.shields.io/badge/Node-%3E%3D18-3FD6C2.svg) ![Zero-dependency](https://img.shields.io/badge/deps-0%20npm-3FD6C2.svg) ![Agent Skill](https://img.shields.io/badge/Agent-Skill-2E6FDB.svg)
+
+</div>
+
+<img src="docs/gallery/hero-wall.jpg" width="100%" alt="blcaptain-ppt-skill — 7 visual personas, 20-page overviews" />
 
 > **Install**: tell your agent (Codex / Claude Code / Cursor / Gemini CLI…) — "Install this Skill: `github.com/dososo/blcaptain-ppt-skill`"
 
@@ -31,13 +37,28 @@ It is **intelligence-driven**: your AI agent reads the content, picks a persona 
 - **Editorial** — magazine editorial tradition + the only serif body of the seven. *In-depth industry analysis / long-form.*
 - **Zen** — Zen × *In Praise of Shadows* × MUJI emptiness, dark-ink "second black." *Ideas / brand keynote.* (narrow persona: one image, one thought — not for data / pitches)
 
-## Gallery
+## Gallery · 7 personas × 20-page overviews
 
-<p>
-<img src="docs/gallery/compute-overview-hd.png" width="32%" />
-<img src="docs/gallery/luxury-overview-hd.png" width="32%" />
-<img src="docs/gallery/zen-overview-hd.png" width="32%" />
-</p>
+Each image is a 20-page render thumbnail of that persona (click to enlarge; open the matching `templates/deck-<persona>.html` to see it live):
+
+<table>
+<tr>
+<td align="center" width="50%"><img src="docs/gallery/compute-overview-hd.png" width="100%" alt="Technical Sublime — 20-page overview"/><br/><b>Technical Sublime</b><br/><sub>Engineered cool + iso-compute contour signature · tech reports / compute / AI</sub></td>
+<td align="center" width="50%"><img src="docs/gallery/constructivist-overview-hd.png" width="100%" alt="Constructivism — 20-page overview"/><br/><b>Constructivism</b><br/><sub>Red-square acts + asymmetric tension · manifestos / strong claims</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="docs/gallery/info-data-overview-hd.png" width="100%" alt="Information Design — 20-page overview"/><br/><b>Information Design</b><br/><sub>Tufte / FT / Pudding chart grammar · data / trends / reports</sub></td>
+<td align="center"><img src="docs/gallery/luxury-overview-hd.png" width="100%" alt="Luxury Minimalism — 20-page overview"/><br/><b>Luxury Minimalism</b><br/><sub>Didone bare-color + whitespace-as-pricing · premium brand / judgment</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="docs/gallery/de-stijl-overview-hd.png" width="100%" alt="De Stijl — 20-page overview"/><br/><b>De Stijl</b><br/><sub>Mondrian / Vignelli muted primaries · standards / order / systems</sub></td>
+<td align="center"><img src="docs/gallery/editorial-overview-hd.png" width="100%" alt="Editorial — 20-page overview"/><br/><b>Editorial</b><br/><sub>Magazine tradition + the only serif body of the seven · long-form analysis</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="docs/gallery/zen-overview-hd.png" width="100%" alt="Zen — 20-page overview"/><br/><b>Zen</b><br/><sub>Shadows × MUJI emptiness + dark-ink "second black" · ideas / brand keynote</sub></td>
+<td align="center" valign="center"><sub>7 personas = 7 time-tested design systems,<br/>**not recolored templates**.<br/><br/>Each is 20 pages, all passing P0=0 machine checks.<br/>Full-resolution images in <a href="docs/gallery/">docs/gallery/</a>.</sub></td>
+</tr>
+</table>
 
 ## Install
 
